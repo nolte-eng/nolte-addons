@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<odoo>
+<!--Verändert die Standardansicht des Kalenders auf Monatsansicht-->
+
+    <record id="nolte_calendar_month_calendar_view" model="ir.ui.view">
+        <field name="name">Meetings Calendar</field>
+        <field name="model">calendar.event</field>
+        <field name="view_type">calendar</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_calendar"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//calendar" position="attributes">
+          <attribute name="mode">month</attribute>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

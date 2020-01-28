@@ -1,0 +1,333 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* nolte_berichte
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 12.0-20191106\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-14 00:33+0000\n"
+"PO-Revision-Date: 2019-12-14 01:37+0100\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: \n"
+"Language: de\n"
+"X-Generator: Poedit 2.2.4\n"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "&amp;nbsp;<span>on</span>"
+msgstr "&amp;nbsp; <span>von</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid ""
+"<span groups=\"account.group_show_line_subtotals_tax_excluded\">Amount</span>\n"
+"                                    <span groups=\"account.group_show_line_subtotals_tax_included\">Total Price</span>"
+msgstr ""
+"<span groups=\"account.group_show_line_subtotals_tax_excluded\">Betrag</span>\n"
+"                                <span groups=\"account.group_show_line_subtotals_tax_included\">Gesamtpreis</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span style=\"float:left; padding-right:10px;\">E-Mail</span>"
+msgstr ""
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>+49 2173 250242</span>"
+msgstr ""
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Contact person</span>"
+msgstr "<span>Ansprechpartner</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Customer no.</span>"
+msgstr "<span>Kundennummer</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Description</span>"
+msgstr "<span>Beschreibung</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Disc.(%)</span>"
+msgstr "<span>Rabatt(%)</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Fax</span>"
+msgstr "<span>Fax</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "<span>Invoice Date:</span>"
+msgstr "<span>Rechnungsdatum</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "<span>Invoice no.</span>"
+msgstr "<span>Rechnungsnr.</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Offer valid until</span>"
+msgstr "<span>Angebot gültig bis</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Order date</span>"
+msgstr "<span>Auftragsdatum</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Order no.</span>"
+msgstr "<span>Auftragsnummer</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Our reference no.</span>"
+msgstr "<span>Unsere Referenz</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Phone</span>"
+msgstr "<span>Telefon</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Pro-Forma Invoice  </span>"
+msgstr "<span>Pro-Forma Rechnung  </span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Quantity</span>"
+msgstr "<span>Menge</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Quotation date</span>"
+msgstr "<span>Angebotsdatum</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Quotation no.</span>"
+msgstr "<span>Angebotsnummer</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "<span>Reference</span>"
+msgstr "<span>Referenz</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Source Document</span>"
+msgstr "<span>Ausgangsdokument</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Taxes</span>"
+msgstr "<span>Umsatzsteuer</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Unit Price</span>"
+msgstr "<span>Einzelpreis</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>VAT Reg. no.</span>"
+msgstr "<span>Ust-IdNr.</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>Your reference no.</span>"
+msgstr "<span>Ihr Zeichen</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span>on</span>"
+msgstr "<span>von</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong class=\"mr16\">Subtotal</strong>"
+msgstr "<strong class=\"mr16\">Zwischensumme</strong>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "<strong class=\"text-center\">Scan me with your banking app.</strong><br/><br/>"
+msgstr "<strong class=\"text-center\">Scannen Sie mich mit Ihrer Banking-Applikation.</strong><br/><br/>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "<strong class=\"text-center\">The SEPA QR Code informations are not set correctly.</strong><br/>"
+msgstr "<strong class=\"text-center\">Die SEPA QR Code Informationen sind nicht korrekt konfiguriert.</strong><br/>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>Fiscal Position Remark:</strong>"
+msgstr "<strong>Steuerzuordnung:</strong>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>For further information, please contact</strong>"
+msgstr "<strong>Bei Fragen wenden Sie sich bitte an</strong>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>Item No.</strong>"
+msgstr "<strong>Artikelnr.</strong>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>Payment:</strong>"
+msgstr "<strong>Zahlungsbedingungen:</strong>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>Pos.</strong>"
+msgstr ""
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>Subtotal</strong>"
+msgstr "<strong>Zwischensumme</strong>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<strong>Total</strong>"
+msgstr "<strong>Gesamtsumme</strong>"
+
+#. module: nolte_berichte
+#: model:ir.model.fields,field_description:nolte_berichte.field_res_company__ceo_01
+msgid "CEO 1"
+msgstr "Geschäftsführer"
+
+#. module: nolte_berichte
+#: model:ir.model.fields,field_description:nolte_berichte.field_res_company__ceo_02
+msgid "CEO 2"
+msgstr "Geschäftsführer"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Cancelled Invoice"
+msgstr "Stornierte Rechnung"
+
+#. module: nolte_berichte
+#: model:ir.model,name:nolte_berichte.model_res_company
+msgid "Companies"
+msgstr "Unternehmen"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Credit Note"
+msgstr "Gutschrift"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Draft Invoice"
+msgstr "Rechnungsentwurf"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.berichte_ceo_company
+msgid "FAX"
+msgstr ""
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.company_footer
+msgid "HR-Nummer:"
+msgstr ""
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Invoice"
+msgstr "Rechnung"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_external_layout_standard
+msgid "Logo"
+msgstr ""
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "Order"
+msgstr "Auftrag"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_external_layout_standard
+msgid "Page: <span class=\"page\"/> / <span class=\"topage\"/>"
+msgstr "Seite : <span class=\"page\"/> / <span class=\"topage\"/>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Payment Terms :"
+msgstr "Zahlungsbedingungen :"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Please use the following communication for your payment :"
+msgstr "Bitte benutzen Sie den folgenden Verwendungszweck für Ihre Zahlung:"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "Quotation"
+msgstr "Angebot"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.company_footer
+msgid "VAT:"
+msgstr "UstIdNr."
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Vendor Bill"
+msgstr "Lieferantenrechnung"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+msgid "Vendor Credit Note"
+msgstr "Lieferanten-Gutschrift"
+
+#. module: nolte_berichte
+#: model:ir.model.fields,field_description:nolte_berichte.field_res_company__com_fax
+msgid "company fax"
+msgstr "Firmen Fax"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.company_footer
+msgid "executive director"
+msgstr "Geschäftsführer"
+
+#. module: nolte_berichte
+#: model:ir.model.fields,field_description:nolte_berichte.field_res_company__ceo_title
+msgid "res.partner.title"
+msgstr ""

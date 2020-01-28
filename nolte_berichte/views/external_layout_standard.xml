@@ -1,0 +1,44 @@
+<odoo>
+
+<template id="nolte_external_layout_standard" inherit_id="web.external_layout_standard">
+        <xpath expr="//t[@t-name='web.external_layout_standard']" position="replace">
+
+
+		<t t-name="web.external_layout_standard">
+		        <div class="header">
+		            <div class="row">
+		                <div class="col-12 mb8 text-right float-right">
+		                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 120px;" alt="Logo"/>
+                		</div> 
+		                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
+		            </div> 
+		            <div t-if="company.logo or company.report_header" class="row zero_min_height"> 
+		                <div class="col-12">
+                		    <div style="border-bottom: 0px solid black;"/>
+		                </div>
+		            </div>
+           
+		        </div>
+		        <div class="article o_report_layout_standard" t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+                                            
+            			<t t-call="web.address_layout"/>
+		       		<t t-raw="0"/>
+       		        </div>
+	
+			<div class="footer o_standard_footer">
+ 				<div t-if="report_type == 'pdf'" class="list-inline" style="text-align: right !important; font-size: 0.6em;">
+		                    Page: <span class="page"/> / <span class="topage"/>
+              			</div>
+
+		   		<div class="text-center" style="border-top: 1px solid black;">
+             				<t t-call="nolte_berichte.company_footer"/>
+		              		<span t-field="company.report_footer"/>
+    				</div>
+            
+		        </div>
+ 		</t>
+ 	</xpath>
+ </template>
+
+ </odoo>
+
