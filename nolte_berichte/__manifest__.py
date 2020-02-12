@@ -12,7 +12,7 @@
     'author': "Nolte Engineering GmbH",
     'website': "http://www.nolte-eng.de",
     'category': 'Uncategorized',
-    'version': '12.0.1.0.3',
+    'version': '13.0.0.1',
 
     # any module necessary for this one to work correctly
     'depends': ['base', 'account', 'web', 'sale_comment_template', 'partner_fax'],
