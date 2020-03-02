@@ -19,7 +19,7 @@
                                     <span>
                                     </span>
                                     <h t-field="doc.company_id.partner_id.city"/>
-                                    <h t-if="doc.company_id.partner_id.country_id.name != doc.partner_id.country_id.name" t-field="doc.company_id.partner_id.country_id.name"/>
+                                <!--    <h t-if="doc.company_id.partner_id.country_id.name != doc.partner_id.country_id.name" t-field="doc.company_id.partner_id.country_id.name"/>-->
                              
                                  </div>
             </t>                    
@@ -171,9 +171,9 @@
                       
 -->
 		<t t-set="display_discount" t-value="any([l.discount for l in doc.order_line])"/>
-			<p t-if="doc.note1">                	
-				<span t-field="doc.note1"/>
-           		</p>
+<!--			<p t-if="doc.note1">                	-->
+<!--				<span t-field="doc.note1"/>	-->
+<!--           		</p>					-->
 
 
 
@@ -192,7 +192,7 @@
                                     <span>Disc.(%)</span>
                                     <t t-set="colspan" t-value="colspan+1"/>
                                 </th>
-                                <th t-attf-class="text-left {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}"><span>Taxes</span></th>
+                                <th t-attf-class="text-right {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}"><span>Taxes</span></th>
                                 <th class="text-right">
                                     <span groups="account.group_show_line_subtotals_tax_excluded">Amount</span>
                                     <span groups="account.group_show_line_subtotals_tax_included">Total Price</span>
@@ -237,7 +237,7 @@
                                         <td t-if="display_discount" t-attf-class="text-right {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
                                             <span t-field="line.discount"/>
                                         </td>
-                                        <td t-attf-class="text-left {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
+                                        <td t-attf-class="text-right {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
                                             <span t-esc="', '.join(map(lambda x: (x.description or x.name), line.tax_id))"/>
                                         </td>
                                         <td class="text-right o_price_total" style="padding-right:0px;">
@@ -261,7 +261,7 @@
                                
                                 </tr>
 
-                                <t t-if="current_section and (line_last or doc_order_line[line_index+1].display_type == 'line_section')">
+                                <t t-if="current_section and (line_last or doc.order_line[line_index+1].display_type == 'line_section')">
                                     <tr class="is-subtotal text-right">
                                         <td colspan="99">
                                             <strong class="mr16">Subtotal</strong>
@@ -316,9 +316,10 @@
                                 </table>
                             </div>
                         </div>
-                    </div>  <p t-if="doc.note2">
-				<span t-field="doc.note2"/>
-			</p>
+                    </div> 
+<!--			 <p t-if="doc.note2">			-->
+<!--				<span t-field="doc.note2"/>		-->
+<!--			</p>						-->
 			 <p t-if="doc.payment_term_id.note">
 				<strong>Payment:</strong>
               			  <span t-field="doc.payment_term_id.note"/>

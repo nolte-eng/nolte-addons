@@ -15,7 +15,8 @@
     'version': '13.0.0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'account', 'web', 'sale_comment_template', 'partner_fax'],
+#    'depends': ['base', 'account', 'web', 'sale_comment_template', 'partner_fax'],
+    'depends': ['base', 'account', 'web', 'partner_fax'],
 
     'data': [
     #    'security/ir.model.access.csv',
