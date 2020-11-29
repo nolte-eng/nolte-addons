@@ -236,7 +236,7 @@
                                         <td class="text-right" style="padding-right:0px">
                                             
         	                                <span t-field="line.quantity"/>
-	                                        <td class="text-left"><span t-field="line.uom_id" groups="uom.group_uom"/></td>
+	                                        <td class="text-left"><span t-field="line.product_uom_id" groups="uom.group_uom"/></td>
                                         </td>
 
 					<span t-field="line.product_uom_id" groups="uom.group_uom"/>

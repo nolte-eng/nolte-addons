@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="saleorder_email_template" model="mail.template">
+          <field name="name">Sales report e-mail template</field>
+          <field name="email_from">${object.user_id.email_formatted |safe}</field>
+          <field name="subject">${object.company_id.name} ${object.state in ('draft', 'sent') and 'Angebot' or 'Auftrag'} (Betreff ${object.name or 'k.A.' })</field>
+          <field name="email_to">${object.partner_id.id}</field>
+          <field name="lang">${object.partner_id.lang}</field>
+          <field name="model_id" ref="sale.model_sale_order"/>
+          <field name="auto_delete" eval="True"/>
+	  <field name="body_html">
+            <![CDATA[
+	      <div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        % set doc_name = 'Angebot' if object.state in ('draft', 'sent') else 'Auftrag'
+        sehr geehrte(r) ${object.partner_id.name}
+        % if object.partner_id.parent_id:
+            (${object.partner_id.parent_id.name})
+        % endif
+        <br><br> Hier ist
+        % if ctx.get('proforma')
+        im anhang ihre pro-forma rechnung
+        % else
+          ihr ${doc_name} <strong>${object.name}</strong>
+        % endif
+        % if object.origin:
+            (mit der Referenz: ${object.origin} )
+        % endif
+        welcher sich&nbsp; auf <strong>${format_amount(object.amount_total, object.pricelist_id.currency_id)}&nbsp;</strong><span style="font-style: initial; font-variant-ligatures: initial; font-variant-caps: initial; font-weight: initial; text-align: inherit;">beläuft.
+&nbsp;</span><br><span style="font-style: initial; font-variant-ligatures: initial; font-variant-caps: initial; font-weight: initial; text-align: inherit;">Die Bestellung erfolgte bei ${object.company_id.name}.&nbsp;</span></p><p style="margin: 0px; padding: 0px; font-size: 13px;"><br>
+        Zögern Sie nicht, uns zu kontaktieren, wenn Sie Fragen haben.
+    </p>
+</div>
+
+<br><p></p><p><font style="color: rgb(8, 82, 148); font-size: 13px;">Mit Freundlichen Grüßen / Best Regards</font><br><br>
+
+<img src="/logo.png?company=${object.company_id.id}" style="padding: 0px; margin: 0px; height: auto; width: 120px;" alt="${object.company_id.name}"><br>
+
+<font style="color: rgb(8, 82, 148);"><b>${object.company_id.name}</b></font><br>
+<div style="color: rgb(8, 82, 148); font-size: 10px;">
+<table style="width: 30%">
+<tbody>
+<tr>
+<td>Adress:</td>
+<td>${object.company_id.street}</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>${object.company_id.zip} ${object.company_id.city}</td>
+</tr>
+<tr>
+<td>Phone:</td>
+<td>${object.company_id.phone}</td>
+</tr>
+<tr>
+<td>Fax:</td>
+<td>${object.company_id.com_fax}</td>
+</tr>
+<tr>
+<td>Email:</td>
+<td>${object.company_id.email}</td>
+</tr>
+<tr>
+<td>Website:</td>
+<td>${object.company_id.website}</td>
+</tr>
+<tr>
+<td>VAT:</td>
+<td>${object.company_id.vat}</td>
+</tr>
+<tr>
+<td>CEO:</td>
+<td>${object.company_id.ceo_01}</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>${object.company_id.ceo_02}</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</font></p><p><font style="color: rgb(8, 82, 148); font-size: 10px;">
+This e-mail message and its attachments are intended solely for the use of the addressee and may contain legally privileged and confidential information. If the reader of this message is not the intended recipient, nor an employee or agent responsible for delivering this message to the intended recipient, please note that any dissemination, distribution, copying, or other use of this message or its attachments is strictly prohibited. If you have received this message in error, please notify the sender immediately and delete this messag</font>e.</p></small><p></p>
+	    ]]>
+	  </field>
+       </record>
+    </data>
+</odoo>
