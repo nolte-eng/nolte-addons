@@ -5,14 +5,10 @@
     'description': """
 Erweiterungen für Nolte Engineering GmbH
 ========================================
-
 -Anpassung des Kalenders
 	- Besitzer wird  angezeigt
 	- Standardansicht ist Monat
 	- Zeige 10 Termine an einen Tag an
-
-
-
     """,
     'author': 'Lars Nolte',
     'website': 'http://www.nolte-eng.de',

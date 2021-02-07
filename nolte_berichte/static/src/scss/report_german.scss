@@ -1,0 +1,76 @@
+.german {
+    &.header {
+        position: relative;
+        left: 15mm;
+        top: 15mm;
+        width: 180mm;
+        min-height: 45mm;
+        max-height: 45mm;
+        overflow: hidden;
+        img {
+            max-height: 45mm;
+        }
+    }
+    .company_address {
+        position: relative;
+        left: 25mm;
+        top: 5mm;
+        width: 75mm;
+        min-width: 75mm;
+        display: inline-block;
+    }
+    .company_invoice_address {
+        position: relative;
+        left: 15mm;
+        top: 17.7mm;
+        width: 85mm;
+        min-width: 85mm;
+        margin-bottom: 1mm;
+        font-size: 7pt;
+        overflow-y: hidden;
+        word-break: break-word;
+    }
+    .company_invoice_line {
+        margin-top: 1mm;
+    }
+    .invoice_address {
+        position: relative;
+        left: 15mm;
+        top: 14.7mm;
+        width: 95mm;
+        height: 27.3mm;
+        font-size: 10pt;
+        line-height: 1.15;
+        overflow-y: hidden;
+        word-break: break-word;
+        float: left;
+    }
+    .header_address { 
+        min-height: 35mm;
+    }
+    .page_number {
+        margin-top: 4.23mm;
+        margin-bottom: 2.23mm;
+    }
+    &.article {
+        .page {
+            position: relative;
+            top: 8.46mm;
+            left: 15mm;
+            width: 180mm;
+        }
+        .address {
+            margin-top: 5mm;
+        }
+    }
+    &.o_background_footer {
+        position: relative;
+        left: 15mm;
+        width: 180mm;
+    }
+    .o_account_reports_header {
+        .fallback_header {
+            display: none;
+        }
+    }
+}

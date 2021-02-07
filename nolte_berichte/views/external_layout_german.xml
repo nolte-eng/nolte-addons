@@ -1,0 +1,112 @@
+<odoo>
+    <template id="assets_common" name="german_din5008_report" inherit_id="web.report_assets_common">
+        <xpath expr="." position="inside">
+            <link rel="stylesheet" type="text/scss" href="/nolte_berichte/static/src/scss/report_german.scss"/>
+        </xpath>
+    </template>
+
+    <template id="external_layout_german">
+        <t t-if="not o and doc">
+            <t t-set="o" t-value="doc"/>
+        </t>
+        <t t-if="o and 'company_id' in o">
+            <t t-set="company" t-value="o.company_id.sudo()"/>
+        </t>
+
+        <t t-if="not o or not 'company_id' in o">
+            <t t-set="company" t-value="res_company"/>
+        </t>
+
+        <div class="header german">
+		            <div class="row">
+		                <div class="col-12 mb8 text-right float-right">
+		                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 120px;" alt="Logo"/>
+                		</div>
+		                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
+		            </div>
+		            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+		                <div class="col-12">
+                		    <div style="border-bottom: 0px solid black;"/>
+		                </div>
+		            </div>
+
+		        </div>
+
+        <div class="article german" t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" >
+
+            <div class="header_address">
+                        <t t-if="address">
+                            <div class="company_invoice_address">
+                                <t t-if="company.name">
+                                    <span t-field="company.name"/> &#8226;
+                                </t>
+                                <t t-if="company.street">
+                                    <span t-field="company.street"/> &#8226;
+                                </t>
+                                <t t-if="company.street2">
+                                    <span t-field="company.street2"/> &#8226;
+                                </t>
+                                <t t-if="company.zip">
+                                    <span t-field="company.zip"/> &#8226;
+                                </t>
+                                <t t-if="company.city">
+                                    <span t-field="company.city"/> &#8226;
+                                </t>
+                                <t t-if="company.country_id">
+                                    <span t-field="company.country_id.name"/>
+                                </t>
+                                <hr class="company_invoice_line" />
+                            </div>
+                            <div name="invoice_address" class="invoice_address">
+                                <t t-raw="address"/>
+                            </div>
+                        </t>
+                        <t t-else="fallback_address">
+                            <div name="invoice_address" class="invoice_address" t-raw="fallback_address" t-options='{"widget": "contact", "fields": ["address", "name", "phone"], "no_marker": True}' />
+                        </t>
+                        <div class="company_address">
+                            <!--<div>
+                                <strong t-field="company.partner_id.name"/>
+                            </div>-->
+
+                            <!--<span t-field="company.partner_id"
+                                t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/>-->
+                            <t t-if="information_block">
+
+                            </t>
+                            <div class="address">
+                                    <t t-raw="information_block"/>
+                                </div>
+                        </div>
+
+
+                </div>
+
+         <t t-raw="0" />
+
+        </div>
+
+
+         <div >
+            <div t-if="report_type == 'pdf'" class="list-inline"  style="text-align: right !important; font-size: 0.6em;">
+                <div class="text-right page_number">
+                Page:
+                <span class="page"/>
+                /
+                <span class="topage"/>
+                </div>
+
+         </div>
+           <!-- <div class="text-center" style="border-top: 1px solid black;">-->
+                 <div class="footer text-center" style="width: 195mm; border-top: 1px solid black">
+                <t t-call="nolte_berichte.company_footer"/>
+<!--                <span t-field="company.report_footer"/>-->
+
+                 </div>
+
+
+        </div>
+    </template>
+
+</odoo>
+

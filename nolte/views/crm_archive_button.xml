@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-        
+    <!--Erweitert das Formular um den Archiv Button-->
 
- <record model="ir.ui.view" id="crm_case_form_view-oppor">
-	    <field name="name">Add Archive button</field>
- 		<field name="model">crm.lead</field>
-            <field name="inherit_id" ref="crm.crm_case_form_view_oppor" />
-            <field name="arch" type="xml">
+    <record model="ir.ui.view" id="crm_case_form_view-oppor">
+        <field name="name">Add Archive button</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
 
-<!--Erweitert das Formular um den Archiv Button-->
+            <xpath expr="//div[@name='button_box']" postition='inside'>
+                <button string="Archive" name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive"
+                        attrs="{'invisible': [('active', '=', True), ('probability', '&lt;', 100)]}"></button>
+            </xpath>
 
-
-	<xpath expr="//div[@name='button_box']" postition='inside'>
-			<button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive" attrs="{'invisible': [('active', '=', True), ('probability', '&lt;', 100)]}">
-                                <field name="active" widget="boolean_button" options="{&quot;terminology&quot;: &quot;archive&quot;}"/>
-                            </button>
-                </xpath>
-
-
-            </field>
-        </record>
-
-
-
-
+        </field>
+    </record>
 </odoo>
