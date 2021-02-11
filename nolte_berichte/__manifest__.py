@@ -20,13 +20,17 @@
 
     'data': [
         #    'security/ir.model.access.csv',
-        'views/report_invoice_document.xml',
-        'views/report_saleorder_document.xml',
+
+        'report/external_layout_german.xml',
+        'report/report_invoice_document.xml',
+        'report/report_saleorder_document.xml',
+        'report/report_purchaseorder_document.xml',
+
         'views/address_layout.xml',
-        'views/external_layout_german.xml',
         'views/company_footer.xml',
-        'views/paper_format.xml',
         'views/res_company_view.xml',
+
+        'data/paper_format.xml',
         'data/report_layout.xml'
     ]
 }

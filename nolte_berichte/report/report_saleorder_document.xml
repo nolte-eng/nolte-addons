@@ -5,37 +5,16 @@
 
 <t t-name="sale.report_saleorder_document">
             <t t-call="web.external_layout">
-                <t t-set="doc" t-value="doc.with_context(lang=doc.partner_id.lang)"/>
-
-            <t t-set="returnaddress">
-                <div class="col-12 float-left" t-attf-style="font-size:10px; padding-left:0px;text-decoration: underline;">
-
-
-                                    <h t-field="doc.company_id.partner_id.name"/>
-                                    <span>-</span>
-                                    <h t-field="doc.company_id.partner_id.street"/>
-                                                                        <span>-</span>
-                                    <h t-field="doc.company_id.partner_id.zip"/>
-                                    <span>
-                                    </span>
-                                    <h t-field="doc.company_id.partner_id.city"/>
-                                <!--    <h t-if="doc.company_id.partner_id.country_id.name != doc.partner_id.country_id.name" t-field="doc.company_id.partner_id.country_id.name"/>-->
-
-                                 </div>
-            </t>
+          <t t-set="doc" t-value="doc.with_context(lang=doc.partner_id.lang)"/>
         <t t-set="address">
-                      
-                    <div class="col-8 float-left" t-attf-style="font-size:14px; padding-left:0px">
-                      <br></br>
-                      <br></br>
-                      <br></br>
-                      <t t-raw="returnaddress"/>
-                    <address t-field="doc.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: True}"/>
-                    </div>
-               <!--  <div t-if="o.partner_id.vat" class="mt16"><t t-esc="o.company_id.country_id.vat_label or 'Tax ID'"/>: <span t-field="o.partner_id.vat"/></div>-->
-                </t>
-       <t t-set="information_block">
-          <div class="col-16 float-right" style="margin-right:0;margin-left:0; padding-right:0px; font-size: 0.8em;">
+            <div t-field="doc.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: True}"/>
+            <br></br>
+            <p t-if="doc.partner_id.vat"><t t-esc="doc.company_id.country_id.vat_label or 'Tax ID'"/>: <span t-field="doc.partner_id.vat"/></p>
+        </t>
+
+
+       <t t-set="info_block">
+          <div class="col-16 float-right" style="margin-right:0;margin-left:0; padding-right:0px; font-size: 1em;">
                 <table style="width:100%; font-size: 1em; padding-right:0px;">
 			<tbody>
 
@@ -108,8 +87,9 @@
                                             <tr>
 	                                              <td></td>
                                             </tr>
-                                    </tbody>
-                                </table>
+            </tbody>
+                </table>
+
                                 <h style="line-height:2em;" t-if="doc.user_id">
                                     <strong>For further information, please contact</strong>
                                 </h>
@@ -148,7 +128,8 @@
                                     </tbody>
                                 </table>
                   </div>
-              </t>
+
+       </t>
                 <div class="page" t-attf-style="font-size:12px;">
                  <br></br>
                  <br></br>
@@ -178,12 +159,12 @@
 
 
 <!--                    <table class="table table-sm o_main_table" name="invoice_line_table" style="width:100%; font-size: 1em">-->
-			<table class="table" style="border-style: none;">
-                        <thead class="table" style="border-top: none !important; border-bottom: 2px solid black !important;	page-break-inside:avoid !important" >
+			<table class="table table-sm o_main_table" name="invoice_line_table">
+                        <thead>
                             <tr>
                                 <t t-set="colspan" t-value="6"/>
-                                <th><strong>Pos.</strong> </th>
-                        	<th><strong>Item No.</strong></th>
+                                <th class="text-left"><span>Pos.</span> </th>
+                        	    <th class="text-left"><span>Item No.</span></th>
                                 <th class="text-left"><span>Description</span></th>
                                 <th class="d-none text-left"><span>Source Document</span></th>
                                 <th class="text-center" colspan="2"><span>Quantity</span></th>
@@ -343,6 +324,6 @@
                    	</div>
 </t>
 </t>
-</xpath>
+</xpath>å
 </template>
 </odoo>

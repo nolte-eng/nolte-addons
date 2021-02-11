@@ -2,8 +2,8 @@
     &.header {
         position: relative;
         left: 15mm;
-        top: 15mm;
-        width: 180mm;
+        top: 10mm;
+        width: 190mm;
         min-height: 45mm;
         max-height: 45mm;
         overflow: hidden;
@@ -15,15 +15,15 @@
         position: relative;
         left: 25mm;
         top: 5mm;
-        width: 75mm;
-        min-width: 75mm;
+        width: 85mm;
+        min-width: 85mm;
         display: inline-block;
     }
     .company_invoice_address {
         position: relative;
         left: 15mm;
         top: 17.7mm;
-        width: 85mm;
+        width: 95mm;
         min-width: 85mm;
         margin-bottom: 1mm;
         font-size: 7pt;
@@ -39,14 +39,14 @@
         top: 14.7mm;
         width: 95mm;
         height: 27.3mm;
-        font-size: 10pt;
+        font-size: 12pt;
         line-height: 1.15;
         overflow-y: hidden;
         word-break: break-word;
         float: left;
     }
     .header_address { 
-        min-height: 35mm;
+        min-height: 40mm;
     }
     .page_number {
         margin-top: 4.23mm;
@@ -57,20 +57,23 @@
             position: relative;
             top: 8.46mm;
             left: 15mm;
-            width: 180mm;
+            width: 190mm;
         }
         .address {
             margin-top: 5mm;
         }
     }
-    &.o_background_footer {
+    &.o_standard_footer {
         position: relative;
         left: 15mm;
-        width: 180mm;
+        width: 190mm;
     }
     .o_account_reports_header {
         .fallback_header {
             display: none;
         }
     }
+
+
+
 }

@@ -25,12 +25,14 @@ msgstr "&amp;nbsp; <span>von</span>"
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
-msgid ""
-"<span groups=\"account.group_show_line_subtotals_tax_excluded\">Amount</span>\n"
-"                                    <span groups=\"account.group_show_line_subtotals_tax_included\">Total Price</span>"
-msgstr ""
-"<span groups=\"account.group_show_line_subtotals_tax_excluded\">Betrag</span>\n"
-"                                <span groups=\"account.group_show_line_subtotals_tax_included\">Gesamtpreis</span>"
+msgid "<span groups=\"account.group_show_line_subtotals_tax_excluded\">Amount</span>"
+msgstr"<span groups=\"account.group_show_line_subtotals_tax_excluded\">Betrag</span>"
+
+#. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
+msgid "<span groups=\"account.group_show_line_subtotals_tax_included\">Total Price</span>"
+msgstr"<span groups=\"account.group_show_line_subtotals_tax_included\">Gesamtpreis</span>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -201,8 +203,8 @@ msgstr "<strong>Bei Fragen wenden Sie sich bitte an</strong>"
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
-msgid "<strong>Item No.</strong>"
-msgstr "<strong>Artikelnr.</strong>"
+msgid "<span>Item No.</span>"
+msgstr "Artikelnr."
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
@@ -212,7 +214,7 @@ msgstr "<strong>Zahlungsbedingungen:</strong>"
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
-msgid "<strong>Pos.</strong>"
+msgid "<span>Pos.</span>"
 msgstr ""
 
 #. module: nolte_berichte
@@ -263,9 +265,9 @@ msgid "FAX"
 msgstr ""
 
 #. module: nolte_berichte
-#: model_terms:ir.ui.view,arch_db:nolte_berichte.company_footer
-msgid "HR-Nummer:"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
+msgid "HR-Number:"
+msgstr "HR-Nummer"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -283,9 +285,9 @@ msgid "Order"
 msgstr "Auftrag"
 
 #. module: nolte_berichte
-#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_external_layout_standard
-msgid "Page: <span class=\"page\"/> / <span class=\"topage\"/>"
-msgstr "Seite : <span class=\"page\"/> / <span class=\"topage\"/>"
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_external_layout_german
+msgid  "Page:<span class=\"page\"/>"
+msgstr "Page:<span class=\"Seite :"/>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -303,7 +305,7 @@ msgid "Quotation"
 msgstr "Angebot"
 
 #. module: nolte_berichte
-#: model_terms:ir.ui.view,arch_db:nolte_berichte.company_footer
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
 msgid "VAT:"
 msgstr "UstIdNr."
 
@@ -323,7 +325,7 @@ msgid "company fax"
 msgstr "Firmen Fax"
 
 #. module: nolte_berichte
-#: model_terms:ir.ui.view,arch_db:nolte_berichte.company_footer
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
 msgid "executive director"
 msgstr "Geschäftsführer"
 
