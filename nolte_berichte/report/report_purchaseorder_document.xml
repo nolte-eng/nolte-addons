@@ -1,19 +1,20 @@
 <odoo>
 
-<template id="nolte_report_purchawwe_document" inherit_id="purchase.report_purchaseorder_document">
+<template id="nolte_report_purchase_document" inherit_id="purchase.report_purchaseorder_document">
     <xpath expr="//t[@t-call='web.external_layout']" position="replace">
 <t t-name="purchase.report_purchaseorder_document">
     <t t-call="web.external_layout">
         <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)"/>
         <t t-set="address">
             <div t-field="o.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;], &quot;no_marker&quot;: True, &quot;phone_icons&quot;: True}"/>
-            <p t-if="o.partner_id.vat"><t t-esc="o.company_id.country_id.vat_label or 'Tax ID'"/>: <span t-field="o.partner_id.vat"/></p>
+        <!--  <div t-field="o.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;}"/>-->
         </t>
         <t t-if="o.dest_address_id">
             <t t-set="information_block">
                 <strong>Shipping address:</strong>
                 <div t-if="o.dest_address_id">
-                    <div t-field="o.dest_address_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;], &quot;no_marker&quot;: True, &quot;phone_icons&quot;: True}" name="purchase_shipping_address"/>
+                    <div t-field="o.dest_address_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;], &quot;no_marker&quot;: True}" name="purchase_shipping_address"/>
+                <!--     <div t-field="o.dest_address_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;], &quot;no_marker&quot;: True, &quot;phone_icons&quot;: True}" name="purchase_shipping_address"/>-->
                 </div>
 
             </t>
@@ -27,8 +28,8 @@
 
     <t t-set="info_block">
 
-    <div class="col-16 float-right" style="margin-right:0;margin-left:0; padding-right:0px; font-size: 0.8em;">
-                <table style="width:100%; font-size: 1em; padding-right:0px;">
+    <div class="col-16 float-right" style="margin-right:0;margin-left:0; padding-right:0px; font-size: 1em;">
+                <table >
 			<tbody>
 
                                          <tr t-if="o.partner_ref">
@@ -49,7 +50,7 @@
 							<span>Quotation no.</span>
 						</td>
 						<td class="text-right">
-					    		<span  t-field="o.name"/>
+					    		<span t-field="o.name"/>
 						</td>
 					</tr>
 					<tr t-if="o.date_order">
@@ -60,7 +61,7 @@
                                                     <span>Quotation date</span>
                                                 </td>
                                                 <td class="text-right">
-                                                    <span t-esc="o.date_order" />
+                                                    <span t-esc="o.date_order"/>
 	                                        </td>
 					</tr>
 					<tr t-if="o.origin">
@@ -68,7 +69,7 @@
                                                     <span>Our reference no.</span>
                                                 </td>
                                                 <td class="text-right">
-                                                    <span t-field="o.origin" />
+                                                    <span t-field="o.origin"/>
                                                 </td>
                                         </tr>
 
@@ -83,14 +84,14 @@
                                                 </tr>
                                             </t>
                                             <tr>
-	                                              <td></td>
+	                                              <td/>
                                             </tr>
                                     </tbody>
                                 </table>
                                 <h style="line-height:2em;" t-if="o.user_id">
                                     <strong>For further information, please contact</strong>
                                 </h>
-                                <table style="width:100%; font-size: 0.9em; " t-if="o.user_id">
+                                <table style="width:100%; font-size: 1em; " t-if="o.user_id">
                                     <tbody>
                                         <tr t-if="o.user_id.name">
                                             <td>

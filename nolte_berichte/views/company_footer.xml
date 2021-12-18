@@ -17,9 +17,9 @@
 
 			<div t-attf-style="#{footer_style}" t-attf-class="'mr32}"><!--Contacts -->
 										<ul style="padding: 0px;">
-											<div t-if="company.phone"><i class="fa fa-phone-square"/> <span t-field="company.phone"/></div>
-											<div t-if="company.website"><i class="fa fa-globe"/> <span t-field="company.website"/></div>
-											<div t-if="company.email"><i class="fa fa-envelope"/> <span t-field="company.email"/></div>
+											<div t-if="company.phone"><i class="fa-phone-square"/> <span t-field="company.phone"/></div>
+											<div t-if="company.website"><i class="fa-globe"/> <span t-field="company.website"/></div>
+											<div t-if="company.email"><i class="fa-envelope"/> <span t-field="company.email"/></div>
 
 										</ul>
 									</div>
@@ -47,9 +47,9 @@
 										<ul style="padding: 0px;">
 											<t t-foreach="company.bank_journal_ids" t-as="journal">
 												<t t-set="bank_acc" t-value="journal.bank_account_id"/>
-												<div t-if="bank_acc"><i class="fa fa-bank"/> <span t-field="bank_acc.bank_name"/></div>
-												<div> <t t-if="bank_acc.bank_bic"> <i class="fa fa-money"/> <span t-field="bank_acc.bank_bic"/></t> </div>
-												<div> <i class="fa fa-building"/>
+												<div t-if="bank_acc"><i class="fa-bank"/> <span t-field="bank_acc.bank_name"/></div>
+												<div> <t t-if="bank_acc.bank_bic"> <i class="fa-money"/> <span t-field="bank_acc.bank_bic"/></t> </div>
+												<div> <i class="fa-building"/>
 													<span t-field="bank_acc.acc_number"/></div>
 
 											</t>

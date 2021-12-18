@@ -26,13 +26,13 @@ msgstr "&amp;nbsp; <span>von</span>"
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
 msgid "<span groups=\"account.group_show_line_subtotals_tax_excluded\">Amount</span>"
-msgstr"<span groups=\"account.group_show_line_subtotals_tax_excluded\">Betrag</span>"
+msgstr "<span groups=\"account.group_show_line_subtotals_tax_excluded\">Betrag</span>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
 msgid "<span groups=\"account.group_show_line_subtotals_tax_included\">Total Price</span>"
-msgstr"<span groups=\"account.group_show_line_subtotals_tax_included\">Gesamtpreis</span>"
+msgstr "<span groups=\"account.group_show_line_subtotals_tax_included\">Gesamtpreis</span>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -198,7 +198,7 @@ msgstr "<strong>Steuerzuordnung:</strong>"
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
 msgid "<strong>For further information, please contact</strong>"
-msgstr "<strong>Bei Fragen wenden Sie sich bitte an</strong>"
+msgstr "<span>Bei Fragen wenden Sie sich bitte an:</span>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -215,7 +215,7 @@ msgstr "<strong>Zahlungsbedingungen:</strong>"
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_saleorder_document
 msgid "<span>Pos.</span>"
-msgstr ""
+msgstr "<span>Pos.</span>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -266,7 +266,7 @@ msgstr ""
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
-msgid "HR-Number:"
+msgid "HR-Number"
 msgstr "HR-Nummer"
 
 #. module: nolte_berichte
@@ -286,8 +286,9 @@ msgstr "Auftrag"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_external_layout_german
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 msgid  "Page:<span class=\"page\"/>"
-msgstr "Page:<span class=\"Seite :"/>"
+msgstr "Page:<span class=\"Seite\"/>"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -305,9 +306,10 @@ msgid "Quotation"
 msgstr "Angebot"
 
 #. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
 msgid "VAT:"
-msgstr "UstIdNr."
+msgstr "UstIdNr"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
@@ -326,6 +328,7 @@ msgstr "Firmen Fax"
 
 #. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_report_invoice_document
 msgid "executive director"
 msgstr "Geschäftsführer"
 
