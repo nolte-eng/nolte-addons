@@ -4,11 +4,9 @@
 			<t t-set="company" t-value="company.sudo()"/>
 			<t t-set="footer_style" t-value="'text-align:left;font-size:9px;display:inline-block;width:auto;max-width:100%;white-space:nowrap;border-top: 0px solid;'"/>
 			<div class="col-32 text-center float-left" t-attf-style="background-color:transparent !important; border-top: 1px solid; padding-top:5px;padding-left:0px; padding-right:0px;">
-
-
 			<div t-attf-style="#{footer_style}" t-attf-class="mr32"> <!--Address -->
 				<ul style="padding: 0px;">
-					<div t-if="company.name"><span t-field="company.name"/></div>
+				<div t-if="company.name"><span t-field="company.name"/></div>
 					<div t-if="company.street"><span t-field="company.street"/></div>
 					<div t-if="company.street2" class="ml8"> <span t-field="company.street2"/></div>
 					<div t-if="company.city or company.state_id or company.zip"><span t-field="company.zip"/> <span t-field="company.city"/> </div>
@@ -28,7 +26,7 @@
 										<ul style="padding: 2px;">
 											<div t-if="company.vat">VAT: <span t-field="company.vat"/></div>
 											<div t-if="company.company_registry">HR-Number: <span t-field="company.company_registry"/></div>
-											<br></br>
+											<br> </br>
 										</ul>
 									</div>
 
@@ -37,7 +35,7 @@
 											<div>executive director</div>
 											<div t-if="company.ceo_01"><span t-field="company.ceo_01"/></div>
 											<div t-if="company.ceo_02"><span t-field="company.ceo_02"/></div>
-											<div t-if="not company.ceo_02"><br></br></div>
+											<div t-if="not company.ceo_02"><br> </br></div>
 
 										</ul>
 									</div>

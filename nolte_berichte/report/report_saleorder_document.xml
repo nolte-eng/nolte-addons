@@ -265,7 +265,7 @@
                                         </td>
                                     </tr>
 <!-- -->       
-                             <t t-foreach="doc.amount_by_group" t-as="amount_by_group">
+ <!--                            <t t-foreach="doc.amount_by_group" t-as="amount_by_group">
                                         <tr style="">
 					   <t t-if="amount_by_group[3] == 1 and doc.amount_untaxed == amount_by_group[2]">                                           
 
@@ -293,14 +293,25 @@
                                         <td class="text-right" style="margin-right:0;margin-left:0; padding-right:0px">
                                             <span t-field="doc.amount_total"/>
                                         </td>
-                                    </tr>
+                                    </tr> -->
                                 </table>
                             </div>
                         </div>
                     </div> 
 <!--			 <p t-if="doc.note2">			-->
 <!--				<span t-field="doc.note2"/>		-->
-<!--			</p>						-->
+<!--			</p>			-->
+                    <div class="clearfix" name="so_total_summary">
+                <div id="total" class="row" name="total">
+                    <div t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-7 col-md-6'} ml-auto">
+                        <table class="table table-sm">
+                            <!-- Tax totals -->
+                            <t t-set="tax_totals" t-value="json.loads(doc.tax_totals_json)"/>
+                            <t t-call="account.document_tax_totals"/>
+                        </table>
+                    </div>
+                </div>
+            </div>
 			 <p t-if="doc.payment_term_id.note">
 				<strong>Payment:</strong>
               			  <span t-field="doc.payment_term_id.note"/>
@@ -324,6 +335,6 @@
                    	</div>
 </t>
 </t>
-</xpath>å
+</xpath>
 </template>
 </odoo>
