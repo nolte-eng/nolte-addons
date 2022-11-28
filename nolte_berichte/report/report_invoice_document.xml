@@ -7,6 +7,13 @@
                 <t t-set="o" t-value="o.with_context(lang=lang)"/>
                 <t t-set="address">
                     <address t-field="o.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: True}"/>
+                <!--    <div t-if="o.partner_id.vat" class="mt16">
+                        <t t-if="o.company_id.country_id.vat_label" t-esc="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                        <t t-else="">Tax ID</t>: <span t-field="o.partner_id.vat"/></div>-->
+                </t>
+                <div class="page" t-attf-style="font-size:12px;">
+<!--                    <br></br>-->
+<!--                 <br></br>-->
                 </t>
                 <div class="page" t-attf-style="font-size:12px;">
                     <br/>
@@ -21,6 +28,115 @@
                         <span t-if="o.name != '/'" t-field="o.name"/>
                     </h4>
 
+
+                    <div id="informations" class="row mt-4 mb-4">
+                        <div class="col-auto col-3 mw-100 mb-2" t-if="o.invoice_date" name="invoice_date">
+                            <t t-if="o.move_type == 'out_invoice'"><strong>Invoice Date:</strong></t>
+                            <t t-if="o.move_type == 'out_refund'"><strong>Credit Note Date:</strong></t>
+                            <t t-if="o.move_type == 'out_receipt'"><strong>Receipt Date:</strong></t>
+                            <t style="line-height:2em;" t-if="o.user_id">
+                                    <strong>For further information, please contact</strong>
+                                </t>
+                            <t t-else=""><strong>Date:</strong></t>
+                            <p class="m-0" t-field="o.invoice_date"/>
+                        </div>
+                        <div class="col-auto col-3 mw-100 mb-2" t-if="o.invoice_date_due and o.move_type == 'out_invoice' and o.state == 'posted'" name="due_date">
+                            <strong>Due Date:</strong>
+                            <p class="m-0" t-field="o.invoice_date_due"/>
+                        </div>
+                        <div class="col-auto col-3 mw-100 mb-2" t-if="o.invoice_origin" name="origin">
+                            <strong>Source:</strong>
+                            <p class="m-0" t-field="o.invoice_origin"/>
+                        </div>
+                        <div class="col-auto col-3 mw-100 mb-2" t-if="o.partner_id.ref" name="customer_code">
+                            <strong>Customer Code:</strong>
+                            <p class="m-0" t-field="o.partner_id.ref"/>
+                        </div>
+                        <div class="col-auto col-3 mw-100 mb-2" t-if="o.ref" name="reference">
+                            <strong>Reference:</strong>
+                            <p class="m-0" t-field="o.ref"/>
+                        </div>
+                    </div>
+<!--                    <t t-set="info_block">-->
+<!--          <div class="col-16 float-right" style="margin-right:0;margin-left:0; padding-right:0px; font-size: 1em;">-->
+<!--                <table style="width:100%; font-size: 1em; padding-right:0px;">-->
+<!--                                    <tbody>-->
+<!--                                         <tr t-if="o.partner_id.ref">-->
+<!--                                                <td>-->
+<!--                                                  <span>Customer no.</span>-->
+<!--                                                </td>-->
+
+<!--                                                <td class="text-right">-->
+<!--                                                    <span t-field="o.partner_id.ref"/>-->
+<!--                                                </td>-->
+<!--                                          </tr>-->
+<!--                                        <tr t-if="o.name">-->
+<!--                                                <td>-->
+<!--                                                  <span>Invoice no.</span>-->
+<!--                                                </td>-->
+<!--                                                <td class="text-right">-->
+<!--                                                  <span t-field="o.name"/>-->
+<!--                                                </td>-->
+<!--                                          </tr>-->
+<!--                                        <tr t-if="o.invoice_date">-->
+<!--                                                <td>-->
+<!--                                                  <span>Invoice Date:</span>-->
+<!--                                                </td>-->
+<!--                                                <td class="text-right">-->
+<!--                                                  <span t-field="o.invoice_date"/>-->
+<!--                                                  &lt;!&ndash;<span t-esc="invoice_date"/>&ndash;&gt;-->
+<!--                                                </td>-->
+<!--                                          </tr>-->
+<!--                                   &lt;!&ndash;     <tr t-if="o.ref and o.type == 'in_invoice'">-->
+<!--                                                <td style="padding-right:1em;">-->
+<!--                                                  <span>Reference</span>-->
+<!--                                                </td>-->
+<!--                                                <td>-->
+<!--                                                  <p t-field="o.ref"/>-->
+<!--                                                </td>-->
+<!--                                   -     </tr>-->
+<!--                                    &ndash;&gt;-->
+<!--                                        <tr t-if="o.partner_id.ref">-->
+<!--                                                <td>-->
+<!--                                                  <span>Your reference no.</span>-->
+<!--                                                </td>-->
+
+<!--                                                <td class="text-right">-->
+<!--                                                  <span t-field="o.partner_id.ref"/>-->
+<!--                                                </td>-->
+<!--                                        </tr>-->
+
+<!--                                        <tr t-if="o.invoice_origin">-->
+<!--                                                <td>-->
+<!--                                                  <span>Our reference no.</span>-->
+<!--                                                </td>-->
+
+<!--                                                <td class="text-right">-->
+<!--                                                  <span t-field="o.invoice_origin"/>-->
+<!--                                                </td>-->
+<!--                                        </tr>-->
+
+<!--                                        <t t-if="o.fiscal_position_id.name == 'Kunde EU Unternehmen (mit USt-ID)' or o.fiscal_position_id.name == 'Kunde EU Unternehmen (mit USt-ID) - SKR03' or o.fiscal_position_id.name == 'Kunde EU Unternehmen (mit USt-ID) - SKR04'">-->
+<!--                                                <tr t-if="o.partner_id.vat">-->
+<!--                                                    <td>-->
+<!--                                                      <span>VAT Reg. no.</span>-->
+<!--                                                    </td>-->
+
+<!--                                                    <td class="text-right">-->
+<!--                                                      <span t-field="o.partner_id.vat"/>-->
+<!--                                                    </td>-->
+<!--                                                </tr>-->
+<!--                                        </t>-->
+
+<!--                                                <tr>-->
+<!--                                                  <td>-->
+<!--                                                  </td>-->
+
+<!--                                                  <td>-->
+<!--                                                  </td>-->
+<!--                                                </tr>-->
+<!--                                                 <tr>-->
+=======
                     <t t-set="info_block">
 		          <div style="margin-right:0;margin-left:0; padding-right:0px; font-size: 1em;">
                			 <table style="width:100%; font-size: 1em; padding-right:0px;">
@@ -97,8 +213,57 @@
                                         </td>
                                         </tr>
                                         <tr>
+ 
 
-                                        </tr>
+<!--                                        </tr>-->
+
+<!--                                    </tbody>-->
+<!--                                </table>-->
+<!--                                <h style="line-height:2em;" t-if="o.user_id">-->
+<!--                                    <strong>For further information, please contact</strong>-->
+<!--                                </h>-->
+<!--                                <table style="width:100%; font-size: 0.9em; " t-if="o.user_id">-->
+<!--                                    <tbody>-->
+<!--                                        <tr t-if="o.user_id.name">-->
+<!--                                            <td>-->
+<!--                                                <span>Contact person</span>-->
+<!--                                            </td>-->
+<!--                                            <td class="text-right">-->
+<!--                                                <span t-field="o.user_id.name"/>-->
+<!--                                            </td>-->
+<!--                                        </tr>-->
+<!--                                        <tr t-if="o.user_id.phone">-->
+<!--                                            <td>-->
+<!--                                                <span>Phone</span>-->
+<!--                                            </td>-->
+<!--                                            <td class="text-right">-->
+<!--                                                <span t-field="o.user_id.phone"/>-->
+<!--                                            </td>-->
+<!--                                        </tr>-->
+<!--                                        <tr t-if="o.user_id.fax">-->
+<!--                                            <td>-->
+<!--                                                <span>Fax</span>-->
+<!--                                            </td>-->
+<!--                                            <td class="text-right">-->
+<!--                                             <span t-field="o.company_id.com_fax"/>-->
+<!--                                            </td>-->
+<!--                                        </tr>-->
+<!--                                        <tr t-if="o.user_id.email">-->
+<!--                                            <td colspan="2">-->
+<!--                                                <span style="float:left; padding-right:10px;">E-Mail</span>-->
+<!--                                                <span t-field="o.user_id.email" style="float:right;"/>-->
+<!--                                            </td>-->
+<!--                                        </tr>-->
+<!--                                    </tbody>-->
+<!--                                </table>-->
+<!--                  </div>-->
+<!--              </t>-->
+
+
+                    <t t-set="display_discount" t-value="any(l.discount for l in o.invoice_line_ids)"/>
+<!--                    <br></br>-->
+<!--                    <br></br>-->
+<!--                    <br></br>-->
 
                                     </tbody>
                                 </table>
@@ -199,6 +364,13 @@
                                             		</t>
                                         	</div>
                                         </td>
+                                        <td name="account_invoice_line_name"><span t-field="line.name" t-options="{'widget': 'text'}"/></td>
+                                        <td class="text-right" style="padding-right:0px">
+                                            <span t-field="line.quantity"/>
+                                            <td class="text-left"><span t-field="line.product_uom_id" groups="uom.group_uom"/></td>
+                                            </td>
+
+
 
                                         <td class="text-right">
                                             <span t-field="line.quantity"/>
@@ -247,6 +419,13 @@
                         <div id="total" class="row">
                             <div t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-7 col-md-6'} ml-auto">
                                 <table class="table table-sm" style="page-break-inside: avoid;">
+
+                                    <!--Tax totals-->
+                                    <t t-set="tax_totals" t-value="json.loads(o.tax_totals_json)"/>
+                                    <t t-call="account.document_tax_totals"/>
+
+                                    <!--Payments-->
+
                                     <tr class="border-black o_subtotal" style="">
                                         <td><strong>Subtotal</strong></td>
                                         <td class="text-right">

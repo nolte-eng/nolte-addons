@@ -17,7 +17,7 @@ Erweiterungen für Nolte Engineering GmbH
     # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
     'category': 'Uncategorized',
-    'version': '14.0.0.1',
+    'version': '15.0.0.1',
 
     # Benötigten Module werden eingebunden
     'depends': ['base', 'calendar', 'crm'],

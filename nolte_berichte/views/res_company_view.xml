@@ -10,7 +10,7 @@
                 <field name="ceo_01" placeholder="executive director"/>
                 <field name="ceo_02" />
                 <field name="com_fax" placeholder="FAX"/>
-            </field>
+           </field>
         </field>
     </record>
 </odoo>
