@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
+# Copyright 2021-Nolte engineering GmbH
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import models, fields, api
 
 
