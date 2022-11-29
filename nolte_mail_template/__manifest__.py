@@ -15,7 +15,8 @@
     # Categories can be used to filter modules in modules listing
     # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
-    'category': 'Uncategorized',
+    'category':'Uncategorized',
+    'license':'GPL-2',
     'version': '15.0.1',
 
     # any module necessary for this one to work correctly

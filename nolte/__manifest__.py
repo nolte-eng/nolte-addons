@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "nolte",
+    'name': "Nolte",
     'summary': 'Erweiterungen zum Anpassen von Odoo für Nolte Engineering GmbH',
     'description': """
 Erweiterungen für Nolte Engineering GmbH
@@ -17,8 +17,9 @@ Erweiterungen für Nolte Engineering GmbH
     # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
     'category': 'Uncategorized',
-    'version': '15.0.0.1',
-
+    'version': '15.0.1.0.0',
+    'installable': True,
+    'license': 'LGPL-3',
     # Benötigten Module werden eingebunden
     'depends': ['base', 'calendar', 'crm'],
 
@@ -28,13 +29,13 @@ Erweiterungen für Nolte Engineering GmbH
     # 'security/ir.model.access.csv',
 
     # Ansicht auf Monat umstellen
-    'views/calendar_month_view.xml',
+     'views/calendar_month_view.xml',
     # Ansicht Erweitern um Besitzer
-    'views/calendar_owner_view.xml',
+    # 'views/calendar_owner_view.xml',
     # Anzahl der Angezeigten Events
-    'views/calendar_event_view.xml',
+     'views/calendar_event_view.xml',
     # Kundenverwaltung Archiv button
-    'views/crm_archive_button.xml'
+     'views/crm_archive_button.xml'
     ],
 
 }
