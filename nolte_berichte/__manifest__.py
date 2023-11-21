@@ -1,6 +1,6 @@
 {
     'name':'Nolte Berichte',
-    'version':'16.0.1.0.0',
+    'version':'15.0.1.0.0',
     'category':'Uncategorized',
     'license':'GPL-2',
     'summary':"""Anpassung der Berichte für Deutsche Firmen""",
@@ -12,10 +12,8 @@
 
     'data':[
 
-       # 'report/external_layout_german.xml',
-        'report/xpath_invoice_document.xml',
-        'report/xpath_din5008.xml',
-      #  'report/report_invoice_document.xml',
+        'report/external_layout_german.xml',
+        'report/report_invoice_document.xml',
         # 'report/report_saleorder_document.xml',
         # 'report/report_purchaseorder_document.xml',
         #
@@ -24,7 +22,7 @@
         'views/res_company_view.xml',
         #
         # 'data/paper_format.xml',
-       # 'data/report_layout.xml'
+        'data/report_layout.xml'
 
     ],
     'assets': {
@@ -33,6 +31,5 @@
         ],
     },
  }
-
 
 
