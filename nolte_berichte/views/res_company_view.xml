@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <field name="website" position="after">
                 <field name="ceo_01" placeholder="executive director"/>
-                <field name="ceo_02" />
+                <field name="ceo_02" placeholder="executive director#2"/>
                 <field name="com_fax" placeholder="FAX"/>
            </field>
         </field>
