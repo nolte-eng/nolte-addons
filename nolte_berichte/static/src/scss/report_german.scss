@@ -1,104 +1,49 @@
-.din_page {
+.german {
+    width: 180mm;
+    margin-left: -1rem;
+    font-size: 9pt;
 
     &.header {
-         position: relative;
+        position: relative;
         left: 15mm;
         top: 10mm;
         width: 190mm;
-        min-height: 60mm;
-        max-height: 60mm;
-        overflow: hidden;
-    }
-
-
-    &.invoice_note {
-        tr {
-
-            .sender_address
-            {
-
-                margin-left: 5mm;
-                margin-bottom: 1mm;
-                border-bottom: solid;
-                border-width: 1px;
-                border-color: $o-default-report-primary-color;
-                font-size: 7pt;
-
-            }
-
-            .information_block, .invoice_address
-            {
-                width: 75mm;
-                min-height: 40mm;
-                margin-left: 40mm;
-                table
-                {
-                    width: 100%;
-                }
-            }
-
-
-
-        }
-
-    }
-    &.footer {
-        padding-left: 5mm;
-        padding-right: 10mm;
-        font-size: 6pt;
-        .page_number {
-            margin-top: 4.23mm;
-            width: 100%;
-            height: 4.23mm;
-        }
-        .company_details {
-            margin-top: 4.23mm;
-            width: 100%;
-            table {
-                border-top: solid 1px;
-                width: 100%;
-                td {
-                    vertical-align: baseline;
-                    padding-right: 3mm;
-                    &:last-child {
-                        padding-right: initial;
-                    }
-                }
-            }
-        }
-    }
-}
-
-.din_page_pdf {
-    width: 180mm;
-    margin-left: -1rem;
-}
-
-
-// TODO WAN remove in master
-.din {
-    &.header {
-        top: 10mm;
         min-height: 45mm;
         max-height: 45mm;
         overflow: hidden;
-        img {
-            max-height: 45mm;
+        table {
+            width: 100%;
+            img, h3, td, tr
+                    {
+                    padding: 0;
+                    margin: 0;
+                    }
+                 h3
+                    {
+                    color: $o-default-report-primary-color;
+                    position: relative;
+                    top: -10mm;
+                    margin-bottom: -10mm;
+                    }
+                img {
+                    float: right;
+                    max-height: 45mm;
+                    }
         }
     }
     .company_address {
         position: relative;
-        left: 45mm;
+        left: 25mm;
         top: 5mm;
-        width:85mm;
-        min-width: 75mm;
+        width: 85mm;
+        min-width: 85mm;
         display: inline-block;
     }
     .company_invoice_address {
         position: relative;
-        left: 25mm;
+        left: 15mm;
         top: 17.7mm;
-        width: 85mm;
+        width: 95mm;
         min-width: 85mm;
         margin-bottom: 1mm;
         font-size: 7pt;
@@ -110,36 +55,37 @@
     }
     .invoice_address {
         position: relative;
-        left: 25mm;
+        left: 15mm;
         top: 14.7mm;
-        width: 85mm;
+        width: 95mm;
         height: 27.3mm;
+        font-size: 12pt;
         line-height: 1.15;
         overflow-y: hidden;
         word-break: break-word;
         float: left;
     }
-    .header_address {
-        min-height: 45mm;
+    .header_address { 
+        min-height: 40mm;
     }
     .page_number {
         margin-top: 4.23mm;
-        margin-bottom: 4.23mm;
+        margin-bottom: 2.23mm;
     }
     &.article {
         .page {
             position: relative;
             top: 8.46mm;
-            left: 25mm;
+            left: 15mm;
             width: 190mm;
         }
         .address {
             margin-top: 5mm;
         }
     }
-    &.o_background_footer {
+    &.o_standard_footer {
         position: relative;
-        left: 25mm;
+        left: 15mm;
         width: 190mm;
     }
     .o_account_reports_header {
@@ -147,24 +93,68 @@
             display: none;
         }
     }
-}
+&.invoice_note {
+        tr {
+            td {
+                vertical-align: bottom;
+            }
+            &:nth-child(2) td {
+                vertical-align: top;
+            }
+            .address, .information_block, .shipping_address, .invoice_address {
+                margin: 0;
+            }
+            .address {
+                height: 45mm;
+            }
+            .address, .shipping_address {
+                width: 85mm;
+                padding-left: 5mm;
+                .company_invoice_line {
+                    margin-top: 1mm;
+                }
+                > span {
+                    color: $o-default-report-secondary-color;
+                }
+            }
+            .information_block, .invoice_address {
+                width: 75mm;
+                min-height: 40mm;
+                margin-left: 20mm;
+                table {
+                    width: 100%;
+                }
+            }
+        }
+        h2 {
+            margin-left: 5mm;
+            margin-right: 10mm;
+            margin-top: 8.46mm;
+            color: $o-default-report-primary-color;
+        }
+        > .pt-5 {  // hide hardcoded address from base.template.layout
+            display: none;
+        }
+        .page {
+            margin-left: 5mm;
+            margin-right: 10mm;
+            > h2, h1, #informations {
+                display: none;
+            }
+            [name=invoice_line_table], [name=stock_move_table], .o_main_table {
+                margin-top: 8.46mm;
+                th {
+                    color: $o-default-report-secondary-color;
+                }
+            }
 
-#faltmarke-1 {
-    position: absolute;
-    /* ( 105 mm - 10 mm margin ) */
-    top: 95mm;
-}
+            tr {
+                td {
+                    vertical-align: bottom;
+                }
+            }
+        }
+    }
 
-.lochmarke {
-    position: absolute;
-    /* ( 148.5 mm - 10 mm margin ) */
-    top: 138.5mm;
-    left: -10mm;
-}
 
-#faltmarke-2 {
-    position: absolute;
-    /* ( 210 mm - 10 mm margin ) */
-    top: 200mm;
 }
-
