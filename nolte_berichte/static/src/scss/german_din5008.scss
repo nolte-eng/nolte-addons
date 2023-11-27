@@ -1,122 +1,52 @@
 .din_page {
-    width: 200mm;
-    margin-left: -1rem;
-    font-size: 10pt;
+
     &.header {
-        table {
-
-            width: 100%;
-
-            img, h3, td, tr {
-                padding: 0;
-                margin: auto;
-            }
-            h3 {
-                color: $o-default-report-primary-color;
-                position: relative;
-                top: -10mm;
-                margin-bottom: -10mm;
-
-            }
-            img {
-               margin: auto;
-                float: right;
-            }
-        }
+         position: relative;
+        left: 15mm;
+        top: 10mm;
+        width: 190mm;
+        min-height: 60mm;
+        max-height: 60mm;
+        overflow: hidden;
     }
+
+
     &.invoice_note {
         tr {
-            td {
-                vertical-align: bottom;
-            }
-            &:nth-child(2) td {
-                vertical-align: top;
 
-            }
-            .address, .information_block, .shipping_address, .invoice_address {
-                margin: 1;
-
-
-            }
             .sender_address
             {
 
-                margin-left: 5mm;
+                margin-left: 0mm;
                 margin-bottom: 1mm;
                 border-bottom: solid;
                 border-width: 1px;
-                border-color: black;
+                border-color: $o-default-report-primary-color;
+                color: $o-default-report-primary-color;
                 font-size: 7pt;
 
             }
 
-
-
-            .address {
-                height: 45mm;
-
-
-            }
-            .address, .shipping_address {
-                width: 85mm;
-//                 padding-left: 10mm;
-
-
-                .company_invoice_line {
-                    margin-top: 1mm;
-
-                }
-
-                 span {
-                    color: $o-default-report-secondary-color;
-
-
-
-                }
-            }
-            .information_block, .invoice_address {
-
+            .information_block, .invoice_address
+            {
                 width: 75mm;
                 min-height: 40mm;
                 margin-left: 40mm;
-                table {
+                table
+                {
                     width: 100%;
                 }
             }
-        }
-        h2 {
-            margin-left: 5mm;
-            margin-right: 10mm;
-            margin-top: 8.46mm;
-            color: $o-default-report-primary-color;
-        }
-        > .pt-5 {  // hide hardcoded address from base.template.layout
-            display: none;
-        }
-        .page {
-            margin-left: 5mm;
-            margin-right: 10mm;
-            > h2, h1, #informations {
-                display: none;
-            }
-            [name=invoice_line_table], [name=stock_move_table], .o_main_table {
-                margin-top: 8.46mm;
-                th {
-                    color: $o-default-report-secondary-color;
-                }
-            }
 
-            tr {
-                td {
-                    vertical-align: bottom;
-                }
-            }
+
+
         }
+
     }
     &.footer {
         padding-left: 5mm;
         padding-right: 10mm;
-        font-size: 7pt;
+        font-size: 6pt;
         .page_number {
             margin-top: 4.23mm;
             width: 100%;
@@ -140,25 +70,45 @@
     }
 }
 
+.din_page_pdf {
+    width: 180mm;
+    margin-left: -1rem;
+}
+
 
 // TODO WAN remove in master
 .din {
     &.header {
+
+        top: 10mm;
+        bottom: 10mm;
         min-height: 45mm;
         max-height: 45mm;
         overflow: hidden;
         img {
             max-height: 45mm;
         }
-    }
+     }
+
     .company_address {
         position: relative;
         left: 45mm;
         top: 5mm;
-        width: 75mm;
+        width:85mm;
         min-width: 75mm;
         display: inline-block;
     }
+    &.sender_address  {
+
+                margin-left: 0mm;
+                margin-bottom: 1mm;
+                border-bottom: solid;
+                border-width: 1px;
+                border-color: $o-default-report-primary-color;
+                color: $o-default-report-primary-color;
+                font-size: 7pt;
+
+            }
     .company_invoice_address {
         position: relative;
         left: 25mm;
@@ -213,7 +163,6 @@
         }
     }
 }
-
 
 #faltmarke-1 {
     position: absolute;

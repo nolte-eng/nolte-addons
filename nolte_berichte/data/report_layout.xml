@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="german_din5008_report" model="report.layout">
+        <record id="report_layout_din5008_german" model="report.layout">
             <field name="view_id" ref="nolte_berichte.external_layout_german"/>
-            <!--<field name="image">/l10n_de/static/img/preview_din.png</field>
-            <field name="pdf">/l10n_de/static/pdf/preview_din.pdf</field>-->
-            <field name="name">Deutsch DIN 5008</field>
+            <field name="image"></field>
+            <field name="pdf"></field>
+            <field name="name">DIN 5008 German</field>
         </record>
     </data>
 </odoo>
