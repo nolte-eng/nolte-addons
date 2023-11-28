@@ -12,6 +12,14 @@
 
     'data':[
 
+       # 'report/external_layout_german.xml',
+        'report/xpath_invoice_document.xml',
+        'report/xpath_din5008.xml',
+      #  'report/report_invoice_document.xml',
+       # 'report/german_din5008.xml',
+        'report/german_invoice_document.xml',
+        'views/report_templates.xml',
+       # 'report/report_invoice_document.xml',
         'report/external_layout_german.xml',
         'report/report_invoice_document.xml',
         # 'report/report_saleorder_document.xml',
@@ -19,7 +27,7 @@
         #
         # 'views/address_layout.xml',
         # 'views/company_footer.xml',
-        'views/res_company_view.xml',
+           'views/res_company_view.xml',
         #
         # 'data/paper_format.xml',
         'data/report_layout.xml'
@@ -28,7 +36,7 @@
     'assets': {
         'web.report_assets_common': [
             'nolte_berichte/static/src/**/*',
-        ],
+       ],
     },
  }
 
