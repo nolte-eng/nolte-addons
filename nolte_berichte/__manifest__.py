@@ -11,18 +11,15 @@
     'depends':['base', 'account', 'web', 'sale'],
 
     'data':[
-<<<<<<< HEAD
 
        # 'report/external_layout_german.xml',
         'report/xpath_invoice_document.xml',
         'report/xpath_din5008.xml',
       #  'report/report_invoice_document.xml',
-=======
        # 'report/german_din5008.xml',
         'report/german_invoice_document.xml',
         'views/report_templates.xml',
        # 'report/report_invoice_document.xml',
->>>>>>> bfd270e (16.0)
         # 'report/report_saleorder_document.xml',
         # 'report/report_purchaseorder_document.xml',
         #
