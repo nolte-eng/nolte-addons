@@ -99,7 +99,7 @@ msgstr ""
 #: code:addons/nolte_berichte/models/account_move.py:0
 #, python-format
 msgid "Cancelled Invoice"
-msgstr "Stornierte Rechnung""
+msgstr "Stornierte Rechnung"
 
 #. module: nolte_berichte
 #. odoo-python
