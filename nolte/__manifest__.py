@@ -5,14 +5,10 @@
     'description': """
 Erweiterungen für Nolte Engineering GmbH
 ========================================
-
 -Anpassung des Kalenders
 	- Besitzer wird  angezeigt
 	- Standardansicht ist Monat
 	- Zeige 10 Termine an einen Tag an
-
-
-
     """,
     'author': 'Lars Nolte',
     'website': 'http://www.nolte-eng.de',
@@ -21,7 +17,7 @@ Erweiterungen für Nolte Engineering GmbH
     # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
     'category': 'Uncategorized',
-    'version': '13.0.0.1',
+    'version': '15.0.0.1',
 
     # Benötigten Module werden eingebunden
     'depends': ['base', 'calendar', 'crm'],
