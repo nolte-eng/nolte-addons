@@ -38,7 +38,7 @@ class SaleOrder(models.Model):
     def _compute_l10n_german_document_title(self):
         for record in self:
             if self._context.get('proforma'):
-                record.l10n_germsn_document_title = _('Pro Forma Invoice')
+                record.l10n_german_document_title = _('Pro Forma Invoice')
             elif record.state in ('draft', 'sent'):
                 record.l10n_german_document_title = _('Quotation')
             else:
