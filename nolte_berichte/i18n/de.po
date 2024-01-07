@@ -65,6 +65,11 @@ msgid ""
 msgstr ""
 
 #. module: nolte_berichte
+#: model_terms:ir.ui.view,arch_db:nolte_berichte.external_layout_german
+msgid "executive director"
+msgstr "Geschäftsführer"
+
+#. module: nolte_berichte
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_footer
 msgid "<i class=\"fa fa-fw fa-building\"/> BIC:"
 msgstr ""
@@ -486,7 +491,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:nolte_berichte.field_base_document_layout__com_fax
 #: model:ir.model.fields,field_description:nolte_berichte.field_res_company__com_fax
 msgid "company_fax"
-msgstr ""
+msgstr "FAX Nummer"
 
 #. module: nolte_berichte
 #: model:ir.model.fields,field_description:nolte_berichte.field_base_document_layout__ceo_01
@@ -494,14 +499,14 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.berichte_ceo_company
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.nolte_footer
 msgid "executive director"
-msgstr ""
+msgstr "Geschäftsführer"
 
 #. module: nolte_berichte
 #: model:ir.model.fields,field_description:nolte_berichte.field_base_document_layout__ceo_02
 #: model:ir.model.fields,field_description:nolte_berichte.field_res_company__ceo_02
 #: model_terms:ir.ui.view,arch_db:nolte_berichte.berichte_ceo_company
 msgid "executive director#2"
-msgstr ""
+msgstr "Geschäftsführer 2"
 
 #. module: nolte_berichte
 #: model:ir.model.fields,field_description:nolte_berichte.field_base_document_layout__ceo_title
