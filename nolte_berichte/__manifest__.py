@@ -1,6 +1,6 @@
 {
     'name':'Nolte Berichte',
-    'version':'15.0.1.0.0',
+    'version':'17.0.1.0.0',
     'category':'Uncategorized',
     'license':'GPL-2',
     'summary':"""Anpassung der Berichte für Deutsche Firmen""",
