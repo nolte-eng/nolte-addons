@@ -17,7 +17,7 @@ Erweiterungen für Nolte Engineering GmbH
     # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
     'category': 'Uncategorized',
-    'version': '16.0.1.0.0',
+    'version': '17.0.1.0.0',
     'installable': True,
     'license': 'LGPL-3',
     # Benötigten Module werden eingebunden
@@ -35,6 +35,7 @@ Erweiterungen für Nolte Engineering GmbH
     # Anzahl der Angezeigten Events
      'views/calendar_event_view.xml',
     # Kundenverwaltung Archiv button
+
      'views/crm_archive_button.xml'
     ],
 
