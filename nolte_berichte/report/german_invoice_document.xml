@@ -6,13 +6,13 @@
       <span>Item No.</span>
     </th>
   </xpath>
-  <xpath expr="/t/t/div[2]/div/table/tbody/t[3]/tr/t[1]/td[1]" position="before">
+  <xpath expr="/t/t/div[2]/div/table/tbody/t[4]/tr/t[1]/td[1]" position="before">
     <td>
       <span t-field="line.product_id"/>
     </td>
   </xpath>
 
-  <xpath expr="/t/t/div[2]/div/table/tbody/t[3]/tr/t[1]/td[1]" position="before">
+  <xpath expr="/t/t/div[2]/div/table/tbody/t[4]/tr/t[1]/td[1]" position="before">
     <td>
       <span t-esc="pos"/>
     </td>
