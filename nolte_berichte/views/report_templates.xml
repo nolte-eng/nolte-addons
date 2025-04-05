@@ -96,7 +96,7 @@
                         </div>
                     </div>
                      <div class="company_details">
-                        <table class="table-borderless">
+                        <table class="table-borderless" style="font-size:10px;">
                             <tr>
                                 <td>
                                     <ul class="list-inline">
@@ -133,8 +133,8 @@
                                     <ul class="list-inline" t-if="company.partner_id.bank_ids">
                                         <t t-foreach="company.partner_id.bank_ids[:2]" t-as="bank">
                                             <li><i class="fa fa-fw fa-bank"/> <span t-field="bank.bank_id.name"/></li>
-                                            <li><i class="fa fa-fw fa-money"/> IBAN: <span t-field="bank.acc_number"/></li>
-                                            <li><i class="fa fa-fw fa-building"/> BIC: <span t-field="bank.bank_id.bic"/></li>
+                                            <li><i class="fa fa-fw fa-money"/> <span t-field="bank.acc_number"/></li>
+                                            <li><i class="fa fa-fw fa-building"/> <span t-field="bank.bank_id.bic"/></li>
                                         </t>
                                     </ul>
                                 </td>
