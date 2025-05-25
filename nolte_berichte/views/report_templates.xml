@@ -1,183 +1,158 @@
 <odoo>
+
     <data>
 
 
         <!-- New report layout for din5008 format -->
-        <template id="external_layout_german">
-            <div>
-                <div t-attf-class="header din_page o_company_#{company.id}_layout #{'din_page_pdf' if report_type == 'pdf' else ''}">
-                    <table class="company_header table-borderless" t-att-style="'height: %dmm;' % (din_header_spacing or 27)">
-                        <tr>
-                            <td><h3 class="mt0" t-field="company.report_header"/></td>
-                            <td><img t-if="company.logo" t-att-src="image_data_uri(company.logo)" t-att-style="'max-height: %dmm;' % (din_header_spacing or 27)"/></td>
-                        </tr>
-                    </table>
-                </div>
+        <template id="external_layout_german" inherit_id="l10n_din5008.external_layout_din5008">
 
-                <div t-attf-class="din_page invoice_note article o_company_#{company.id}_layout {{'o_report_layout_background' if company.layout_background in ['Geometric', 'Custom']  else  ''}} #{'din_page_pdf' if report_type == 'pdf' else ''}"
-                     t-attf-style="background-image: url({{ 'data:image/png;base64,%s' % company.layout_background_image.decode('utf-8') if company.layout_background_image and company.layout_background == 'Custom' else '/base/static/img/bg_background_template.jpg' if company.layout_background == 'Geometric' else ''}});"
-                     t-att-data-oe-model="o and o._name"
-                     t-att-data-oe-id="o and o.id"
-                     t-att-data-oe-lang="o and o.env.context.get('lang')"
-                     t-if="not skip_headers">
+
+            <!-- LOGO und Report-Header ersetzen -->
+            <xpath expr="//table[hasclass('company_header', 'table-borderless')]" position="replace">
+
+                <t t-set="company" t-value="res_company"/>
+
+                <link rel="stylesheet" href="/nolte_berichte/static/src/scss/report_patch.scss"/>
+                <table class="company_header table-borderless"
+                       t-att-style="'height: %dmm;' % (din_header_spacing or 27)">
+                    <tr>
+                        <td>
+                            <h3 class="mt0" t-field="company.report_header"/>
+                        </td>
+                        <td>
+                            <img t-if="company.logo" t-att-src="image_data_uri(company.logo)"
+                                 t-att-style="'max-height: %dmm;' % (din_header_spacing or 27)"/>
+                        </td>
+                    </tr>
+                </table>
+            </xpath>
+
+
+            <xpath expr="//div[@id='din5008_report_main_address']" position="replace">
+                <div class="address" id="din5008_report_main_address">
+                    <div class="colored_address" style="font-size: 8px;">
+                        <t t-if="company.name">
+                            <span t-field="company.name"/>
+                        </t>
+                        <t t-if="company.street">
+                            <span>|</span>
+                            <span t-field="company.street"/>
+                        </t>
+                        <t t-if="company.street2">
+                            <span>|</span>
+                            <span t-field="company.street2"/>
+                        </t>
+                        <t t-if="company.zip">
+                            <span>|</span>
+                            <span t-field="company.zip"/>
+                        </t>
+                        <t t-if="company.city">
+                            <span t-if="not company.zip">|</span>
+                            <span t-field="company.city"/>
+                        </t>
+                    </div>
+                    <div t-if="address">
+                        <t t-out="address"/>
+                    </div>
+                    <div t-else="fallback_address">
+                        <t t-esc="fallback_address"
+                           t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'/>
+                    </div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('company_details')]" position="replace">
+
+                <div class="company_details" t-att-style="'color: %s;' % primary if primary else ''">
+
                     <table class="table-borderless">
                         <tr>
                             <td>
-                                <div class="address">
-                                    <div class="sender_address">
-                                        <t t-if="company.name">
-                                            <span t-field="company.name"/>
-                                        </t>
-                                    <t t-if="company.street">
-                                        <span>|</span> <span t-field="company.street"/>
-                                    </t>
-                                    <t t-if="company.street2">
-                                        <span>|</span> <span t-field="company.street2"/>
-                                    </t>
-                                    <t t-if="company.zip">
-                                        <span>|</span> <span t-field="company.zip"/>
-                                    </t>
-                                    <t t-if="company.city">
-                                        <span t-if="not company.zip">|</span> <span t-field="company.city"/>
-                                    </t>
-<!--                                    <t t-if="company.country_id">-->
-<!--                                        <span>|</span> <span t-field="company.country_id.name"/>-->
-                                    </div>
-<!--                                    <hr class="company_invoice_line" />-->
-                                        <div t-if="address" >
-                                            <t t-out="address"/>
-                                        </div>
-                                        <div t-else="fallback_address">
-                                        <t t-esc="fallback_address"
-                                           t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
-                                        </div>
-                                </div>
+                                <ul class="list-inline">
+                                    <li t-if="company.name">
+                                        <span t-field="company.name"/>
+                                    </li>
+                                    <li t-if="company.street">
+                                        <span t-field="company.street"/>
+                                    </li>
+                                    <li t-if="company.street2">
+                                        <span t-field="company.street2"/>
+                                    </li>
+                                    <li>
+                                        <span t-if="company.zip" t-field="company.zip"/>
+                                        <span t-if="company.city" t-field="company.city"/>
+                                    </li>
+                                    <!-- <li t-if="company.country_id"><span t-field="company.country_id.name"/></li> -->
+                                </ul>
                             </td>
                             <td>
-                                <div class="information_block">
-                                    <t t-if="'l10n_german_template_data' in company" t-set="template_data" t-value="company.l10n_german_template_data"/>
-                                    <t t-if="o and 'l10n_german_template_data' in o" t-set="template_data" t-value="o.l10n_german_template_data"/>
-                                    <table>
-                                        <t t-foreach="template_data" t-as="row">
-                                            <tr><td><t t-esc="row[0]"/></td><td><t t-esc="row[1]"/></td></tr>
-                                        </t>
-                                    </table>
-                                </div>
+                                <ul class="list-inline">
+                                    <li t-if="company.phone">
+                                        <i class="fa fa-fw fa-phone-square"/>
+                                        <span t-field="company.phone"/>
+                                    </li>
+                                    <li t-if="company.email">
+                                        <i class="fa fa-fw fa-envelope"/>
+                                        <span t-field="company.email"/>
+                                    </li>
+                                    <li t-if="company.website">
+                                        <i class="fa fa-fw fa-globe"/>
+                                        <span t-field="company.website"/>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td>
+                                <ul class="list-inline">
+                                    <li t-if="company.vat">
+                                        <t t-esc="company.account_fiscal_country_id.vat_label or 'Tax ID'"/>:
+                                        <span t-field="company.vat"/>
+                                    </li>
+                                    <li>HRB Nr:
+                                        <span t-field="company.company_registry"/>
+                                    </li>
+                                    <div t-field="company.report_footer"/>
+                                </ul>
+                            </td>
+                            <td>
+                                <ul class="list-inline">
+                                    <li>executive director</li>
+                                    <li t-if="company.ceo_01">
+                                        <span t-field="company.ceo_01"/>
+                                    </li>
+                                    <li t-if="company.ceo_02">
+                                        <span t-field="company.ceo_02"/>
+                                    </li>
+                                    <li t-if="not company.ceo_02">
+                                        <br/>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td>
+                                <ul class="list-inline" t-if="company.partner_id.bank_ids">
+                                    <t t-foreach="company.partner_id.bank_ids[:2]" t-as="bank">
+                                        <li>
+                                            <i class="fa fa-fw fa-bank"/>
+                                            <span t-field="bank.bank_id.name"/>
+                                        </li>
+                                        <li>
+                                            <i class="fa fa-fw fa-money"/>
+                                            <span t-field="bank.acc_number"/>
+                                        </li>
+                                        <li>
+                                            <i class="fa fa-fw fa-building"/>
+                                            <span t-field="bank.bank_id.bic"/>
+                                        </li>
+                                    </t>
+                                </ul>
                             </td>
                         </tr>
-                        <div>
-                            <tr t-if="o and 'l10n_german_addresses' in o">
-                                <t t-foreach="o.l10n_german_addresses" t-as="doc_address">
-                                    <td>
-                                        <div class="shipping_address">
-                                            <strong><t t-esc="doc_address[0]"/></strong>
-                                            <div t-esc="doc_address[1]" t-options='{"widget": "contact", "fields": ["address", "name", "phone"], "no_marker": True}'/>
-                                        </div>
-                                    </td>
-                                </t>
-                            </tr>
-                        </div>
                     </table>
-                    <h2>
-                        <span t-if="not o and not docs"><t t-esc="company.l10n_din5008_document_title"/></span>
-                        <span t-else="">
-                            <t t-set="o" t-value="docs[0]" t-if="not o" />
-                            <span t-if="'l10n_german_document_title' in o"><t t-esc="o.l10n_german_document_title"/></span>
-                            <span t-elif="'name' in o" t-field="o.name"/>
-                        </span>
-                    </h2>
-                    <t t-out="0"/>
                 </div>
-
-                <div t-attf-class="din_page footer o_company_#{company.id}_layout #{'din_page_pdf' if report_type == 'pdf' else ''}">
-                    <div class="text-end page_number">
-                        <div class="text-muted">
-                            Page: <span class="page"/> of <span class="topage"/>
-                        </div>
-                    </div>
-                     <div class="company_details">
-                        <table class="table-borderless" style="font-size:10px;">
-                            <tr>
-                                <td>
-                                    <ul class="list-inline">
-                                        <li t-if="company.name"><span t-field="company.name"/></li>
-                                        <li t-if="company.street"><span t-field="company.street"/></li>
-                                        <li t-if="company.street2"><span t-field="company.street2"/></li>
-                                        <li><span t-if="company.zip" t-field="company.zip"/> <span t-if="company.city" t-field="company.city"/></li>
-<!--                                        <li t-if="company.country_id"><span t-field="company.country_id.name"/></li>-->
-                                    </ul>
-                                </td>
-                                <td>
-                                    <ul class="list-inline">
-                                        <li t-if="company.phone"><i class="fa fa-fw fa-phone-square"/> <span t-field="company.phone"/></li>
-                                        <li t-if="company.email"><i class="fa fa-fw fa-envelope"/>  <span t-field="company.email"/></li>
-                                        <li t-if="company.website"><i class="fa fa-fw fa-globe"/> <span t-field="company.website"/></li>
-                                    </ul>
-                                </td>
-                                <td>
-                                    <ul class="list-inline">
-                                        <li t-if="company.vat"><t t-esc="company.account_fiscal_country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>
-                                        <li>HRB Nr: <span t-field="company.company_registry"/></li>
-                                        <div t-field="company.report_footer"/>
-                                    </ul>
-                                </td>
-                                <td>
-                                    <ul class="list-inline">
-                                        <li>executive director</li>
-                                        <li t-if="company.ceo_01"><span t-field="company.ceo_01"/></li>
-                                        <li t-if="company.ceo_02"><span t-field="company.ceo_02"/></li>
-                                        <li t-if="not company.ceo_02"><br></br></li>
-                                    </ul>
-                                </td>
-                                <td>
-                                    <ul class="list-inline" t-if="company.partner_id.bank_ids">
-                                        <t t-foreach="company.partner_id.bank_ids[:2]" t-as="bank">
-                                            <li><i class="fa fa-fw fa-bank"/> <span t-field="bank.bank_id.name"/></li>
-                                            <li><i class="fa fa-fw fa-money"/> <span t-field="bank.acc_number"/></li>
-                                            <li><i class="fa fa-fw fa-building"/> <span t-field="bank.bank_id.bic"/></li>
-                                        </t>
-                                    </ul>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </template>
-
-        <template id="din5008_css" inherit_id="web.styles_company_report">
-            <xpath expr="//t[@t-elif]" position="before">
-                <t t-elif="layout == 'nolte_berichte.external_layout_german'">
-                    &amp;.din_page {
-                        &amp;.header {
-                            .company_header {
-                                .name_container {
-                                    color: <t t-esc='primary'/>;
-                                }
-                            }
-                        }
-                        &amp;.invoice_note {
-                            td {
-                                .address {
-                                    > span {
-                                        color: <t t-esc='secondary'/>;
-                                    }
-                                }
-                            }
-                            h2 {
-                                color: <t t-esc='primary'/>;
-                            }
-                            .page {
-                                [name=invoice_line_table], [name=stock_move_table], .o_main_table {
-                                    th {
-                                        color: <t t-esc='secondary'/>;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                </t>
             </xpath>
+
+
+
         </template>
+
     </data>
 </odoo>

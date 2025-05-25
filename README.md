@@ -1,7 +1,7 @@
 Odoo Addons for using in Germany
 =================================
 
-This project includes modules that handle payment related tasks:
+This project includes modules that modify the Din5008 report in Odoo 18:
 
 * Add Reports
 * ...

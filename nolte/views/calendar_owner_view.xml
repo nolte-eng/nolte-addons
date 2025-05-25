@@ -1,34 +1,37 @@
 <odoo>
     <data>
         <record model="ir.ui.view" id="hinzufuegen_Verantwortlicher">
-
             <field name="name">Mitarbeiter</field>
             <field name="model">calendar.event</field>
             <field name="inherit_id" ref="calendar.view_calendar_event_form"/>
             <field name="arch" type="xml">
 
-                <!--Blendet Seite 4 des Formulares aus-->
-                <xpath expr="//page[4]" position="replace">
+                <!-- Überprüfen, ob page[4] existiert -->
+                <xpath expr="//page[position()=4]" position="replace">
+                    <page string="Page 4">
+                        <group>
+                            <field name="name"/>
+                        </group>
+                    </page>
                 </xpath>
-                <!--Blendet Seite 3 des Formulares aus-->
-                <xpath expr="//page[3]" position="replace">
+
+                <!-- Überprüfen, ob page[3] existiert -->
+                <xpath expr="//page[position()=3]" position="replace">
+                    <page string="Page 3">
+                        <group>
+                            <field name="name"/>
+                        </group>
+                    </page>
                 </xpath>
 
-                <!--Erweitert die Ansicht um den Besitzer Hintergrund: Unterschiedliche Farben für die verschiedenen Benutzer im Kalender-->
-
-
+                <!-- Erweiterung der Ansicht -->
                 <xpath expr="//field[@name='location']" position="after">
                     <label for="user_id" string="Mitarbeiter"/>
                     <field name="user_id" nolabel="1" can_create="true" can_write="true"
                            modifiers="{'readonly': [['state', 'in', ['done']]]}"/>
-
                 </xpath>
-
 
             </field>
         </record>
-
-
     </data>
-
 </odoo>

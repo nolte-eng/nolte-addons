@@ -1,22 +1,8 @@
-# -*- coding: utf-8 -*-
-
-
-from odoo import models, fields, api
-
+from odoo import models, fields
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    ceo_title = fields.Char('res.partner.title')
-    ceo_01 = fields.Char('executive director')
-    ceo_02 = fields.Char('executive director#2')
-    com_fax = fields.Char('company_fax')
-
-class BaseDocumentLayout(models.TransientModel):
-    _inherit ='base.document.layout'
-    # Those following fields are required as a company to create invoice report
-
-    ceo_title = fields.Char('res.partner.title', readonly=True)
-    ceo_01 = fields.Char('executive director')
-    ceo_02 = fields.Char('executive director#2')
-    com_fax = fields.Char('company_fax')
+    ceo_title = fields.Char(string="CEO Titel")
+    ceo_01 = fields.Char(string="Geschäftsführer 1")
+    ceo_02 = fields.Char(string="Geschäftsführer 2")

@@ -1,42 +1,20 @@
-# -*- coding: utf-8 -*-
 {
-    'name': "Nolte",
-    'summary': 'Erweiterungen zum Anpassen von Odoo für Nolte Engineering GmbH',
-    'description': """
-Erweiterungen für Nolte Engineering GmbH
-========================================
--Anpassung des Kalenders
-	- Besitzer wird  angezeigt
-	- Standardansicht ist Monat
-	- Zeige 10 Termine an einen Tag an
-    """,
-    'author': 'Lars Nolte',
-    'website': 'http://www.nolte-eng.de',
-
-    # Categories can be used to filter modules in modules listing
-    # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
-    # for the full list
-    'category': 'Uncategorized',
-    'version': '17.0.1.0.0',
-    'installable': True,
-    'license': 'LGPL-3',
-    # Benötigten Module werden eingebunden
+    'name': 'Nolte Addon',
+        'version': '18.0.1.0.0',
+    'category': 'Sales',
+    'summary': 'Customized Calendar and CRM Enhancements',
+    'description': """This module extends the Calendar and CRM capabilities with custom views and functionalities.""",
     'depends': ['base', 'calendar', 'crm'],
-
-    # always loaded
     'data': [
-
-    # 'security/ir.model.access.csv',
-
-    # Ansicht auf Monat umstellen
-     'views/calendar_month_view.xml',
-    # Ansicht Erweitern um Besitzer
-    # 'views/calendar_owner_view.xml',
-    # Anzahl der Angezeigten Events
-     'views/calendar_event_view.xml',
-    # Kundenverwaltung Archiv button
-
-     'views/crm_archive_button.xml'
+        'views/calendar_owner_view.xml',
+        'views/calendar_event_view.xml',
+        'views/calendar_month_view.xml',
+        'views/crm_archive_button.xml',
+        'security/ir.model.access.csv',
+        'data/demo.xml'
     ],
-
+    'demo': ['data/demo.xml'],
+    'installable': True,
+    'application': True,
+    'license': 'LGPL-3',
 }

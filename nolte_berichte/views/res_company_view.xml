@@ -1,15 +1,17 @@
-<odoo>
 
-    <record id="berichte_ceo_company" model="ir.ui.view">
-        <field name="name">Add ceo on company</field>
-        <field name="model">res.company</field>
-        <field name="inherit_id" ref="base.view_company_form"/>
-        <field name="arch" type="xml">
-            <field name="website" position="after">
-                <field name="ceo_01" placeholder="executive director"/>
-                <field name="ceo_02" />
-                <field name="com_fax" placeholder="FAX"/>
-           </field>
-        </field>
-    </record>
+<odoo>
+  <record id="view_company_form_inherit_nolte" model="ir.ui.view">
+    <field name="name">res.company.form.nolte</field>
+    <field name="model">res.company</field>
+    <field name="inherit_id" ref="base.view_company_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet" position="inside">
+        <group string="Geschäftsführung">
+          <field name="ceo_01"/>
+          <field name="ceo_02"/>
+
+        </group>
+      </xpath>
+    </field>
+  </record>
 </odoo>
