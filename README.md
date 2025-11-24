@@ -1,7 +1,7 @@
 Odoo Addons for using in Germany
 =================================
 
-This project includes modules that modify the Din5008 report in Odoo 18:
+This 19.0 branch targets Odoo 19 and includes modules that modify the Din5008 report:
 
 * Add Reports
 * ...

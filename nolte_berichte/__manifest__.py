@@ -1,6 +1,6 @@
 {
     "name": "Nolte Berichte",
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "category": "Localization",
     "license": "LGPL-3",
     "summary": "Deutsche Berichtsanpassungen für Verkauf, Einkauf, Rechnung und Lager",
@@ -9,7 +9,6 @@
     "website": "http://www.nolte-eng.de",
     "depends": ["l10n_din5008"],
     "data": [
-
         "views/report_templates.xml",
         "views/res_company_view.xml",
     ],
@@ -19,6 +18,6 @@
         ]
     },
     "installable": True,
-    "application": 'Accounting/Localizations',
+    "application": False,
     "auto_install": False,
 }

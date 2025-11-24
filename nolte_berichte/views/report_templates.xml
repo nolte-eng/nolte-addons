@@ -115,7 +115,7 @@
                             </td>
                             <td>
                                 <ul class="list-inline">
-                                    <li>executive director</li>
+                                    <li>Geschäftsführer</li>
                                     <li t-if="company.ceo_01">
                                         <span t-field="company.ceo_01"/>
                                     </li>
