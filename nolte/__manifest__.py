@@ -1,6 +1,6 @@
 {
     'name': 'Nolte Addon',
-        'version': '18.0.1.0.0',
+    'version': '19.0.1.0.0',
     'category': 'Sales',
     'summary': 'Customized Calendar and CRM Enhancements',
     'description': """This module extends the Calendar and CRM capabilities with custom views and functionalities.""",
@@ -11,7 +11,7 @@
         'views/calendar_month_view.xml',
         'views/crm_archive_button.xml',
         'security/ir.model.access.csv',
-        'data/demo.xml'
+        'data/demo.xml',
     ],
     'demo': ['data/demo.xml'],
     'installable': True,
