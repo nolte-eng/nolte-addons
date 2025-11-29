@@ -6,29 +6,12 @@
             <field name="inherit_id" ref="calendar.view_calendar_event_form"/>
             <field name="arch" type="xml">
 
-                <!-- Überprüfen, ob page[4] existiert -->
-                <xpath expr="//page[position()=4]" position="replace">
-                    <page string="Page 4">
-                        <group>
-                            <field name="name"/>
-                        </group>
-                    </page>
-                </xpath>
-
-                <!-- Überprüfen, ob page[3] existiert -->
-                <xpath expr="//page[position()=3]" position="replace">
-                    <page string="Page 3">
-                        <group>
-                            <field name="name"/>
-                        </group>
-                    </page>
-                </xpath>
-
-                <!-- Erweiterung der Ansicht -->
-                <xpath expr="//field[@name='location']" position="after">
-                    <label for="user_id" string="Mitarbeiter"/>
-                    <field name="user_id" nolabel="1" can_create="true" can_write="true"
-                           modifiers="{'readonly': [['state', 'in', ['done']]]}"/>
+                <xpath expr="//page[@name='options']" position="inside">
+                    <group string="Mitarbeiter">
+                        <label for="user_id" string="Mitarbeiter"/>
+                        <field name="user_id" nolabel="1" can_create="true" can_write="true"
+                               modifiers="{'readonly': [['state', 'in', ['done']]]}"/>
+                    </group>
                 </xpath>
 
             </field>
