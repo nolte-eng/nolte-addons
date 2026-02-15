@@ -1,0 +1,8 @@
+<odoo>
+  <menuitem id="menu_nolte_overtime_root" name="Nolte" sequence="90"/>
+  <menuitem id="menu_nolte_overtime_import"
+            name="Überstunden CSV Import"
+            parent="menu_nolte_overtime_root"
+            action="action_nolte_overtime_import_wizard"
+            sequence="10"/>
+</odoo>
