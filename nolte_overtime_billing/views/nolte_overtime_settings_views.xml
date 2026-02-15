@@ -1,0 +1,57 @@
+<odoo>
+
+  <!-- Standalone settings form (no fragile xpath inheritance) -->
+  <record id="view_nolte_overtime_settings_form" model="ir.ui.view">
+    <field name="name">nolte.overtime.settings.form</field>
+    <field name="model">res.config.settings</field>
+    <field name="arch" type="xml">
+      <form string="Nolte Überstunden – Einstellungen">
+        <sheet>
+          <group>
+            <group string="Normal">
+              <field name="nolte_product_work_id"/>
+              <field name="nolte_product_travel_id"/>
+            </group>
+
+            <group string="Überstunden Arbeitszeit">
+              <field name="nolte_product_work_ot30_id"/>
+              <field name="nolte_product_work_ot50_id"/>
+            </group>
+          </group>
+
+          <group>
+            <group string="Überstunden Fahrzeit">
+              <field name="nolte_product_travel_ot30_id"/>
+              <field name="nolte_product_travel_ot50_id"/>
+            </group>
+
+            <group string="Zusätze">
+              <field name="nolte_product_km_id"/>
+              <field name="nolte_product_overnight_id"/>
+            </group>
+          </group>
+
+          <footer>
+            <button string="Speichern" type="object" name="execute" class="btn-primary"/>
+            <button string="Abbrechen" special="cancel" class="btn-secondary"/>
+          </footer>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_nolte_overtime_settings" model="ir.actions.act_window">
+    <field name="name">Nolte Überstunden – Einstellungen</field>
+    <field name="res_model">res.config.settings</field>
+    <field name="view_mode">form</field>
+    <field name="view_id" ref="view_nolte_overtime_settings_form"/>
+    <field name="target">current</field>
+    <field name="context">{'module': 'nolte_overtime_billing'}</field>
+  </record>
+
+  <!-- Menu under Sales / Configuration (robust across CE/EE) -->
+  <menuitem id="menu_nolte_overtime_root" name="Nolte Überstunden" parent="sale.sale_menu_root" sequence="95"/>
+  <menuitem id="menu_nolte_overtime_settings" name="Einstellungen" parent="menu_nolte_overtime_root"
+            action="action_nolte_overtime_settings" sequence="10"/>
+
+</odoo>

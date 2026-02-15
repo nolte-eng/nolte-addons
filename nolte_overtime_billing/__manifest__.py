@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nolte Overtime Billing (CSV → Sales Order)",
-    "version": "18.0.1.5.1",
+    "version": "18.0.1.6.7",
     "category": "Sales",
     "summary": "Import Stundenbericht-CSV, berechne Überstunden, erstelle Verkaufsauftrag (und daraus Rechnung).",
     "author": "Nolte Engineering / Nolte Sales",
@@ -10,9 +10,9 @@
     "data": [
         "security/ir.model.access.csv",
         "data/product_data.xml",
-        "views/res_config_settings_views.xml",
-        "views/overtime_import_wizard_views.xml",
+                "views/overtime_import_wizard_views.xml",
         "views/menu.xml",
+        "views/nolte_overtime_settings_views.xml",
         "views/sale_order_views.xml",
     ],
     "post_init_hook": "post_init_hook",

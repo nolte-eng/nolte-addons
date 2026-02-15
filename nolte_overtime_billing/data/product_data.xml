@@ -7,9 +7,7 @@
     <field name="invoice_policy">order</field>
     <field name="uom_id" ref="uom.product_uom_unit"/>
     <field name="uom_po_id" ref="uom.product_uom_unit"/>
+    <field name="base_unit_count">1</field>
     <field name="list_price">0.0</field>
-  </record>
-  <record id="product_overnight" model="product.product">
-    <field name="product_tmpl_id" ref="nolte_overtime_billing.product_template_overnight"/>
   </record>
 </odoo>

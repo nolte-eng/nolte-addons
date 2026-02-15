@@ -9,7 +9,7 @@
                 type="action"
                 string="Überstunden-CSV importieren"
                 class="btn-secondary"
-                context="{'active_model': 'sale.order', 'active_id': active_id}"/>
+                context="{'active_model': 'sale.order', 'active_id': id}"/>
       </xpath>
     </field>
   </record>
