@@ -8,9 +8,11 @@
     "license": "LGPL-3",
     "depends": ["base", "sale_management", "product", "uom"],
     "data": [
+        # Create model external IDs early so access rules resolve during install/upgrade
+        "security/ir_model.xml",
         "security/ir.model.access.csv",
         "data/product_data.xml",
-                "views/overtime_import_wizard_views.xml",
+        "views/overtime_import_wizard_views.xml",
         "views/menu.xml",
         "views/nolte_overtime_settings_views.xml",
         "views/sale_order_views.xml",

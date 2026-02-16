@@ -5,11 +5,11 @@
     <field name="inherit_id" ref="sale.view_order_form"/>
     <field name="arch" type="xml">
       <xpath expr="//header" position="inside">
-        <button name="%(nolte_overtime_billing.action_nolte_overtime_import_wizard)d"
-                type="action"
-                string="Überstunden-CSV importieren"
-                class="btn-secondary"
-                context="{'active_model': 'sale.order', 'active_id': id}"/>
+		<button name="%(nolte_overtime_billing.action_nolte_overtime_import_wizard)d"
+		        type="action"
+		        string="Überstunden-CSV importieren"
+		        class="btn-secondary"
+		        context="{'active_model': 'sale.order', 'active_id': id, 'default_order_id': id}"/>
       </xpath>
     </field>
   </record>

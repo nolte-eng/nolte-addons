@@ -124,7 +124,11 @@ class NolteOvertimeImportWizard(models.TransientModel):
     csv_file = fields.Binary(string="CSV-Datei", required=True)
     csv_filename = fields.Char(string="Dateiname")
 
-    order_id = fields.Many2one("sale.order", string="Verkaufsauftrag (optional)")
+    order_id = fields.Many2one(
+        "sale.order",
+        string="Verkaufsauftrag",
+        default=lambda self: self.env.context.get("default_order_id"),
+    )
 
     def _cfg_pid(self, key: str):
         v = self.env["ir.config_parameter"].sudo().get_param(key)
@@ -295,16 +299,21 @@ class NolteOvertimeImportWizard(models.TransientModel):
 
         partner = self._partner_from_meta(meta)
         origin = meta.get("berichtNr") or self.csv_filename or _("Überstunden-Import")
-        order = False
-        if self.env.context.get('active_model') == 'sale.order' and self.env.context.get('active_id'):
+        # Target order:
+        # - Prefer the explicit selection in the wizard (menu usage)
+        # - Otherwise fall back to the active sale order (button usage)
+        order = self.order_id
+        if not order and self.env.context.get('active_model') == 'sale.order' and self.env.context.get('active_id'):
             order = self.env['sale.order'].browse(self.env.context['active_id'])
-        if order:
-            if not order.partner_id:
-                order.partner_id = partner.id
-            if not order.origin:
-                order.origin = origin
-        else:
-            order = self.env['sale.order'].create({'partner_id': partner.id, 'origin': origin})
+
+        if not order or not order.exists():
+            raise UserError(_("Bitte wählen Sie einen Verkaufsauftrag aus."))
+
+        # Fill partner/origin if missing
+        if not order.partner_id:
+            order.partner_id = partner.id
+        if not order.origin:
+            order.origin = origin
         self._add_note_line(order, meta, activities)
 
         totals = {"work": 0.0, "work_ot30": 0.0, "work_ot50": 0.0,
