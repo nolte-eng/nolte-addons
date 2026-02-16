@@ -1,0 +1,13 @@
+<odoo>
+  <record id="product_template_overnight" model="product.template">
+    <field name="name">Übernachtungspauschale</field>
+    <field name="type">service</field>
+    <field name="sale_ok">1</field>
+    <field name="purchase_ok">0</field>
+    <field name="invoice_policy">order</field>
+    <field name="uom_id" ref="uom.product_uom_unit"/>
+    <field name="uom_po_id" ref="uom.product_uom_unit"/>
+    <field name="base_unit_count">1</field>
+    <field name="list_price">0.0</field>
+  </record>
+</odoo>
