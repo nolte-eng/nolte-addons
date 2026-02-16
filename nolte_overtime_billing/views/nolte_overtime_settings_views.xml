@@ -1,57 +1,68 @@
 <odoo>
+  <!-- Standalone settings wizard (persists via ir.config_parameter) -->
 
-  <!-- Standalone settings form (no fragile xpath inheritance) -->
   <record id="view_nolte_overtime_settings_form" model="ir.ui.view">
     <field name="name">nolte.overtime.settings.form</field>
-    <field name="model">res.config.settings</field>
+    <field name="model">nolte.overtime.settings</field>
     <field name="arch" type="xml">
       <form string="Nolte Überstunden – Einstellungen">
         <sheet>
-          <group>
-            <group string="Normal">
-              <field name="nolte_product_work_id"/>
-              <field name="nolte_product_travel_id"/>
+          <group col="6">
+            <group string="Arbeitszeit (normal)">
+              <field name="product_work_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Standard-Artikel für normale Arbeitszeit.</div>
+            </group>
+            <group string="Fahrzeit (normal)">
+              <field name="product_travel_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Standard-Artikel für normale Fahrzeit.</div>
             </group>
 
-            <group string="Überstunden Arbeitszeit">
-              <field name="nolte_product_work_ot30_id"/>
-              <field name="nolte_product_work_ot50_id"/>
+            <group string="Arbeitszeit Überstunden 30 %">
+              <field name="product_work_ot30_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Artikel für Arbeitszeit mit 30 % Zuschlag.</div>
+            </group>
+            <group string="Arbeitszeit Überstunden 50 %">
+              <field name="product_work_ot50_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Artikel für Arbeitszeit mit 50 % Zuschlag.</div>
+            </group>
+
+            <group string="Fahrzeit Überstunden 30 %">
+              <field name="product_travel_ot30_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Artikel für Fahrzeit mit 30 % Zuschlag.</div>
+            </group>
+            <group string="Fahrzeit Überstunden 50 %">
+              <field name="product_travel_ot50_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Artikel für Fahrzeit mit 50 % Zuschlag.</div>
+            </group>
+
+            <group string="Kilometerpauschale">
+              <field name="product_km_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Artikel für Kilometerabrechnung.</div>
+            </group>
+            <group string="Übernachtungspauschale">
+              <field name="product_overnight_id" options="{'no_create': False, 'no_open': False}"/>
+              <div class="text-muted">Artikel für Übernachtungskosten.</div>
             </group>
           </group>
-
-          <group>
-            <group string="Überstunden Fahrzeit">
-              <field name="nolte_product_travel_ot30_id"/>
-              <field name="nolte_product_travel_ot50_id"/>
-            </group>
-
-            <group string="Zusätze">
-              <field name="nolte_product_km_id"/>
-              <field name="nolte_product_overnight_id"/>
-            </group>
-          </group>
-
-          <footer>
-            <button string="Speichern" type="object" name="execute" class="btn-primary"/>
-            <button string="Abbrechen" special="cancel" class="btn-secondary"/>
-          </footer>
         </sheet>
+        <footer>
+          <button name="action_save" type="object" class="btn-primary" string="Speichern"/>
+          <button special="cancel" class="btn-secondary" string="Abbrechen"/>
+        </footer>
       </form>
     </field>
   </record>
 
   <record id="action_nolte_overtime_settings" model="ir.actions.act_window">
-    <field name="name">Nolte Überstunden – Einstellungen</field>
-    <field name="res_model">res.config.settings</field>
+    <field name="name">Einstellungen</field>
+    <field name="res_model">nolte.overtime.settings</field>
     <field name="view_mode">form</field>
-    <field name="view_id" ref="view_nolte_overtime_settings_form"/>
-    <field name="target">current</field>
-    <field name="context">{'module': 'nolte_overtime_billing'}</field>
+    <field name="target">new</field>
   </record>
 
-  <!-- Menu under Sales / Configuration (robust across CE/EE) -->
-  <menuitem id="menu_nolte_overtime_root" name="Nolte Überstunden" parent="sale.sale_menu_root" sequence="95"/>
-  <menuitem id="menu_nolte_overtime_settings" name="Einstellungen" parent="menu_nolte_overtime_root"
-            action="action_nolte_overtime_settings" sequence="10"/>
+  <!-- menu lives under "Nolte Überstunden" root defined in menu.xml -->
+  <menuitem id="menu_nolte_overtime_settings" name="Einstellungen"
+            parent="nolte_overtime_billing.menu_nolte_overtime_root" sequence="20"
+            action="action_nolte_overtime_settings"/>
 
 </odoo>
