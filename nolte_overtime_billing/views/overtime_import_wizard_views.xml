@@ -3,14 +3,13 @@
     <field name="name">nolte.overtime.import.wizard.form</field>
     <field name="model">nolte.overtime.import.wizard</field>
     <field name="arch" type="xml">
-      <form string="Überstunden CSV importieren">
+      <form string="Stundenbericht CSV importieren">
         <group>
-	          <field name="order_id" options="{'no_create': True}" placeholder="Verkaufsauftrag wählen..."/>
           <field name="csv_file" filename="csv_filename"/>
           <field name="csv_filename" invisible="1"/>
         </group>
         <footer>
-	          <button name="action_import_create_sale_order" type="object" string="Import starten" class="btn-primary"/>
+          <button name="action_import_create_sale_order" type="object" string="Verkaufsauftrag erstellen" class="btn-primary"/>
           <button string="Abbrechen" special="cancel" class="btn-secondary"/>
         </footer>
       </form>
@@ -18,7 +17,7 @@
   </record>
 
   <record id="action_nolte_overtime_import_wizard" model="ir.actions.act_window">
-    <field name="name">Überstunden CSV Import</field>
+    <field name="name">Stundenbericht CSV Import</field>
     <field name="res_model">nolte.overtime.import.wizard</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>

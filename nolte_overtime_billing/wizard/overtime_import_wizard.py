@@ -124,11 +124,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
     csv_file = fields.Binary(string="CSV-Datei", required=True)
     csv_filename = fields.Char(string="Dateiname")
 
-    order_id = fields.Many2one(
-        "sale.order",
-        string="Verkaufsauftrag",
-        default=lambda self: self.env.context.get("default_order_id"),
-    )
+    order_id = fields.Many2one("sale.order", string="Verkaufsauftrag (optional)")
 
     def _cfg_pid(self, key: str):
         v = self.env["ir.config_parameter"].sudo().get_param(key)
@@ -150,10 +146,12 @@ class NolteOvertimeImportWizard(models.TransientModel):
             ))
         km_pid = self._cfg_pid("nolte_overtime_billing.product_km_id")
         overnight_pid = self._cfg_pid("nolte_overtime_billing.product_overnight_id")
+        allowance_pid = self._cfg_pid("nolte_overtime_billing.product_allowance_id")
 
         prods = {k: self.env["product.product"].browse(pid) for k, pid in pids.items()}
         prods["km"] = self.env["product.product"].browse(km_pid) if km_pid else False
         prods["overnight"] = self.env["product.product"].browse(overnight_pid) if overnight_pid else False
+        prods["allowance"] = self.env["product.product"].browse(allowance_pid) if allowance_pid else False
         return prods
 
     def _read_kv_csv(self, text: str):
@@ -299,27 +297,24 @@ class NolteOvertimeImportWizard(models.TransientModel):
 
         partner = self._partner_from_meta(meta)
         origin = meta.get("berichtNr") or self.csv_filename or _("Überstunden-Import")
-        # Target order:
-        # - Prefer the explicit selection in the wizard (menu usage)
-        # - Otherwise fall back to the active sale order (button usage)
-        order = self.order_id
-        if not order and self.env.context.get('active_model') == 'sale.order' and self.env.context.get('active_id'):
+        order = False
+        if self.env.context.get('active_model') == 'sale.order' and self.env.context.get('active_id'):
             order = self.env['sale.order'].browse(self.env.context['active_id'])
-
-        if not order or not order.exists():
-            raise UserError(_("Bitte wählen Sie einen Verkaufsauftrag aus."))
-
-        # Fill partner/origin if missing
-        if not order.partner_id:
-            order.partner_id = partner.id
-        if not order.origin:
-            order.origin = origin
+        if order:
+            if not order.partner_id:
+                order.partner_id = partner.id
+            if not order.origin:
+                order.origin = origin
+        else:
+            order = self.env['sale.order'].create({'partner_id': partner.id, 'origin': origin})
         self._add_note_line(order, meta, activities)
 
         totals = {"work": 0.0, "work_ot30": 0.0, "work_ot50": 0.0,
                   "travel": 0.0, "travel_ot30": 0.0, "travel_ot50": 0.0,
                   "km": 0.0, "overnight": 0.0}
         detail_lines = []
+        allowance_days = {}  # person -> set(day)
+
 
         for idx in sorted(activities.keys()):
             a = activities[idx]
@@ -328,6 +323,10 @@ class NolteOvertimeImportWizard(models.TransientModel):
             day = d.isoformat() if d else str(date_str).strip()
             person = a.get("name") or ""
             note = (f"{day} {person}").strip()
+            # Auslöse: je Mitarbeiter & Einsatztag genau 1× zählen (auch bei nicht zusammenhängenden Tagen / Wochenende)
+            person_key = (person or "").strip() or "_gesamt_"
+            allowance_days.setdefault(person_key, set()).add(day)
+
 
             segments = self._build_segments(a)
             if segments:
@@ -395,5 +394,22 @@ class NolteOvertimeImportWizard(models.TransientModel):
             add_line(prods["overnight"], totals["overnight"], "Übernachtungspauschale", 40)
         elif totals["overnight"] > 1e-6:
             order.note = (order.note or "") + "\n\nHinweis: Übernachtungen vorhanden, aber kein Produkt konfiguriert."
+        
+        # Auslöse je Mitarbeiter & Einsatztag
+        if allowance_days:
+            if prods.get("allowance"):
+                seq = 50
+                for person_key in sorted(allowance_days.keys()):
+                    qty = float(len(allowance_days[person_key]))
+                    if qty <= 0:
+                        continue
+                    label = "Auslöse" if person_key == "_gesamt_" else f"Auslöse ({person_key})"
+                    add_line(prods["allowance"], qty, label, seq)
+                    seq += 1
+            else:
+                total_days = sum(len(s) for s in allowance_days.values())
+                if total_days:
+                    order.note = (order.note or "") + f"\n\nHinweis: Auslöse-Tage ({total_days}) vorhanden, aber kein Produkt konfiguriert."
+
 
         return {"type": "ir.actions.act_window", "res_model": "sale.order", "view_mode": "form", "res_id": order.id}
