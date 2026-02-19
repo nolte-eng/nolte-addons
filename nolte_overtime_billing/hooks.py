@@ -26,7 +26,7 @@ def pre_init_hook(cr):
 
 
 def post_init_hook(env):
-    """Post-init hook (Odoo 18): set default products if not configured yet."""
+    """Post-init hook (Odoo 19): set default products if not configured yet."""
     _ensure_product_template_base_unit_count_default_cr(env.cr)
 
     ICP = env["ir.config_parameter"].sudo()
