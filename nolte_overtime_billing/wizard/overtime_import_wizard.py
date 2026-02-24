@@ -3,8 +3,12 @@ import csv
 import io
 import re
 from datetime import datetime, timedelta
+import logging
 
 from odoo import fields, models, _
+
+_logger = logging.getLogger(__name__)
+
 from odoo.exceptions import UserError
 
 
@@ -307,6 +311,10 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 order.origin = origin
         else:
             order = self.env['sale.order'].create({'partner_id': partner.id, 'origin': origin})
+
+        # Ensure pricelist is set so sales prices follow the customer's pricing rules
+        if not order.pricelist_id and order.partner_id and order.partner_id.property_product_pricelist:
+            order.pricelist_id = order.partner_id.property_product_pricelist.id
         self._add_note_line(order, meta, activities)
 
         totals = {"work": 0.0, "work_ot30": 0.0, "work_ot50": 0.0,
@@ -364,18 +372,122 @@ class NolteOvertimeImportWizard(models.TransientModel):
             extra = f"\nÜbernachtungen (gesamt): {totals['overnight']:.0f}" if totals["overnight"] else ""
             order.note = f"CSV Import: {origin}\n" + "\n".join(detail_lines) + extra
 
+        def _pricelist_price(prod, q):
+            """Pricelist price getter (robust).
+            Goal: Use customer's pricelist, but NEVER crash the import.
+            If anything in pricelist/currency conversion fails, we fall back to an EUR list price.
+            """
+            pl = order.pricelist_id
+            partner = order.partner_id
+            date = order.date_order or fields.Date.context_today(self)
+            uom = getattr(prod, "uom_id", False)
+
+            # Determine EUR currency record (prefer company currency if it is EUR)
+            eur = None
+            try:
+                if order.company_id.currency_id and order.company_id.currency_id.name == "EUR":
+                    eur = order.company_id.currency_id
+                else:
+                    eur = self.env["res.currency"].search([("name", "=", "EUR")], limit=1)
+            except Exception:
+                eur = None
+
+            try:
+                # Force context to EUR when possible (prevents random conversions where configuration is broken)
+                if eur:
+                    pl_ctx = pl.with_context(to_currency=eur.id, currency_id=eur.id, date=str(date))
+                else:
+                    pl_ctx = pl
+
+                # Newer APIs (signature differs between versions)
+                if hasattr(pl_ctx, "_get_product_price"):
+                    try:
+                        return pl_ctx._get_product_price(prod, q, partner, date=date, uom_id=uom.id if uom else False)
+                    except TypeError:
+                        return pl_ctx._get_product_price(prod, q, partner)
+
+                if hasattr(pl_ctx, "get_product_price"):
+                    try:
+                        return pl_ctx.get_product_price(prod, q, partner, date=date, uom_id=uom.id if uom else False)
+                    except TypeError:
+                        return pl_ctx.get_product_price(prod, q, partner)
+
+                # Older APIs
+                if hasattr(pl_ctx, "_get_product_price_rule"):
+                    try:
+                        res = pl_ctx._get_product_price_rule(prod, q, partner, date=date, uom_id=uom.id if uom else False)
+                    except TypeError:
+                        res = pl_ctx._get_product_price_rule(prod, q, partner)
+                    if isinstance(res, (list, tuple)) and res:
+                        return res[0]
+
+            except Exception as e:
+                # Don't ever let pricelist/currency issues kill the import
+                try:
+                    _logger.exception(
+                        "Pricelist price computation failed (forcing EUR fallback). pricelist=%s product=%s qty=%s date=%s error=%s",
+                        pl.display_name if pl else pl, prod.display_name if prod else prod, q, date, e
+                    )
+                except Exception:
+                    pass
+
+            # Safe fallback: use list price (assumed company currency; if EUR exists, take EUR context)
+            try:
+                if eur:
+                    return prod.with_company(order.company_id).with_context(currency_id=eur.id).lst_price
+                return prod.with_company(order.company_id).lst_price
+            except Exception:
+                return prod.lst_price
+
         def add_line(product, qty, label, seq):
             qty = float(qty or 0.0)
             if qty <= 1e-6:
                 return
-            self.env["sale.order.line"].create({
+
+            # Create the line via onchange so Odoo applies the customer's pricelist (and taxes, UoM logic, etc.)
+            line = self.env["sale.order.line"].new({
                 "order_id": order.id,
                 "product_id": product.id,
-                "name": label,
                 "product_uom_qty": qty,
-                "price_unit": product.lst_price,
-                "sequence": seq,
             })
+
+            # Odoo version compatibility: the onchange helper name differs across versions/installations.
+            if hasattr(line, "_onchange_product_id"):
+                line._onchange_product_id()
+            elif hasattr(line, "product_id_change"):
+                line.product_id_change()
+            else:
+                # Fallback: at least apply pricelist price
+                try:
+                    line.price_unit = _pricelist_price(product, qty)
+                except Exception as e:
+                    _logger.exception(
+                        "Pricelist price failed, fallback to list price (product=%s, qty=%s): %s",
+                        product.display_name if product else product, qty, e
+                    )
+                    line.price_unit = product.with_company(order.company_id).lst_price if order.company_id else product.lst_price
+
+            line.product_uom_qty = qty
+
+            # qty can affect pricelist rules (quantity breaks)
+            if hasattr(line, "_onchange_product_uom_qty"):
+                line._onchange_product_uom_qty()
+            elif hasattr(line, "product_uom_qty_change"):
+                line.product_uom_qty_change()
+            elif not getattr(line, "price_unit", None):
+                # If no qty onchange exists, ensure price respects quantity breaks
+                try:
+                    line.price_unit = _pricelist_price(product, qty)
+                except Exception as e:
+                    _logger.exception(
+                        "Pricelist price failed, fallback to list price (product=%s, qty=%s): %s",
+                        product.display_name if product else product, qty, e
+                    )
+                    line.price_unit = product.with_company(order.company_id).lst_price if order.company_id else product.lst_price
+
+            line.name = label
+            line.sequence = seq
+            self.env["sale.order.line"].create(line._convert_to_write(line._cache))
 
         add_line(prods["work"], totals["work"], "Arbeitszeit", 10)
         add_line(prods["work_ot30"], totals["work_ot30"], "Arbeitszeit Überstunden 30%", 11)
