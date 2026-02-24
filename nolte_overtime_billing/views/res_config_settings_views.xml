@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="view_res_config_settings_nolte_overtime" model="ir.ui.view">
+      <field name="name">res.config.settings.nolte.overtime</field>
+      <field name="model">res.config.settings</field>
+      <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+      <field name="priority" eval="200"/>
+      <field name="arch" type="xml">
+
+        <!-- Wie im Google-Maps-Beispiel: an vorhandenen block hängen -->
+        <xpath expr="//block[@name='integration']" position="after">
+
+          <block name="nolte_overtime_block" title="Nolte Überstunden – CSV Import">
+
+            <setting id="nolte_product_work_setting">
+              <field name="nolte_product_work_id" string="Arbeitszeit"/>
+            </setting>
+
+            <setting id="nolte_product_work_ot30_setting">
+              <field name="nolte_product_work_ot30_id" string="Arbeitszeit 30% Überstunden (8–10h)"/>
+            </setting>
+
+            <setting id="nolte_product_work_ot50_setting">
+              <field name="nolte_product_work_ot50_id" string="Arbeitszeit 50% Überstunden (über 10h)"/>
+            </setting>
+
+            <setting id="nolte_product_travel_setting">
+              <field name="nolte_product_travel_id" string="Fahrzeit"/>
+            </setting>
+
+            <setting id="nolte_product_travel_ot30_setting">
+              <field name="nolte_product_travel_ot30_id" string="Fahrzeit 30% Überstunden (8–10h)"/>
+            </setting>
+
+            <setting id="nolte_product_travel_ot50_setting">
+              <field name="nolte_product_travel_ot50_id" string="Fahrzeit 50% Überstunden (über 10h)"/>
+            </setting>
+
+            <setting id="nolte_product_km_setting">
+              <field name="nolte_product_km_id" string="Kilometerpauschale"/>
+            </setting>
+
+            <setting id="nolte_product_overnight_setting">
+              <field name="nolte_product_overnight_id" string="Übernachtung"/>
+            </setting>
+
+            <setting id="nolte_product_allowance_setting" >
+              <field name="nolte_product_allowance_id" string="Auslöse pro Tag"/>
+            </setting>
+
+          </block>
+
+        </xpath>
+
+      </field>
+    </record>
+
+  </data>
+</odoo>
