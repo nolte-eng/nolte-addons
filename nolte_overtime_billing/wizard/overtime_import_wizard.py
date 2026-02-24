@@ -159,23 +159,60 @@ class NolteOvertimeImportWizard(models.TransientModel):
         return prods
 
     def _read_kv_csv(self, text: str):
-        reader = csv.reader(io.StringIO(text), delimiter=",", quotechar='"')
+        """Robust KV CSV parser.
+
+        Expected format per line: key,value
+        Some exports/users accidentally include hard line breaks inside the value
+        without quoting. The stdlib csv module raises:
+            _csv.Error: new-line character seen in unquoted field
+        To keep the import resilient (esp. on Odoo.sh / production), we parse
+        line-by-line and treat lines without a comma as a continuation of the
+        previous value.
+        """
+        text = (text or "").replace("\r\n", "\n").replace("\r", "\n")
         meta = {}
         activities = {}
-        for row in reader:
-            if not row or len(row) < 2:
+
+        last_target = None  # tuple (container, key) where container is dict to update
+        last_act = None     # tuple (idx, field) when last_target is activities
+
+        for raw_line in text.split("\n"):
+            line = (raw_line or "").strip()
+            if not line:
                 continue
-            key = (row[0] or "").strip()
-            val = (row[1] or "").strip()
-            if not key:
-                continue
-            m = re.match(r"taetigkeit(\d+)\.(.+)", key)
-            if m:
-                idx = int(m.group(1))
-                field = m.group(2)
-                activities.setdefault(idx, {})[field] = val
+
+            if "," in line:
+                key, val = line.split(",", 1)
+                key = (key or "").strip()
+                val = (val or "").strip()
+                if not key:
+                    continue
+
+                m = re.match(r"taetigkeit(\d+)\.(.+)", key)
+                if m:
+                    idx = int(m.group(1))
+                    field = m.group(2)
+                    activities.setdefault(idx, {})[field] = val
+                    last_target = ("activities", idx)
+                    last_act = (idx, field)
+                else:
+                    meta[key] = val
+                    last_target = ("meta", key)
+                    last_act = None
             else:
-                meta[key] = val
+                # continuation line: append to previous value if any
+                if not last_target:
+                    continue
+                if last_target[0] == "meta":
+                    k = last_target[1]
+                    meta[k] = (meta.get(k) or "") + "\n" + line
+                else:
+                    if not last_act:
+                        continue
+                    idx, field = last_act
+                    activities.setdefault(idx, {})
+                    activities[idx][field] = (activities[idx].get(field) or "") + "\n" + line
+
         return meta, activities
 
     def _partner_from_meta(self, meta):
