@@ -84,3 +84,16 @@ class MaintenanceEquipment(models.Model):
         self.ensure_one()
         self._ensure_product_and_bom()
         return self.env.ref("nolte_machine_spareparts.action_report_spare_parts_catalog").report_action(self)
+
+    def action_open_spareparts_quote_wizard(self):
+        self.ensure_one()
+        if not self.partner_id:
+            raise UserError(_("Bitte zuerst am Equipment einen Kunden setzen."))
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Angebot aus Ersatzteilen"),
+            "res_model": "nolte.spareparts.quotation.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_equipment_id": self.id},
+        }

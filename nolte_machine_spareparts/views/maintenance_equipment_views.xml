@@ -8,7 +8,7 @@
             <xpath expr="//field[@name='category_id']" position="after">
                 <field name="partner_id"/>
                 <field name="product_id"/>
-                <field name="bom_id" readonly="1" invisible="1"/>
+<field name="bom_id" readonly="1" invisible="1"/>
             </xpath>
 
             <xpath expr="//div[contains(@class,'oe_button_box')]" position="inside">
@@ -29,8 +29,18 @@
                     <div class="o_stat_info">
                         <span class="o_stat_text">PDF Katalog</span>
                     </div>
-                </button>
-            </xpath>
+                
+        </button>
+        <button name="action_open_spareparts_quote_wizard"
+                type="object"
+                class="oe_stat_button"
+                icon="fa-file-text-o"
+                invisible="not product_id">
+            <div class="o_stat_info">
+                <span class="o_stat_text">Angebot</span>
+            </div>
+        </button>
+</xpath>
         </field>
     </record>
 
@@ -40,11 +50,46 @@
         <field name="arch" type="xml">
             <list string="Ersatzteile" create="false" delete="false" edit="false">
                 <field name="product_id"/>
-                <field name="product_qty" string="Menge"/>
+                <field name="qty_available" string="Bestand"/>
+<field name="product_qty" string="Menge"/>
                 <field name="product_uom_id" string="ME"/>
                 <field name="bom_id" invisible="1"/>
             </list>
         </field>
     </record>
 
+<!-- Wizard: Angebot aus Ersatzteilen -->
+<record id="view_nolte_spareparts_quotation_wizard_form" model="ir.ui.view">
+    <field name="name">nolte.spareparts.quotation.wizard.form</field>
+    <field name="model">nolte.spareparts.quotation.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Angebot aus Ersatzteilen">
+            <group>
+                <field name="equipment_id" readonly="1"/>
+                <field name="partner_id" readonly="1"/>
+            </group>
+
+            <group>
+                <field name="target"/>
+                <field name="existing_order_id" invisible="target != 'existing'"/>
+                <field name="merge_same_product"/>
+            </group>
+
+            <separator string="Positionen"/>
+            <field name="line_ids">
+                <list editable="bottom">
+                    <field name="selected"/>
+                    <field name="product_id"/>
+<field name="quantity"/>
+                    <field name="product_uom_id"/>
+                </list>
+            </field>
+
+            <footer>
+                <button string="Abbrechen" class="btn-secondary" special="cancel"/>
+                <button string="Angebot erstellen" class="btn-primary" type="object" name="action_create_or_update_quotation"/>
+            </footer>
+        </form>
+    </field>
+</record>
 </odoo>
