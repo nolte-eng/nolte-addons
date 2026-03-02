@@ -68,6 +68,10 @@ class MaintenanceEquipment(models.Model):
             "name": _("Ersatzteile"),
             "res_model": "mrp.bom.line",
             "view_mode": "list,form",
+            "views": [
+                (self.env.ref("nolte_machine_spareparts.view_mrp_bom_line_list_nolte_machine_spareparts").id, "list"),
+                (False, "form"),
+            ],
             "target": "current",
             "domain": [("bom_id", "=", self.bom_id.id)],
             "context": {
