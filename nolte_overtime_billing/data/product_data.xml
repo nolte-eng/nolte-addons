@@ -6,7 +6,6 @@
     <field name="purchase_ok">0</field>
     <field name="invoice_policy">order</field>
     <field name="uom_id" ref="uom.product_uom_unit"/>
-    <field name="uom_po_id" ref="uom.product_uom_unit"/>
 <field name="list_price">0.0</field>
   </record>
 
@@ -17,7 +16,6 @@
     <field name="purchase_ok">0</field>
     <field name="invoice_policy">order</field>
     <field name="uom_id" ref="uom.product_uom_unit"/>
-    <field name="uom_po_id" ref="uom.product_uom_unit"/>
 <field name="list_price">0.0</field>
   </record>
 </odoo>
