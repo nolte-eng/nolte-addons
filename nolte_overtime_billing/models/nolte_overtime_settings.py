@@ -26,6 +26,7 @@ class NolteOvertimeSettings(models.TransientModel):
     # Extras
     product_km_id = fields.Many2one("product.product", string="Kilometerpauschale")
     product_overnight_id = fields.Many2one("product.product", string="Übernachtungspauschale")
+    product_allowance_id = fields.Many2one("product.product", string="Auslöse / pro Tag")
 
     @api.model
     def default_get(self, fields_list):
@@ -49,6 +50,7 @@ class NolteOvertimeSettings(models.TransientModel):
             "product_travel_ot50_id": "nolte_overtime_billing.product_travel_ot50_id",
             "product_km_id": "nolte_overtime_billing.product_km_id",
             "product_overnight_id": "nolte_overtime_billing.product_overnight_id",
+            "product_allowance_id": "nolte_overtime_billing.product_allowance_id",
         }
 
         for field_name, key in mapping.items():
@@ -71,5 +73,6 @@ class NolteOvertimeSettings(models.TransientModel):
         _set("nolte_overtime_billing.product_travel_ot50_id", self.product_travel_ot50_id)
         _set("nolte_overtime_billing.product_km_id", self.product_km_id)
         _set("nolte_overtime_billing.product_overnight_id", self.product_overnight_id)
+        _set("nolte_overtime_billing.product_allowance_id", self.product_allowance_id)
 
         return {"type": "ir.actions.act_window_close"}

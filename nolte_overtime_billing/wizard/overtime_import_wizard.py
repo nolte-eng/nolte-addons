@@ -1,14 +1,13 @@
 import base64
 import csv
 import io
+import logging
 import re
 from datetime import datetime, timedelta
-import logging
 
-from odoo import fields, models, _
+from odoo import api, fields, models, _
 
 _logger = logging.getLogger(__name__)
-
 from odoo.exceptions import UserError
 
 
@@ -128,11 +127,96 @@ class NolteOvertimeImportWizard(models.TransientModel):
     csv_file = fields.Binary(string="CSV-Datei", required=True)
     csv_filename = fields.Char(string="Dateiname")
 
-    order_id = fields.Many2one("sale.order", string="Verkaufsauftrag (optional)")
+    import_target = fields.Selection([
+        ("new", "Neuen Verkaufsauftrag erstellen"),
+        ("existing", "In bestehenden Verkaufsauftrag importieren"),
+    ], string="Importziel", default="new", required=True)
+    order_id = fields.Many2one(
+        "sale.order",
+        string="Bestehender Verkaufsauftrag",
+        domain="[('state', 'in', ['draft', 'sent'])]",
+    )
+    partner_id = fields.Many2one("res.partner", string="Kunde")
+    detected_partner_name = fields.Char(string="Erkannter Kunde", readonly=True)
+    create_partner_if_missing = fields.Boolean(string="Partner automatisch neu anlegen, wenn nicht gefunden", default=False)
+    new_partner_name = fields.Char(string="Neuer Partnername")
+    new_partner_street = fields.Char(string="Straße")
+    new_partner_zip = fields.Char(string="PLZ")
+    new_partner_city = fields.Char(string="Ort")
+    new_partner_country_id = fields.Many2one("res.country", string="Land")
+
+
+    @api.onchange("order_id")
+    def _onchange_order_id(self):
+        for wizard in self:
+            if wizard.order_id:
+                wizard.partner_id = wizard.order_id.partner_id
+
+
+
+    def _extract_partner_data_from_meta(self, meta):
+        addr = (meta.get("rechnungsadresse") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+        lines = [line.strip() for line in addr.split("\n") if line.strip()]
+        vals = {
+            "name": lines[0] if lines else "",
+            "street": False,
+            "zip": False,
+            "city": False,
+            "country_id": False,
+        }
+        if len(lines) >= 2:
+            vals["street"] = lines[1]
+        if len(lines) >= 3:
+            m = re.match(r"^(?P<zip>[A-Za-z0-9\- ]{3,12})\s+(?P<city>.+)$", lines[2])
+            if m:
+                vals["zip"] = m.group("zip").strip()
+                vals["city"] = m.group("city").strip()
+            else:
+                vals["city"] = lines[2]
+        if len(lines) >= 4:
+            country_line = lines[3]
+            country = self.env["res.country"].search(["|", ("name", "=ilike", country_line), ("code", "=ilike", country_line)], limit=1)
+            if country:
+                vals["country_id"] = country.id
+        return vals
+
+    @api.onchange("csv_file")
+    def _onchange_csv_file_partner_preview(self):
+        for wizard in self:
+            wizard.detected_partner_name = False
+            wizard.new_partner_name = False
+            wizard.new_partner_street = False
+            wizard.new_partner_zip = False
+            wizard.new_partner_city = False
+            wizard.new_partner_country_id = False
+            if not wizard.csv_file:
+                continue
+            try:
+                raw = base64.b64decode(wizard.csv_file)
+                text = raw.decode("utf-8-sig", errors="replace")
+                meta, _activities = wizard._read_kv_csv(text)
+                vals = wizard._extract_partner_data_from_meta(meta)
+                wizard.detected_partner_name = vals.get("name") or False
+                wizard.new_partner_name = vals.get("name") or False
+                wizard.new_partner_street = vals.get("street") or False
+                wizard.new_partner_zip = vals.get("zip") or False
+                wizard.new_partner_city = vals.get("city") or False
+                wizard.new_partner_country_id = vals.get("country_id") or False
+                if vals.get("name") and not wizard.partner_id:
+                    partner = wizard.env["res.partner"].search([("name", "ilike", vals["name"])], limit=1)
+                    if partner:
+                        wizard.partner_id = partner
+            except Exception:
+                _logger.exception("Partner-Vorschau aus CSV konnte nicht gelesen werden.")
 
     def _cfg_pid(self, key: str):
         v = self.env["ir.config_parameter"].sudo().get_param(key)
-        return int(v) if v else False
+        if not v:
+            return False
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return False
 
     def _get_products(self):
         keys = {
@@ -179,13 +263,42 @@ class NolteOvertimeImportWizard(models.TransientModel):
         return meta, activities
 
     def _partner_from_meta(self, meta):
-        addr = (meta.get("rechnungsadresse") or "").replace("\r\n", "\n").strip()
-        name = addr.split("\n")[0].strip() if addr else ""
+        vals = self._extract_partner_data_from_meta(meta)
+        name = (vals.get("name") or "").strip()
         if not name:
             raise UserError(_("Kunde konnte nicht ermittelt werden (rechnungsadresse fehlt)."))
         partner = self.env["res.partner"].search([("name", "ilike", name)], limit=1)
         if not partner:
             raise UserError(_("Kunde '%s' nicht gefunden. Bitte Partner in Odoo anlegen oder Name anpassen.") % name)
+        return partner
+
+    def _resolve_partner(self, meta):
+        self.ensure_one()
+        if self.partner_id:
+            return self.partner_id
+
+        vals = self._extract_partner_data_from_meta(meta)
+        name = (vals.get("name") or self.new_partner_name or "").strip()
+        if not name:
+            raise UserError(_("Kunde konnte nicht ermittelt werden (rechnungsadresse fehlt)."))
+
+        partner = self.env["res.partner"].search([("name", "ilike", name)], limit=1)
+        if partner:
+            return partner
+
+        if not self.create_partner_if_missing:
+            raise UserError(_("Kunde '%s' nicht gefunden. Bitte Partner in Odoo anlegen, im Assistenten auswählen oder automatische Neuanlage aktivieren.") % name)
+
+        create_vals = {
+            "name": name,
+            "street": self.new_partner_street or vals.get("street") or False,
+            "zip": self.new_partner_zip or vals.get("zip") or False,
+            "city": self.new_partner_city or vals.get("city") or False,
+            "country_id": self.new_partner_country_id.id or vals.get("country_id") or False,
+            "customer_rank": 1,
+        }
+        partner = self.env["res.partner"].create(create_vals)
+        self.partner_id = partner
         return partner
 
     def _build_segments(self, a):
@@ -299,18 +412,32 @@ class NolteOvertimeImportWizard(models.TransientModel):
         if not activities:
             raise UserError(_("Keine 'taetigkeitN.*' Einträge in der CSV gefunden."))
 
-        partner = self._partner_from_meta(meta)
+        partner = self._resolve_partner(meta)
         origin = meta.get("berichtNr") or self.csv_filename or _("Überstunden-Import")
         order = False
-        if self.env.context.get('active_model') == 'sale.order' and self.env.context.get('active_id'):
-            order = self.env['sale.order'].browse(self.env.context['active_id'])
-        if order:
+
+        if self.import_target == "existing":
+            if not self.order_id:
+                raise UserError(_("Bitte einen bestehenden Verkaufsauftrag auswählen."))
+            order = self.order_id
+            if order.state not in ("draft", "sent"):
+                raise UserError(_("Es kann nur in einen Verkaufsauftrag im Status Angebot oder Angebot gesendet importiert werden."))
+            if order.partner_id and order.partner_id != partner:
+                raise UserError(_("Der ausgewählte Verkaufsauftrag gehört zu '%s', die CSV jedoch zu '%s'. Bitte passenden Auftrag wählen oder Kunden-Auswahl anpassen.") % (order.partner_id.display_name, partner.display_name))
             if not order.partner_id:
                 order.partner_id = partner.id
             if not order.origin:
                 order.origin = origin
         else:
-            order = self.env['sale.order'].create({'partner_id': partner.id, 'origin': origin})
+            if self.env.context.get('active_model') == 'sale.order' and self.env.context.get('active_id'):
+                order = self.env['sale.order'].browse(self.env.context['active_id'])
+            if order:
+                if not order.partner_id:
+                    order.partner_id = partner.id
+                if not order.origin:
+                    order.origin = origin
+            else:
+                order = self.env['sale.order'].create({'partner_id': partner.id, 'origin': origin})
 
         # Ensure pricelist is set so sales prices follow the customer's pricing rules
         if not order.pricelist_id and order.partner_id and order.partner_id.property_product_pricelist:
@@ -372,77 +499,56 @@ class NolteOvertimeImportWizard(models.TransientModel):
             extra = f"\nÜbernachtungen (gesamt): {totals['overnight']:.0f}" if totals["overnight"] else ""
             order.note = f"CSV Import: {origin}\n" + "\n".join(detail_lines) + extra
 
-        def _pricelist_price(prod, q):
-            """Pricelist price getter (robust).
-            Goal: Use customer's pricelist, but NEVER crash the import.
-            If anything in pricelist/currency conversion fails, we fall back to an EUR list price.
-            """
-            pl = order.pricelist_id
-            partner = order.partner_id
-            date = order.date_order or fields.Date.context_today(self)
-            uom = getattr(prod, "uom_id", False)
-
-            # Determine EUR currency record (prefer company currency if it is EUR)
-            eur = None
-            try:
-                if order.company_id.currency_id and order.company_id.currency_id.name == "EUR":
-                    eur = order.company_id.currency_id
-                else:
-                    eur = self.env["res.currency"].search([("name", "=", "EUR")], limit=1)
-            except Exception:
-                eur = None
-
-            try:
-                # Force context to EUR when possible (prevents random conversions where configuration is broken)
-                if eur:
-                    pl_ctx = pl.with_context(to_currency=eur.id, currency_id=eur.id, date=str(date))
-                else:
-                    pl_ctx = pl
-
-                # Newer APIs (signature differs between versions)
-                if hasattr(pl_ctx, "_get_product_price"):
-                    try:
-                        return pl_ctx._get_product_price(prod, q, partner, date=date, uom_id=uom.id if uom else False)
-                    except TypeError:
-                        return pl_ctx._get_product_price(prod, q, partner)
-
-                if hasattr(pl_ctx, "get_product_price"):
-                    try:
-                        return pl_ctx.get_product_price(prod, q, partner, date=date, uom_id=uom.id if uom else False)
-                    except TypeError:
-                        return pl_ctx.get_product_price(prod, q, partner)
-
-                # Older APIs
-                if hasattr(pl_ctx, "_get_product_price_rule"):
-                    try:
-                        res = pl_ctx._get_product_price_rule(prod, q, partner, date=date, uom_id=uom.id if uom else False)
-                    except TypeError:
-                        res = pl_ctx._get_product_price_rule(prod, q, partner)
-                    if isinstance(res, (list, tuple)) and res:
-                        return res[0]
-
-            except Exception as e:
-                # Don't ever let pricelist/currency issues kill the import
-                try:
-                    _logger.exception(
-                        "Pricelist price computation failed (forcing EUR fallback). pricelist=%s product=%s qty=%s date=%s error=%s",
-                        pl.display_name if pl else pl, prod.display_name if prod else prod, q, date, e
-                    )
-                except Exception:
-                    pass
-
-            # Safe fallback: use list price (assumed company currency; if EUR exists, take EUR context)
-            try:
-                if eur:
-                    return prod.with_company(order.company_id).with_context(currency_id=eur.id).lst_price
-                return prod.with_company(order.company_id).lst_price
-            except Exception:
-                return prod.lst_price
-
         def add_line(product, qty, label, seq):
             qty = float(qty or 0.0)
             if qty <= 1e-6:
                 return
+
+            def _pricelist_price(prod, q):
+                """Pricelist price getter.
+                - Uses the order's pricelist
+                - Tries multiple API signatures (Odoo version differences)
+                - Never crashes the import: falls back to product list price if pricelist/currency setup is incomplete
+                """
+                pl = order.pricelist_id
+                partner = order.partner_id
+                date = order.date_order or fields.Date.context_today(self)
+                uom = getattr(prod, "uom_id", False)
+
+                try:
+                    # Newer APIs (signature differs between versions)
+                    if hasattr(pl, "_get_product_price"):
+                        try:
+                            return pl._get_product_price(prod, q, partner, date=date, uom_id=uom.id if uom else False)
+                        except TypeError:
+                            # older signature without keywords
+                            return pl._get_product_price(prod, q, partner)
+
+                    if hasattr(pl, "get_product_price"):
+                        try:
+                            return pl.get_product_price(prod, q, partner, date=date, uom_id=uom.id if uom else False)
+                        except TypeError:
+                            return pl.get_product_price(prod, q, partner)
+
+                    # Older APIs
+                    if hasattr(pl, "_get_product_price_rule"):
+                        try:
+                            res = pl._get_product_price_rule(prod, q, partner, date=date, uom_id=uom.id if uom else False)
+                        except TypeError:
+                            res = pl._get_product_price_rule(prod, q, partner)
+                        # usually returns (price, rule_id)
+                        if isinstance(res, (list, tuple)) and res:
+                            return res[0]
+
+                except Exception as e:
+                    _logger.exception("Pricelist price computation failed (pricelist=%s, product=%s, qty=%s). Falling back to list price. Error: %s",
+                                      pl.display_name if pl else pl, prod.display_name if prod else prod, q, e)
+
+                # Safe fallback: product list price (company-aware)
+                try:
+                    return prod.with_company(order.company_id).lst_price
+                except Exception:
+                    return prod.lst_price
 
             # Create the line via onchange so Odoo applies the customer's pricelist (and taxes, UoM logic, etc.)
             line = self.env["sale.order.line"].new({
@@ -458,17 +564,9 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 line.product_id_change()
             else:
                 # Fallback: at least apply pricelist price
-                try:
-                    line.price_unit = _pricelist_price(product, qty)
-                except Exception as e:
-                    _logger.exception(
-                        "Pricelist price failed, fallback to list price (product=%s, qty=%s): %s",
-                        product.display_name if product else product, qty, e
-                    )
-                    line.price_unit = product.with_company(order.company_id).lst_price if order.company_id else product.lst_price
+                line.price_unit = _pricelist_price(product, qty)
 
             line.product_uom_qty = qty
-
             # qty can affect pricelist rules (quantity breaks)
             if hasattr(line, "_onchange_product_uom_qty"):
                 line._onchange_product_uom_qty()
@@ -476,14 +574,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 line.product_uom_qty_change()
             elif not getattr(line, "price_unit", None):
                 # If no qty onchange exists, ensure price respects quantity breaks
-                try:
-                    line.price_unit = _pricelist_price(product, qty)
-                except Exception as e:
-                    _logger.exception(
-                        "Pricelist price failed, fallback to list price (product=%s, qty=%s): %s",
-                        product.display_name if product else product, qty, e
-                    )
-                    line.price_unit = product.with_company(order.company_id).lst_price if order.company_id else product.lst_price
+                line.price_unit = _pricelist_price(product, qty)
 
             line.name = label
             line.sequence = seq

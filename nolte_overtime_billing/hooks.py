@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from odoo import SUPERUSER_ID, api
 
 def _ensure_product_template_base_unit_count_default_cr(cr):
     """Some local schemas add a NOT NULL column `product_template.base_unit_count`
@@ -21,13 +22,16 @@ def _ensure_product_template_base_unit_count_default_cr(cr):
 
 
 def pre_init_hook(cr):
-    """Pre-init hook: runs BEFORE module data is loaded."""
+    """Pre-init hook: accepts env (Odoo 18) or cr (older signatures)."""
+    cr = getattr(cr, "cr", cr)
     _ensure_product_template_base_unit_count_default_cr(cr)
 
 
-def post_init_hook(env):
-    """Post-init hook (Odoo 18): set default products if not configured yet."""
-    _ensure_product_template_base_unit_count_default_cr(env.cr)
+def post_init_hook(cr, registry=None):
+    """Post-init hook: accepts env (Odoo 18) or (cr, registry)."""
+    env = cr if hasattr(cr, "cr") else api.Environment(cr, SUPERUSER_ID, {})
+    cr = env.cr
+    _ensure_product_template_base_unit_count_default_cr(cr)
 
     ICP = env["ir.config_parameter"].sudo()
     key_overnight = "nolte_overtime_billing.product_overnight_id"
