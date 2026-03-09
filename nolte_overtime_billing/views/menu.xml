@@ -1,7 +1,18 @@
 <odoo>
+  <menuitem id="menu_nolte_overtime_root"
+            name="Nolte Überstunden"
+            parent="sale.sale_menu_root"
+            sequence="89"/>
+
   <menuitem id="menu_nolte_overtime_import"
             name="Stundenbericht CSV Import"
-            parent="sale.sale_menu_root"
+            parent="menu_nolte_overtime_root"
             action="action_nolte_overtime_import_wizard"
-            sequence="90"/>
+            sequence="10"/>
+
+  <menuitem id="menu_nolte_overtime_settings"
+            name="Einstellungen"
+            parent="menu_nolte_overtime_root"
+            action="action_nolte_overtime_settings"
+            sequence="20"/>
 </odoo>
