@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140" role="img" aria-labelledby="t d">
+  <title id="t">L-Form</title>
+  <desc id="d">Technische Skizze L-Form</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+      <path d="M0,0 L8,4 L0,8 z" fill="#d8232a"/>
+    </marker>
+    <style>
+      .outline { fill: none; stroke: #1f2937; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .fold { fill: none; stroke: #334155; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+      .dim { fill: none; stroke: #d8232a; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; marker-start: url(#arrow); marker-end: url(#arrow); }
+      .ext { fill: none; stroke: #94a3b8; stroke-width: 1.6; stroke-dasharray: 4 4; }
+      .txt { fill: #d8232a; font: 700 12px Arial, Helvetica, sans-serif; }
+      .base { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.2; }
+    </style>
+  </defs>
+  <rect class="base" x="1" y="1" width="218" height="138" rx="14"/>
+
+  <path class="outline" d="M58 30 V100 H156"/>
+  <path class="fold" d="M58 52 l14 10 l-14 10 M72 100 l10 -18 l10 18 l10 -18 l10 18 l10 -18 l10 18 l10 -18 l10 18"/>
+  <line class="dim" x1="58" y1="18" x2="128" y2="18"/>
+  <text class="txt" x="93" y="13" text-anchor="middle">A</text>
+  <line class="dim" x1="42" y1="30" x2="42" y2="100"/>
+  <text class="txt" x="35" y="67">B</text>
+  <line class="dim" x1="170" y1="42" x2="170" y2="100"/>
+  <text class="txt" x="177" y="74">C</text>
+
+</svg>

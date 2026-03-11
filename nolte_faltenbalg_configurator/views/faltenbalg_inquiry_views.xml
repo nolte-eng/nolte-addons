@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_faltenbalg_inquiry_list" model="ir.ui.view">
+        <field name="name">faltenbalg.inquiry.list</field>
+        <field name="model">faltenbalg.inquiry</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="create_date"/>
+                <field name="contact_name"/>
+                <field name="company_name"/>
+                <field name="email"/>
+                <field name="shape"/>
+                <field name="axis"/>
+                <field name="description"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_faltenbalg_inquiry_form" model="ir.ui.view">
+        <field name="name">faltenbalg.inquiry.form</field>
+        <field name="model">faltenbalg.inquiry</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_in_progress" type="object" string="In Bearbeitung" class="oe_highlight" invisible="state != 'new'"/>
+                    <button name="action_mark_quoted" type="object" string="Angebot erstellt" invisible="state not in ('new', 'in_progress')"/>
+                    <button name="action_mark_done" type="object" string="Erledigt" invisible="state == 'done'"/>
+                    <button name="action_mark_cancel" type="object" string="Abbrechen" invisible="state == 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,in_progress,quoted,done,cancel"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="product_tmpl_id"/>
+                            <field name="partner_id"/>
+                            <field name="lead_id" invisible="not lead_id"/>
+                        </group>
+                        <group>
+                            <field name="company_name"/>
+                            <field name="contact_name"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Konfiguration">
+                            <group>
+                                <group>
+                                    <field name="shape"/>
+                                    <field name="axis"/>
+                                    <field name="installation_position"/>
+                                    <field name="width_mm"/>
+                                    <field name="depth_mm"/>
+                                    <field name="length_mm"/>
+                                    <field name="height_mm"/>
+                                    <field name="quantity"/>
+                                    <field name="material"/>
+                                </group>
+                                <group>
+                                    <field name="application"/>
+                                    <field name="source_url"/>
+                                    <field name="description" readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="note"/>
+                        </page>
+                        <page string="Anhänge">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_faltenbalg_inquiry_search" model="ir.ui.view">
+        <field name="name">faltenbalg.inquiry.search</field>
+        <field name="model">faltenbalg.inquiry</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="contact_name"/>
+                <field name="company_name"/>
+                <field name="email"/>
+                <field name="application"/>
+                <filter string="Neu" name="filter_new" domain="[('state','=','new')]"/>
+                <filter string="In Bearbeitung" name="filter_progress" domain="[('state','=','in_progress')]"/>
+                <filter string="Erledigt" name="filter_done" domain="[('state','=','done')]"/>
+                <group expand="0" string="Gruppieren nach">
+                    <filter string="Status" name="group_state" context="{'group_by':'state'}"/>
+                    <filter string="Produkt" name="group_product" context="{'group_by':'product_tmpl_id'}"/>
+                    <filter string="Bauform" name="group_shape" context="{'group_by':'shape'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_faltenbalg_inquiry" model="ir.actions.act_window">
+        <field name="name">Faltenbalg-Anfragen</field>
+        <field name="res_model">faltenbalg.inquiry</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_faltenbalg_inquiry_search"/>
+    </record>
+
+    <menuitem id="menu_faltenbalg_inquiry_root" name="Faltenbalg" parent="website.menu_website_configuration" sequence="90"/>
+    <menuitem id="menu_faltenbalg_inquiries" name="Anfragen" parent="menu_faltenbalg_inquiry_root" action="action_faltenbalg_inquiry" sequence="10"/>
+</odoo>

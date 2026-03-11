@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_addition_button" inherit_id="website_sale.product" name="Faltenbalg Button auf Produktseite">
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="inside">
+            <t t-if="product and product.is_faltenbalg_configurator">
+                <a t-att-href="'/shop/faltenbalg/configurator/%s' % product.id" class="btn btn-outline-primary ms-2 mt-2 mt-lg-0">Faltenbalg konfigurieren</a>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="faltenbalg_configurator_page" name="Faltenbalg Konfigurator">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure oe_empty">
+                <section class="pt64 pb64 fb-wizard-page">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-xl-10">
+                                <div class="text-center mb-4 mb-lg-5">
+                                    <span class="fb-eyebrow">Schritt für Schritt zur Anfrage</span>
+                                    <h1 class="mt-2">Faltenbalg-Konfigurator</h1>
+                                    <p class="lead text-muted mb-0">Technische Skizzen, klare Bauformen und eine geführte Abfrage statt Preisangabe.</p>
+                                </div>
+
+                                <div class="fb-hero card border-0 shadow-sm mb-4">
+                                    <div class="card-body p-4 p-lg-5">
+                                        <div class="row g-4 align-items-center">
+                                            <div class="col-lg-8">
+                                                <h2 class="h4 mb-3">So funktioniert es</h2>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>1.</strong><span>Bauform wählen</span></div></div>
+                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>2.</strong><span>Passende Maße sehen</span></div></div>
+                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>3.</strong><span>Einsatz und Kontakt senden</span></div></div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="fb-side-note">
+                                                    <div class="small text-uppercase text-muted mb-2">Für den Vertrieb</div>
+                                                    <div class="fw-semibold" t-if="product">Produktbezug: <span t-out="product.name"/></div>
+                                                    <div class="text-muted" t-if="not product">Kann auch als allgemeine Faltenbalg-Anfrage genutzt werden.</div>
+                                                    <div class="text-muted small mt-2">Bei Sonderformen am besten Skizze oder Foto hochladen.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <form action="/faltenbalg-konfigurator/submit" method="post" enctype="multipart/form-data" class="fb-wizard card border-0 shadow-sm" id="fbWizardForm" t-att-data-shape-ui="shape_ui_json">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="product_tmpl_id" t-att-value="product.id if product else ''"/>
+                                    <div class="card-body p-4 p-lg-5">
+                                        <div class="fb-progress mb-4"><div class="fb-progress-bar" id="fbProgressBar" style="width: 25%;"></div></div>
+                                        <div class="fb-steps-nav mb-4 mb-lg-5">
+                                            <button type="button" class="fb-step-pill is-active" data-step-target="1">1. Bauform</button>
+                                            <button type="button" class="fb-step-pill" data-step-target="2">2. Maße</button>
+                                            <button type="button" class="fb-step-pill" data-step-target="3">3. Einsatz</button>
+                                            <button type="button" class="fb-step-pill" data-step-target="4">4. Kontakt</button>
+                                        </div>
+
+                                        <div class="fb-step is-active" data-step="1">
+                                            <div class="fb-step-head mb-4">
+                                                <h2 class="h3 mb-2">Welche Bauform wird benötigt?</h2>
+                                                <p class="text-muted mb-0">Jede Form hat eine kleine technische Skizze. Nach der Auswahl passt sich die Maßmaske automatisch an.</p>
+                                            </div>
+                                            <div class="row g-3 fb-shape-grid">
+                                                <t t-foreach="shape_options" t-as="shape">
+                                                    <div class="col-sm-6 col-lg-4">
+                                                        <label class="fb-choice-card" t-att-data-shape="shape[0]">
+                                                            <input type="radio" name="shape" t-att-value="shape[0]" t-att-checked="'checked' if shape[0] == 'straight' else None"/>
+                                                            <span class="fb-choice-icon fb-choice-icon--svg"><img t-att-src="'/nolte_faltenbalg_configurator/static/src/img/%s.svg' % ('roof' if shape[0] == 'roof' else shape[0])" t-att-alt="shape[1]"/></span>
+                                                            <span class="fb-choice-title" t-out="shape[1]"/>
+                                                            <span class="fb-choice-text" t-attf-data-shape-description="#{shape[0]}"></span>
+                                                        </label>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+
+                                        <div class="fb-step" data-step="2">
+                                            <div class="fb-step-head mb-4">
+                                                <h2 class="h3 mb-2">Maße eingeben</h2>
+                                                <p class="text-muted mb-0" id="fbMeasureHint">Wähle oben eine Bauform, damit die passende Maßhilfe angezeigt wird.</p>
+                                            </div>
+                                            <div class="fb-measure-guide mb-4">
+                                                <div class="row g-3 align-items-center">
+                                                    <div class="col-lg-4">
+                                                        <div class="fb-guide-card">
+                                                            <div class="fb-guide-preview"><img id="fbMeasurePreview" src="/nolte_faltenbalg_configurator/static/src/img/straight.svg" alt="Vorschau"/></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-8">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">A</span><div><strong id="fbLabelA">Breite (A)</strong><div class="text-muted small">erstes Hauptmaß</div></div></div></div>
+                                                            <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">B</span><div><strong id="fbLabelB">Tiefe (B)</strong><div class="text-muted small">zweites Hauptmaß</div></div></div></div>
+                                                            <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">C</span><div><strong id="fbLabelC">Länge (C)</strong><div class="text-muted small">Auszug / Gesamtlänge</div></div></div></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label" id="fbInputLabelA" for="fbWidth">Breite (A)</label>
+                                                    <input id="fbWidth" type="number" name="width_mm" class="form-control form-control-lg" min="1" step="0.01" placeholder="z. B. 500" required="required"/>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label" id="fbInputLabelB" for="fbDepth">Tiefe (B)</label>
+                                                    <input id="fbDepth" type="number" name="depth_mm" class="form-control form-control-lg" min="1" step="0.01" placeholder="z. B. 300" required="required"/>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label" id="fbInputLabelC" for="fbLength">Länge (C)</label>
+                                                    <input id="fbLength" type="number" name="length_mm" class="form-control form-control-lg" min="1" step="0.01" placeholder="z. B. 1000" required="required"/>
+                                                </div>
+                                                <div class="col-md-4 d-none" id="fbHeightWrap">
+                                                    <label class="form-label" id="fbInputLabelD" for="fbHeight">Höhe (D)</label>
+                                                    <input id="fbHeight" type="number" name="height_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="optional oder zusätzliches Maß"/>
+                                                </div>
+                                            </div>
+                                            <div class="fb-tip mt-4">
+                                                <strong>Tipp:</strong> Falls die Form komplexer ist, reichen die Hauptmaße A, B und C für den Start. Zusätzliche Details kannst du später im Hinweisfeld beschreiben.
+                                            </div>
+                                        </div>
+
+                                        <div class="fb-step" data-step="3">
+                                            <div class="fb-step-head mb-4">
+                                                <h2 class="h3 mb-2">Einsatz, Material und Upload</h2>
+                                                <p class="text-muted mb-0">Hier kommen die Infos rein, die euren Vertrieb später für die Einordnung und Angebotserstellung braucht.</p>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Achse / Einsatzbereich</label>
+                                                    <select name="axis" class="form-select form-select-lg">
+                                                        <t t-foreach="axis_options" t-as="opt"><option t-att-value="opt[0]" t-out="opt[1]"/></t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Einbaulage</label>
+                                                    <select name="installation_position" class="form-select form-select-lg">
+                                                        <t t-foreach="position_options" t-as="opt"><option t-att-value="opt[0]" t-out="opt[1]"/></t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Stückzahl</label>
+                                                    <input type="number" name="quantity" class="form-control form-control-lg" min="1" step="1" value="1" required="required"/>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Material</label>
+                                                    <select name="material" class="form-select form-select-lg" required="required">
+                                                        <t t-foreach="material_options" t-as="opt"><option t-att-value="opt[0]" t-out="opt[1]"/></t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Maschine / Einsatzfall</label>
+                                                    <input type="text" name="application" class="form-control form-control-lg" placeholder="z. B. MATEC 30 HV, X-Achse, Tischabdeckung"/>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Skizze oder Foto</label>
+                                                    <input type="file" name="drawing_file" class="form-control form-control-lg" accept=".pdf,.png,.jpg,.jpeg,.webp"/>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Zusätzliche Hinweise</label>
+                                                    <textarea name="note" class="form-control" rows="4" placeholder="Späne, Kühlmittel, Endplatten, Teleskop, Befestigung, Einbausituation usw."></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="fb-step" data-step="4">
+                                            <div class="fb-step-head mb-4">
+                                                <h2 class="h3 mb-2">Kontaktdaten</h2>
+                                                <p class="text-muted mb-0">Zum Schluss nur noch die Kontaktdaten. Danach wird die Anfrage direkt im Backend und optional als CRM-Lead angelegt.</p>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-4"><label class="form-label">Firma</label><input type="text" name="company_name" class="form-control form-control-lg"/></div>
+                                                <div class="col-md-4"><label class="form-label">Ansprechpartner</label><input type="text" name="contact_name" class="form-control form-control-lg" required="required"/></div>
+                                                <div class="col-md-4"><label class="form-label">Telefon</label><input type="text" name="phone" class="form-control form-control-lg"/></div>
+                                                <div class="col-12"><label class="form-label">E-Mail</label><input type="email" name="email" class="form-control form-control-lg" required="required"/></div>
+                                            </div>
+                                            <div class="fb-summary mt-4">
+                                                <h3 class="h5 mb-3">Kurzübersicht</h3>
+                                                <ul class="mb-0">
+                                                    <li>Ausgewählte Bauform mit technischer Skizze wird mitgeschickt.</li>
+                                                    <li>Maße A, B, C und optional D werden direkt in der Anfrage gespeichert.</li>
+                                                    <li>Keine Preisangabe im Frontend, Fokus auf qualifizierte Anfrage.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-footer bg-white border-0 px-4 px-lg-5 pb-4 pb-lg-5">
+                                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                                            <div class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-lg" id="fbPrevBtn" disabled="disabled">Zurück</button><a href="/shop" class="btn btn-link btn-lg">Zum Shop</a></div>
+                                            <div class="d-flex gap-2"><button type="button" class="btn btn-primary btn-lg" id="fbNextBtn">Weiter</button><button type="submit" class="btn btn-primary btn-lg d-none" id="fbSubmitBtn">Anfrage absenden</button></div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="faltenbalg_configurator_success" name="Faltenbalg Konfigurator Erfolg">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure oe_empty">
+                <section class="pt64 pb64 fb-success-page">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8 text-center">
+                                <div class="card shadow-sm border-0">
+                                    <div class="card-body p-5">
+                                        <div class="fb-success-check mb-3">✓</div>
+                                        <h1 class="mb-3">Vielen Dank</h1>
+                                        <p class="lead">Ihre Faltenbalg-Anfrage wurde erfolgreich übermittelt.</p>
+                                        <p>Referenz: <strong t-out="inquiry.name"/></p>
+                                        <p class="text-muted" t-if="product">Produkt: <span t-out="product.name"/></p>
+                                        <div class="fb-summary text-start mx-auto mt-4">
+                                            <ul class="mb-0">
+                                                <li><strong>Bauform:</strong> <span t-out="dict(inquiry._fields['shape'].selection).get(inquiry.shape)"/></li>
+                                                <li><strong>Maße:</strong> <span t-out="'A %g | B %g | C %g%s mm' % (inquiry.width_mm, inquiry.depth_mm, inquiry.length_mm, (' | D %g' % inquiry.height_mm) if inquiry.height_mm else '')"/></li>
+                                                <li><strong>Material:</strong> <span t-out="dict(inquiry._fields['material'].selection).get(inquiry.material)"/></li>
+                                            </ul>
+                                        </div>
+                                        <div class="mt-4"><a href="/shop" class="btn btn-primary btn-lg">Zurück zum Shop</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+</odoo>

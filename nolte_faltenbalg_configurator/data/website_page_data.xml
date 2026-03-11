@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_faltenbalg_inquiry" model="ir.sequence">
+            <field name="name">Faltenbalg Anfrage</field>
+            <field name="code">faltenbalg.inquiry</field>
+            <field name="prefix">FBQ%(year)s-</field>
+            <field name="padding">4</field>
+        </record>
+    </data>
+</odoo>
