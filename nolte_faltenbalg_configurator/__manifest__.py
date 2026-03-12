@@ -1,6 +1,6 @@
 {
     "name": "Nolte Faltenbalg Konfigurator",
-    "version": "18.0.4.2.0",
+    "version": "18.0.4.6.1",
     "summary": "Schritt-für-Schritt Website-Konfigurator für Faltenbalg-Anfragen",
     "category": "Website/Website",
     "author": "OpenAI for Nolte Engineering",

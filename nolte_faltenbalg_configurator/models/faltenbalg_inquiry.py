@@ -34,7 +34,7 @@ class FaltenbalgInquiry(models.Model):
         ("box", "Kastenform"),
         ("pult", "Pultform"),
         ("roof", "Dachform"),
-        ("kastenbalg", "Kastenbalg"),
+        ("kastenbalg", "Kastenform"),
         ("special", "Sonderform"),
     ], string="Bauform", required=True, default="straight", tracking=True)
     axis = fields.Selection([
@@ -52,8 +52,15 @@ class FaltenbalgInquiry(models.Model):
     ], string="Einbaulage", default="horizontal", tracking=True)
     width_mm = fields.Float(string="Maß A / Breite (mm)", required=True, digits=(16, 2), tracking=True)
     depth_mm = fields.Float(string="Maß B / Tiefe (mm)", required=True, digits=(16, 2), tracking=True)
-    length_mm = fields.Float(string="Maß C / Länge (mm)", required=True, digits=(16, 2), tracking=True)
-    height_mm = fields.Float(string="Maß D / Höhe (mm)", digits=(16, 2), tracking=True)
+    length_mm = fields.Float(string="Gesamtlänge (mm)", required=True, digits=(16, 2), tracking=True)
+    lmin_mm = fields.Float(string="Lmin (mm)", digits=(16, 2), tracking=True)
+    hub_mm = fields.Float(string="Hub (mm)", digits=(16, 2), tracking=True)
+    fold_pitch_mm = fields.Float(string="Faltenabstand (mm)", digits=(16, 2), tracking=True)
+    fold_count = fields.Integer(string="Faltenanzahl", tracking=True)
+    height_mm = fields.Float(string="Maß D (mm)", digits=(16, 2), tracking=True)
+    extra_e_mm = fields.Float(string="Maß E (mm)", digits=(16, 2), tracking=True)
+    extra_f_mm = fields.Float(string="Maß F (mm)", digits=(16, 2), tracking=True)
+    extra_g_mm = fields.Float(string="Maß G (mm)", digits=(16, 2), tracking=True)
     quantity = fields.Integer(string="Stückzahl", default=1, required=True, tracking=True)
     material = fields.Selection([
         ("standard", "Standard"),
@@ -69,16 +76,30 @@ class FaltenbalgInquiry(models.Model):
 
     description = fields.Text(string="Zusammenfassung", compute="_compute_description", store=True)
 
-    @api.depends("shape", "axis", "installation_position", "width_mm", "depth_mm", "length_mm", "height_mm", "quantity", "material", "application")
+    @api.depends("shape", "axis", "installation_position", "width_mm", "depth_mm", "length_mm", "lmin_mm", "hub_mm", "fold_pitch_mm", "fold_count", "height_mm", "extra_e_mm", "extra_f_mm", "extra_g_mm", "quantity", "material", "application")
     def _compute_description(self):
         shape_map = dict(self._fields["shape"].selection)
         material_map = dict(self._fields["material"].selection)
         axis_map = dict(self._fields["axis"].selection)
         position_map = dict(self._fields["installation_position"].selection)
         for record in self:
-            dims = f"A:{record.width_mm:g} | B:{record.depth_mm:g} | C:{record.length_mm:g} mm"
+            dims = f"A:{record.width_mm:g} | B:{record.depth_mm:g} | C/Lmax:{record.length_mm:g} mm"
+            if record.lmin_mm:
+                dims += f" | Lmin:{record.lmin_mm:g} mm"
+            if record.hub_mm:
+                dims += f" | Hub:{record.hub_mm:g} mm"
+            if record.fold_pitch_mm:
+                dims += f" | Faltenabstand:{record.fold_pitch_mm:g} mm"
+            if record.fold_count:
+                dims += f" | Falten:{record.fold_count:d}"
             if record.height_mm:
                 dims += f" | D:{record.height_mm:g} mm"
+            if record.extra_e_mm:
+                dims += f" | E:{record.extra_e_mm:g} mm"
+            if record.extra_f_mm:
+                dims += f" | F:{record.extra_f_mm:g} mm"
+            if record.extra_g_mm:
+                dims += f" | G:{record.extra_g_mm:g} mm"
             parts = [shape_map.get(record.shape, ""), dims, f"{record.quantity} Stk.", material_map.get(record.material, "")]
             if record.axis:
                 parts.append(axis_map.get(record.axis, ""))
@@ -122,6 +143,14 @@ class FaltenbalgInquiry(models.Model):
         position_map = dict(self._fields["installation_position"].selection)
         for record in self.filtered(lambda r: not r.lead_id):
             dims = f"A: {record.width_mm:g} mm\nB: {record.depth_mm:g} mm\nC: {record.length_mm:g} mm"
+            if record.fold_pitch_mm:
+                dims += f" | Faltenabstand:{record.fold_pitch_mm:g} mm"
+            if record.fold_count:
+                dims += f" | Falten:{record.fold_count:d}"
+            if record.fold_pitch_mm:
+                dims += f"\nFaltenabstand: {record.fold_pitch_mm:g} mm"
+            if record.fold_count:
+                dims += f"\nFaltenanzahl: {record.fold_count:d}"
             if record.height_mm:
                 dims += f"\nD: {record.height_mm:g} mm"
             lead = self.env["crm.lead"].sudo().create({

@@ -1,28 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140" role="img" aria-labelledby="t d">
-  <title id="t">L-Form</title>
-  <desc id="d">Technische Skizze L-Form</desc>
-  <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
-      <path d="M0,0 L8,4 L0,8 z" fill="#d8232a"/>
-    </marker>
-    <style>
-      .outline { fill: none; stroke: #1f2937; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-      .fold { fill: none; stroke: #334155; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-      .dim { fill: none; stroke: #d8232a; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; marker-start: url(#arrow); marker-end: url(#arrow); }
-      .ext { fill: none; stroke: #94a3b8; stroke-width: 1.6; stroke-dasharray: 4 4; }
-      .txt { fill: #d8232a; font: 700 12px Arial, Helvetica, sans-serif; }
-      .base { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.2; }
-    </style>
-  </defs>
-  <rect class="base" x="1" y="1" width="218" height="138" rx="14"/>
-
-  <path class="outline" d="M58 30 V100 H156"/>
-  <path class="fold" d="M58 52 l14 10 l-14 10 M72 100 l10 -18 l10 18 l10 -18 l10 18 l10 -18 l10 18 l10 -18 l10 18"/>
-  <line class="dim" x1="58" y1="18" x2="128" y2="18"/>
-  <text class="txt" x="93" y="13" text-anchor="middle">A</text>
-  <line class="dim" x1="42" y1="30" x2="42" y2="100"/>
-  <text class="txt" x="35" y="67">B</text>
-  <line class="dim" x1="170" y1="42" x2="170" y2="100"/>
-  <text class="txt" x="177" y="74">C</text>
-
+    <title id="t">L-Führungsrahmen</title>
+    <desc id="d">L-Form nach Referenz mit Bemaßung a, b, f</desc>
+    <defs>
+        <marker id="arrowStart" markerWidth="8" markerHeight="8" refX="1.6" refY="4" orient="auto"
+                markerUnits="strokeWidth">
+            <path d="M6.8 0 L0 4 L6.8 8 z" fill="#dc2626"/>
+        </marker>
+        <marker id="arrowEnd" markerWidth="8" markerHeight="8" refX="6.8" refY="4" orient="auto"
+                markerUnits="strokeWidth">
+            <path d="M0 0 L6.8 4 L0 8 z" fill="#dc2626"/>
+        </marker>
+    </defs>
+    <rect class="base" x="1" y="1" width="218" height="138" rx="14" fill="none" stroke="#e2e8f0" stroke-width="1.2"/>
+    <path d="M 20 42 L 194 42 L 194 112 L 170 112 L 170 74 L 20 74 Z" fill="#8a8a8a" stroke="#111111"
+          stroke-width="0.8"/>
+    <line x1="20" y1="18" x2="194" y2="18" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="107.0" y="14" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif"
+          fill="#dc2626">A
+    </text>
+    <line x1="20" y1="42" x2="20" y2="18" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="194" y1="42" x2="194" y2="18" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="208" y1="42" x2="208" y2="112" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="213" y="79.0" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif"
+          fill="#dc2626">C
+    </text>
+    <line x1="194" y1="42" x2="208" y2="42" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="194" y1="112" x2="208" y2="112" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="170" y1="126" x2="194" y2="126" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="182.0" y="140" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif"
+          fill="#dc2626">B
+    </text>
+    <line x1="170" y1="112" x2="170" y2="126" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="194" y1="112" x2="194" y2="126" stroke="#dc2626" stroke-width="0.7"/>
 </svg>

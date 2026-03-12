@@ -9,16 +9,16 @@ class FaltenbalgConfiguratorController(http.Controller):
 
     def _shape_ui_config(self):
         return {
-            "straight": {"labels": ["Breite (A)", "Tiefe (B)", "Länge (C)"], "show_height": False, "hint": "Ideal für lineare Achsen und klassische Führungsabdeckungen."},
-            "u": {"labels": ["Innenbreite (A)", "Schenkeltiefe (B)", "Auszugslänge (C)"], "show_height": False, "hint": "Für dreiseitige Umschließung von Führungen."},
-            "l": {"labels": ["Breite A", "Schenkellänge B", "Auszugslänge C"], "show_height": False, "hint": "Wenn zwei Seiten geschützt werden müssen."},
-            "c": {"labels": ["Öffnung A", "Tiefe B", "Auszugslänge C"], "show_height": False, "hint": "Geeignet für seitlich offene Geometrien."},
-            "g": {"labels": ["Grundmaß A", "Rücksprung B", "Auszugslänge C"], "show_height": False, "hint": "Für versetzte oder eingreifende Einbausituationen."},
-            "box": {"labels": ["Breite A", "Tiefe B", "Länge C"], "show_height": True, "height_label": "Höhe D", "hint": "Mehrseitiger Schutz für komplexere Anwendungen."},
-            "pult": {"labels": ["Breite A", "Hintere Höhe B", "Länge C"], "show_height": True, "height_label": "Vordere Höhe D", "hint": "Schräge Pultform, z. B. für Bedien- oder Dachbereiche."},
-            "roof": {"labels": ["Breite A", "Dachhöhe B", "Länge C"], "show_height": False, "hint": "Symmetrische Dachform für obere Abdeckungen."},
-            "kastenbalg": {"labels": ["Breite A", "Tiefe B", "Länge C"], "show_height": True, "height_label": "Höhe D", "hint": "Räumlicher Kastenbalg für großvolumige Abdeckungen."},
-            "special": {"labels": ["Hauptmaß A", "Hauptmaß B", "Hauptmaß C"], "show_height": True, "height_label": "Optionales Maß D", "hint": "Sonderform: bitte Skizze oder Foto ergänzen."},
+            "straight": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "show_height": False, "hint": "Ideal für lineare Achsen und klassische Führungsabdeckungen. Gesamtlänge entspricht Lmax."},
+            "u": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Tiefe links (C)"}, {"key": "e", "label": "Tiefe rechts (D"}], "hint": "Für dreiseitige Umschließung von Führungen. Zusätzlich bitte D und E angeben."},
+            "l": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Tiefe (C)"}], "hint": "Wenn zwei Seiten geschützt werden müssen."},
+            "c": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Tiefe links (C)"}, {"key": "e", "label": "Tiefe rechts (D)"}, {"key": "e", "label": "Absatz links (E)"}, {"key": "f", "label": "Absatz rechts (F)"}], "hint": "Geeignet für seitlich offene Geometrien. Bitte D, E, F und G ergänzen."},
+            "g": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "c", "label": "Tiefe links (C)"}, {"key": "f", "label": "Tiefe rechts (D)"}, {"key": "e", "label": "Absatz rechts (E)"}], "hint": "Für versetzte oder eingreifende Einbausituationen. Bitte E, F und G ergänzen."},
+            "box": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Höhe D"}], "hint": "Mehrseitiger Schutz für komplexere Anwendungen."},
+            "pult": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Vordere Höhe D"}], "hint": "Schräge Pultform, z. B. für Bedien- oder Dachbereiche."},
+            "roof": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "hint": "Symmetrische Dachform für obere Abdeckungen."},
+            "kastenbalg": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Höhe D"}], "hint": "Kastenform für mehrseitige Abdeckungen."},
+            "special": {"labels": ["Breite (A)", "Faltentiefe (B)", "Gesamtlänge"], "extra_fields": [{"key": "d", "label": "Optionales Tiefe links (C)"}, {"key": "e", "label": "Optionales Tiefe rechts (D)"}, {"key": "f", "label": "Optionales Absatz links (E)"}, {"key": "g", "label": "Optionales Absatz rechts (F)"}], "hint": "Sonderform: bitte Skizze oder Foto ergänzen."},
         }
 
     @http.route(["/faltenbalg-konfigurator", "/shop/faltenbalg/configurator/<model('product.template'):product>"], type="http", auth="public", website=True, sitemap=True)
@@ -29,7 +29,7 @@ class FaltenbalgConfiguratorController(http.Controller):
         values = {
             "product": product,
             "page_name": "faltenbalg_configurator",
-            "shape_options": inquiry_model._fields["shape"].selection,
+            "shape_options": [opt for opt in inquiry_model._fields["shape"].selection if opt[0] != "kastenbalg"],
             "material_options": inquiry_model._fields["material"].selection,
             "axis_options": inquiry_model._fields["axis"].selection,
             "position_options": inquiry_model._fields["installation_position"].selection,
@@ -52,7 +52,14 @@ class FaltenbalgConfiguratorController(http.Controller):
             "width_mm": float(post.get("width_mm") or 0.0),
             "depth_mm": float(post.get("depth_mm") or 0.0),
             "length_mm": float(post.get("length_mm") or 0.0),
+            "lmin_mm": float(post.get("lmin_mm") or 0.0),
+            "hub_mm": float(post.get("hub_mm") or 0.0),
+            "fold_pitch_mm": float(post.get("fold_pitch_mm") or 0.0),
+            "fold_count": int(float(post.get("fold_count") or 0)),
             "height_mm": float(post.get("height_mm") or 0.0),
+            "extra_e_mm": float(post.get("extra_e_mm") or 0.0),
+            "extra_f_mm": float(post.get("extra_f_mm") or 0.0),
+            "extra_g_mm": float(post.get("extra_g_mm") or 0.0),
             "quantity": int(float(post.get("quantity") or 1)),
             "material": post.get("material") or "standard",
             "application": post.get("application"),

@@ -59,9 +59,13 @@
         var inputLabelA = document.getElementById('fbInputLabelA');
         var inputLabelB = document.getElementById('fbInputLabelB');
         var inputLabelC = document.getElementById('fbInputLabelC');
-        var inputLabelD = document.getElementById('fbInputLabelD');
-        var heightWrap = document.getElementById('fbHeightWrap');
-        var heightInput = document.getElementById('fbHeight');
+        var lmaxInput = document.getElementById('fbLmax');
+        var extraFields = {
+            d: {wrap: document.getElementById('fbHeightWrap'), input: document.getElementById('fbHeight'), label: document.getElementById('fbInputLabelD')},
+            e: {wrap: document.getElementById('fbExtraEWrap'), input: document.getElementById('fbExtraE'), label: document.getElementById('fbInputLabelE')},
+            f: {wrap: document.getElementById('fbExtraFWrap'), input: document.getElementById('fbExtraF'), label: document.getElementById('fbInputLabelF')},
+            g: {wrap: document.getElementById('fbExtraGWrap'), input: document.getElementById('fbExtraG'), label: document.getElementById('fbInputLabelG')}
+        };
         var descMap = {
             straight: 'Klassische lineare Abdeckung für Achsen und Führungen.',
             u: 'Für Führungen mit seitlicher Umschließung.',
@@ -71,7 +75,7 @@
             box: 'Mehrseitiger Schutz für komplexere Anwendungen.',
             pult: 'Schräge Form für Pult- und Bedienbereiche.',
             roof: 'Dachförmige Abdeckung für obere Bereiche.',
-            kastenbalg: 'Räumlicher Balg für größere Volumen.',
+            kastenbalg: 'Kastenform für mehrseitige Abdeckungen.',
             special: 'Freiform oder Sondergeometrie, bitte Skizze ergänzen.'
         };
         form.querySelectorAll('[data-shape-description]').forEach(function (el) {
@@ -80,24 +84,35 @@
         });
 
         return function apply(shape) {
-            var cfg = shapeConfig[shape] || shapeConfig.straight || { labels: ['Breite (A)', 'Tiefe (B)', 'Länge (C)'], show_height: false };
-            var labels = cfg.labels || ['Breite (A)', 'Tiefe (B)', 'Länge (C)'];
+            var cfg = shapeConfig[shape] || shapeConfig.straight || { labels: ['Breite (A)', 'Tiefe (B)', 'Gesamtlänge'], show_height: false };
+            var labels = cfg.labels || ['Breite (A)', 'Tiefe (B)', 'Gesamtlänge'];
             if (hint) hint.textContent = cfg.hint || '';
-            if (preview) preview.src = '/nolte_faltenbalg_configurator/static/src/img/' + shape + '.svg';
+            var previewShape = shape === 'kastenbalg' ? 'box' : shape;
+            if (preview) preview.src = '/nolte_faltenbalg_configurator/static/src/img/' + previewShape + '.svg';
             if (labelA) labelA.textContent = labels[0] || 'Maß A';
             if (labelB) labelB.textContent = labels[1] || 'Maß B';
             if (labelC) labelC.textContent = labels[2] || 'Maß C';
             if (inputLabelA) inputLabelA.textContent = labels[0] || 'Maß A';
             if (inputLabelB) inputLabelB.textContent = labels[1] || 'Maß B';
             if (inputLabelC) inputLabelC.textContent = labels[2] || 'Maß C';
-            if (cfg.show_height) {
-                if (heightWrap) heightWrap.classList.remove('d-none');
-                if (heightInput) heightInput.disabled = false;
-                if (inputLabelD) inputLabelD.textContent = cfg.height_label || 'Höhe (D)';
-            } else {
-                if (heightWrap) heightWrap.classList.add('d-none');
-                if (heightInput) { heightInput.disabled = true; heightInput.value = ''; }
-            }
+            if (lmaxInput) lmaxInput.value = (document.getElementById('fbLength') || {}).value || '';
+            Object.keys(extraFields).forEach(function (key) {
+                var field = extraFields[key];
+                if (!field || !field.wrap || !field.input) return;
+                field.wrap.classList.add('d-none');
+                field.input.disabled = true;
+                field.input.required = false;
+                field.input.value = '';
+                if (field.label) field.label.textContent = 'Maß ' + key.toUpperCase();
+            });
+            (cfg.extra_fields || []).forEach(function (fieldCfg) {
+                var field = extraFields[fieldCfg.key];
+                if (!field || !field.wrap || !field.input) return;
+                field.wrap.classList.remove('d-none');
+                field.input.disabled = false;
+                field.input.required = true;
+                if (field.label) field.label.textContent = fieldCfg.label || ('Maß ' + fieldCfg.key.toUpperCase());
+            });
         };
     }
 
@@ -133,8 +148,63 @@
         });
 
         bindChoiceCards(form, applyShapeUi);
+        var lenInput = document.getElementById('fbLength');
+        var lminInput = document.getElementById('fbLmin');
+        var hubInput = document.getElementById('fbHub');
+        var lmaxInput = document.getElementById('fbLmax');
+        var foldPitchInput = document.getElementById('fbFoldPitch');
+        var foldCountInput = document.getElementById('fbFoldCount');
+        var hubValidation = document.getElementById('fbHubValidation');
+        function formatNumber(value, decimals) {
+            if (value === '' || value === null || typeof value === 'undefined' || isNaN(value)) return '';
+            var fixed = Number(value).toFixed(decimals || 2);
+            return fixed.replace(/\.00$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+        }
+        function updateFoldCount(hub) {
+            var pitch = parseFloat(foldPitchInput && foldPitchInput.value || 0);
+            if (foldCountInput) {
+                if (hub > 0 && pitch > 0) foldCountInput.value = String(Math.max(Math.round(hub / pitch), 1));
+                else foldCountInput.value = '';
+            }
+        }
+        function updateHubValidation(lmax, lmin, hub) {
+            var message = '';
+            if (lmax > 0) {
+                if (lmin > lmax) message = 'Lmin darf nicht größer als Lmax sein.';
+                else if (hub > lmax) message = 'Der Hub darf nicht größer als Lmax sein.';
+                else if (lmin > 0 && hub > 0) {
+                    var diff = Math.abs((lmax - lmin) - hub);
+                    if (diff > 0.51) message = 'Hub muss der Differenz aus Lmax und Lmin entsprechen.';
+                }
+            }
+            [lminInput, hubInput].forEach(function (field) { if (field) field.setCustomValidity(message); });
+            if (hubValidation) {
+                hubValidation.textContent = message;
+                hubValidation.classList.toggle('d-none', !message);
+            }
+        }
+        function syncHubFields(source) {
+            var lmax = parseFloat(lenInput && lenInput.value || 0);
+            var lmin = parseFloat(lminInput && lminInput.value || 0);
+            var hub = parseFloat(hubInput && hubInput.value || 0);
+            if (lmaxInput) lmaxInput.value = lenInput && lenInput.value ? lenInput.value : '';
+            if (source === 'lmin' && lmax && !isNaN(lmin)) {
+                hub = Math.max(lmax - lmin, 0);
+                if (hubInput) hubInput.value = formatNumber(hub);
+            } else if (source === 'hub' && lmax && !isNaN(hub)) {
+                lmin = Math.max(lmax - hub, 0);
+                if (lminInput) lminInput.value = formatNumber(lmin);
+            }
+            updateHubValidation(lmax, lmin, hub);
+            updateFoldCount(hub);
+        }
+        if (lenInput) lenInput.addEventListener('input', function () { syncHubFields(); });
+        if (lminInput) lminInput.addEventListener('input', function () { syncHubFields('lmin'); });
+        if (hubInput) hubInput.addEventListener('input', function () { syncHubFields('hub'); });
+        if (foldPitchInput) foldPitchInput.addEventListener('input', function () { syncHubFields(); });
         var selected = form.querySelector('input[name="shape"]:checked');
         applyShapeUi(selected ? selected.value : 'straight');
+        syncHubFields();
         render();
     }
 

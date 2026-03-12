@@ -29,7 +29,9 @@
                                                 <div class="row g-3">
                                                     <div class="col-md-4"><div class="fb-mini-card"><strong>1.</strong><span>Bauform wählen</span></div></div>
                                                     <div class="col-md-4"><div class="fb-mini-card"><strong>2.</strong><span>Passende Maße sehen</span></div></div>
-                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>3.</strong><span>Einsatz und Kontakt senden</span></div></div>
+                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>3.</strong><span>Hub und Längen</span></div></div>
+                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>4.</strong><span>Einsatz und Upload</span></div></div>
+                                                    <div class="col-md-4"><div class="fb-mini-card"><strong>5.</strong><span>Kontakt senden</span></div></div>
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
@@ -52,8 +54,9 @@
                                         <div class="fb-steps-nav mb-4 mb-lg-5">
                                             <button type="button" class="fb-step-pill is-active" data-step-target="1">1. Bauform</button>
                                             <button type="button" class="fb-step-pill" data-step-target="2">2. Maße</button>
-                                            <button type="button" class="fb-step-pill" data-step-target="3">3. Einsatz</button>
-                                            <button type="button" class="fb-step-pill" data-step-target="4">4. Kontakt</button>
+                                            <button type="button" class="fb-step-pill" data-step-target="3">3. Hub</button>
+                                            <button type="button" class="fb-step-pill" data-step-target="4">4. Einsatz</button>
+                                            <button type="button" class="fb-step-pill" data-step-target="5">5. Kontakt</button>
                                         </div>
 
                                         <div class="fb-step is-active" data-step="1">
@@ -91,7 +94,7 @@
                                                         <div class="row g-3">
                                                             <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">A</span><div><strong id="fbLabelA">Breite (A)</strong><div class="text-muted small">erstes Hauptmaß</div></div></div></div>
                                                             <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">B</span><div><strong id="fbLabelB">Tiefe (B)</strong><div class="text-muted small">zweites Hauptmaß</div></div></div></div>
-                                                            <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">C</span><div><strong id="fbLabelC">Länge (C)</strong><div class="text-muted small">Auszug / Gesamtlänge</div></div></div></div>
+                                                            <div class="col-md-4"><div class="fb-guide-dim"><span class="fb-guide-badge">L</span><div><strong id="fbLabelC">Gesamtlänge</strong><div class="text-muted small">Maximale ausgezogene Länge</div></div></div></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -102,16 +105,28 @@
                                                     <input id="fbWidth" type="number" name="width_mm" class="form-control form-control-lg" min="1" step="0.01" placeholder="z. B. 500" required="required"/>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label" id="fbInputLabelB" for="fbDepth">Tiefe (B)</label>
+                                                    <label class="form-label" id="fbInputLabelB" for="fbDepth">Faltentiefe (B)</label>
                                                     <input id="fbDepth" type="number" name="depth_mm" class="form-control form-control-lg" min="1" step="0.01" placeholder="z. B. 300" required="required"/>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label" id="fbInputLabelC" for="fbLength">Länge (C)</label>
+                                                    <label class="form-label" id="fbInputLabelC" for="fbLength">Gesamtlänge</label>
                                                     <input id="fbLength" type="number" name="length_mm" class="form-control form-control-lg" min="1" step="0.01" placeholder="z. B. 1000" required="required"/>
                                                 </div>
                                                 <div class="col-md-4 d-none" id="fbHeightWrap">
-                                                    <label class="form-label" id="fbInputLabelD" for="fbHeight">Höhe (D)</label>
-                                                    <input id="fbHeight" type="number" name="height_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="optional oder zusätzliches Maß"/>
+                                                    <label class="form-label" id="fbInputLabelD" for="fbHeight">Tiefe links (C)</label>
+                                                    <input id="fbHeight" type="number" name="height_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 100"/>
+                                                </div>
+                                                <div class="col-md-4 d-none" id="fbExtraEWrap">
+                                                    <label class="form-label" id="fbInputLabelE" for="fbExtraE">Tiefe rechts (D)</label>
+                                                    <input id="fbExtraE" type="number" name="extra_e_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 100"/>
+                                                </div>
+                                                <div class="col-md-4 d-none" id="fbExtraFWrap">
+                                                    <label class="form-label" id="fbInputLabelF" for="fbExtraF">Absatz links (E)</label>
+                                                    <input id="fbExtraF" type="number" name="extra_f_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 50"/>
+                                                </div>
+                                                <div class="col-md-4 d-none" id="fbExtraGWrap">
+                                                    <label class="form-label" id="fbInputLabelG" for="fbExtraG">Absatz rechts (F)</label>
+                                                    <input id="fbExtraG" type="number" name="extra_g_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 50"/>
                                                 </div>
                                             </div>
                                             <div class="fb-tip mt-4">
@@ -119,10 +134,40 @@
                                             </div>
                                         </div>
 
+
                                         <div class="fb-step" data-step="3">
                                             <div class="fb-step-head mb-4">
+                                                <h2 class="h3 mb-2">Hub und zusammengeschobene Länge</h2>
+                                                <p class="text-muted mb-0">Gesamtlänge entspricht Lmax. Ergänze hier bitte Lmin und den Hub. Wenn nur zwei Werte bekannt sind, genügt das häufig schon für die Angebotsprüfung.</p>
+                                            </div>
+                                            <div class="fb-measure-guide mb-4">
+                                                <div class="row g-3 align-items-center">
+                                                    <div class="col-lg-6">
+                                                        <div class="fb-guide-card">
+                                                            <div class="fb-guide-preview fb-guide-preview--hub"><img src="/nolte_faltenbalg_configurator/static/src/img/faltenbalg_hub_final.svg" alt="Lmax Lmin Hub"/></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-12"><label class="form-label" for="fbLmax">Lmax (entspricht Gesamtlänge)</label><input id="fbLmax" type="number" class="form-control form-control-lg" readonly="readonly"/></div>
+                                                            <div class="col-md-12"><label class="form-label" for="fbLmin">Lmin</label><input id="fbLmin" type="number" name="lmin_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 180"/></div>
+                                                            <div class="col-md-12"><label class="form-label" for="fbHub">Hub</label><input id="fbHub" type="number" name="hub_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 820"/></div>
+                                                            <div class="col-md-12"><label class="form-label" for="fbFoldPitch">Faltenabstand (mm)</label><input id="fbFoldPitch" type="number" name="fold_pitch_mm" class="form-control form-control-lg" min="0" step="0.01" placeholder="z. B. 50"/></div>
+                                                            <div class="col-md-12"><label class="form-label" for="fbFoldCount">Faltenanzahl</label><input id="fbFoldCount" type="number" name="fold_count" class="form-control form-control-lg" min="0" step="1" readonly="readonly"/></div>
+                                                        </div>
+                                                        <div id="fbHubValidation" class="alert alert-danger d-none mt-3" role="alert"></div>
+                                                        <div class="fb-tip mt-3">
+                                                            <strong>Hinweis:</strong> Lmax ist die ausgezogene Länge und wird direkt aus der Gesamtlänge übernommen. Lmin ist die zusammengeschobene Länge. Hub ist die Differenz zwischen Lmax und Lmin. Aus Hub und Faltenabstand wird die Faltenanzahl automatisch vorgeschlagen.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="fb-step" data-step="4">
+                                            <div class="fb-step-head mb-4">
                                                 <h2 class="h3 mb-2">Einsatz, Material und Upload</h2>
-                                                <p class="text-muted mb-0">Hier kommen die Infos rein, die euren Vertrieb später für die Einordnung und Angebotserstellung braucht.</p>
+<!--                                                <p class="text-muted mb-0">Hier kommen die Infos rein, die euren Vertrieb später für die Einordnung und Angebotserstellung braucht.</p>-->
                                             </div>
                                             <div class="row g-3">
                                                 <div class="col-md-4">
@@ -162,10 +207,10 @@
                                             </div>
                                         </div>
 
-                                        <div class="fb-step" data-step="4">
+                                        <div class="fb-step" data-step="5">
                                             <div class="fb-step-head mb-4">
                                                 <h2 class="h3 mb-2">Kontaktdaten</h2>
-                                                <p class="text-muted mb-0">Zum Schluss nur noch die Kontaktdaten. Danach wird die Anfrage direkt im Backend und optional als CRM-Lead angelegt.</p>
+                                                <p class="text-muted mb-0">Zum Schluss nur noch die Kontaktdaten. Danach wird die Anfrage direkt an uns übermittelt.</p>
                                             </div>
                                             <div class="row g-3">
                                                 <div class="col-md-4"><label class="form-label">Firma</label><input type="text" name="company_name" class="form-control form-control-lg"/></div>
@@ -177,7 +222,7 @@
                                                 <h3 class="h5 mb-3">Kurzübersicht</h3>
                                                 <ul class="mb-0">
                                                     <li>Ausgewählte Bauform mit technischer Skizze wird mitgeschickt.</li>
-                                                    <li>Maße A, B, C und optional D werden direkt in der Anfrage gespeichert.</li>
+                                                    <li>Maße A, B, C/Lmax sowie Lmin, Hub und je nach Form zusätzlich D, E, F und G werden direkt in der Anfrage gespeichert.</li>
                                                     <li>Keine Preisangabe im Frontend, Fokus auf qualifizierte Anfrage.</li>
                                                 </ul>
                                             </div>
@@ -216,7 +261,7 @@
                                         <div class="fb-summary text-start mx-auto mt-4">
                                             <ul class="mb-0">
                                                 <li><strong>Bauform:</strong> <span t-out="dict(inquiry._fields['shape'].selection).get(inquiry.shape)"/></li>
-                                                <li><strong>Maße:</strong> <span t-out="'A %g | B %g | C %g%s mm' % (inquiry.width_mm, inquiry.depth_mm, inquiry.length_mm, (' | D %g' % inquiry.height_mm) if inquiry.height_mm else '')"/></li>
+                                                <li><strong>Maße:</strong> <span t-out="'A %g | B %g | C/Lmax %g%s%s%s%s%s%s mm' % (inquiry.width_mm, inquiry.depth_mm, inquiry.length_mm, (' | Lmin %g' % inquiry.lmin_mm) if inquiry.lmin_mm else '', (' | Hub %g' % inquiry.hub_mm) if inquiry.hub_mm else '', (' | D %g' % inquiry.height_mm) if inquiry.height_mm else '', (' | E %g' % inquiry.extra_e_mm) if inquiry.extra_e_mm else '', (' | F %g' % inquiry.extra_f_mm) if inquiry.extra_f_mm else '', (' | G %g' % inquiry.extra_g_mm) if inquiry.extra_g_mm else '')"/></li>
                                                 <li><strong>Material:</strong> <span t-out="dict(inquiry._fields['material'].selection).get(inquiry.material)"/></li>
                                             </ul>
                                         </div>

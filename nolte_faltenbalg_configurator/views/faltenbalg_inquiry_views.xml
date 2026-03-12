@@ -55,7 +55,14 @@
                                     <field name="width_mm"/>
                                     <field name="depth_mm"/>
                                     <field name="length_mm"/>
+                                    <field name="lmin_mm"/>
+                                    <field name="hub_mm"/>
+                                    <field name="fold_pitch_mm"/>
+                                    <field name="fold_count"/>
                                     <field name="height_mm"/>
+                                    <field name="extra_e_mm"/>
+                                    <field name="extra_f_mm"/>
+                                    <field name="extra_g_mm"/>
                                     <field name="quantity"/>
                                     <field name="material"/>
                                 </group>

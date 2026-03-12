@@ -7,7 +7,7 @@
 .fb-mini-card strong { font-size:1.2rem; color:#0f172a; }
 .fb-progress { height:.7rem; background:#e2e8f0; border-radius:999px; overflow:hidden; }
 .fb-progress-bar { height:100%; background:linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%); transition:width .25s ease; }
-.fb-steps-nav { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:.75rem; }
+.fb-steps-nav { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:.75rem; }
 .fb-step-pill { border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:999px; padding:.75rem 1rem; font-weight:600; }
 .fb-step-pill.is-active { background:#0f172a; color:#fff; border-color:#0f172a; }
 .fb-step { display:none; }
@@ -29,3 +29,7 @@
 .fb-success-check { width:4rem; height:4rem; margin:0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#dcfce7; color:#15803d; font-size:2rem; font-weight:700; }
 @media (max-width: 991.98px) { .fb-steps-nav { grid-template-columns:1fr 1fr; } }
 @media (max-width: 575.98px) { .fb-steps-nav { grid-template-columns:1fr; } }
+
+.fb-guide-preview--hub { min-height: 320px; padding: 1rem; }
+.fb-guide-preview--hub img { max-width: 520px; width: 100%; height: auto; max-height: 320px; object-fit: contain; }
+@media (max-width: 991.98px) { .fb-guide-preview--hub { min-height: 240px; } .fb-guide-preview--hub img { max-width: 100%; max-height: 240px; } }
