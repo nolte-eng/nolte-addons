@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local environments and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs, temporary files and backups
+*.log
+*.tmp
+*.bak
+*.backup
+*.dump
+*.sql
+*.zip
+
+# Odoo runtime artifacts
+filestore/
+sessions/
