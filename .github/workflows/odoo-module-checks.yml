@@ -1,0 +1,110 @@
+name: Odoo module checks
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python-Syntax prüfen
+        run: |
+          python -m compileall -q .
+
+      - name: XML-Dateien prüfen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          import xml.etree.ElementTree as ET
+
+          errors = []
+          for path in Path('.').rglob('*.xml'):
+              if '.git' in path.parts:
+                  continue
+              try:
+                  ET.parse(path)
+              except Exception as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("Ungültige XML-Dateien:")
+              print("\n".join(errors))
+              sys.exit(1)
+          PY
+
+      - name: Odoo-Manifeste prüfen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import ast
+          import sys
+
+          errors = []
+          manifests = list(Path('.').rglob('__manifest__.py')) + list(Path('.').rglob('__openerp__.py'))
+          for path in manifests:
+              try:
+                  data = ast.literal_eval(path.read_text(encoding='utf-8'))
+                  if not isinstance(data, dict):
+                      raise ValueError('Manifest ist kein Dictionary')
+                  for key in ('name', 'version'):
+                      if not data.get(key):
+                          raise ValueError(f'Pflichtfeld {key!r} fehlt')
+                  if data.get('installable') is not False and not data.get('depends'):
+                      raise ValueError("installierbares Modul ohne 'depends'")
+              except Exception as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("Fehlerhafte Odoo-Manifeste:")
+              print("\n".join(errors))
+              sys.exit(1)
+          print(f"{len(manifests)} Manifest-Dateien geprüft")
+          PY
+
+      - name: Verbotene Laufzeit- und Secret-Dateien prüfen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          tracked = subprocess.check_output(['git', 'ls-files'], text=True).splitlines()
+          forbidden_names = {'.env', '.secrets.env', 'acme.json', '.DS_Store'}
+          forbidden_suffixes = {'.pem', '.key', '.p12', '.pfx', '.sql', '.dump', '.bak', '.backup', '.pyc'}
+          forbidden_parts = {'__pycache__', 'filestore', 'sessions'}
+
+          bad = []
+          for item in tracked:
+              path = Path(item)
+              if path.name in forbidden_names or path.suffix.lower() in forbidden_suffixes:
+                  bad.append(item)
+                  continue
+              if any(part in forbidden_parts for part in path.parts):
+                  bad.append(item)
+
+          if bad:
+              print('Verbotene versionierte Dateien gefunden:')
+              print('\n'.join(sorted(bad)))
+              sys.exit(1)
+          PY
+
+      - name: Offensichtliche private Schlüssel erkennen
+        run: |
+          if git grep -n -I -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' -- . ':!*.md'; then
+            echo 'Ein privater Schlüssel wurde im Repository gefunden.'
+            exit 1
+          fi
