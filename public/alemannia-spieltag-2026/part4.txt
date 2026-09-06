@@ -1,0 +1,75 @@
+const f=fiA>=0?R().fixtures[fiA]:null;return `<div class="disp-table ${fiA>=0?'c'+(fiA+1):''}"><div class="tno">TISCH ${ti+1}</div>${f?`<div class="fixturebig">${esc(f.home)}<br>gegen<br>${esc(f.away)}</div>`:''}<div class="freebig">FREI</div></div>`;
+  }
+  const f=R().fixtures[t.fixture],g=f.games[t.game];const next=f.games.find((x,idx)=>!gameDone(x)&&busyTable(t.fixture,idx)<0);
+  return `<div class="disp-table c${t.fixture+1}"><div class="tno">TISCH ${ti+1}</div><div class="fixturebig">${esc(f.home)}<br>gegen<br>${esc(f.away)}</div><div class="gamebig">${esc(g.type)}</div><div class="playerbig">${esc(g.homePlayers||'Heimspieler offen')}<div class="vs">GEGEN</div>${esc(g.awayPlayers||'Gastspieler offen')}</div><div class="live-score">${g.winner==="home"?"HEIM GEWONNEN":g.winner==="away"?"GAST GEWONNEN":"LÄUFT"}</div><div class="nextbox"><div class="nextlabel">Nächstes offenes Spiel</div><div class="nexttext">${next?esc(next.type):'keines'}</div></div></div>`;
+ }).join('');
+ document.getElementById('updated').textContent='Aktualisiert '+new Date(state.updated).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+ document.getElementById('roundLabel').textContent='Spielrunde '+schedule[state.currentRound].time+' Uhr';
+}
+function parseNwtfvHtml(fi,html){
+ const doc=new DOMParser().parseFromString(html,'text/html');
+ const rows=[...doc.querySelectorAll('table tr')];
+ const parsed=[];
+ for(const row of rows){
+  const cells=[...row.querySelectorAll('td')];
+  if(cells.length<4)continue;
+  const num=(cells[0].textContent||'').trim();
+  if(!/^[1-8]$/.test(num))continue;
+  let resultIndex=cells.findIndex(c=>/^\s*[0-2]\s*:\s*[0-2]\s*$/.test(c.textContent||''));
+  if(resultIndex<0)continue;
+  const clean=c=>[...c.querySelectorAll('a')].map(a=>a.textContent.trim()).filter(Boolean).join(' / ') || c.textContent.trim();
+  const home=clean(cells[Math.max(1,resultIndex-1)]);
+  const away=clean(cells[Math.min(cells.length-1,resultIndex+1)]);
+  const m=(cells[resultIndex].textContent||'').match(/([0-2])\s*:\s*([0-2])/);
+  parsed.push({idx:Number(num)-1,home,away,winner:m?(Number(m[1])>Number(m[2])?'home':Number(m[2])>Number(m[1])?'away':''):''});
+ }
+ return applyParsed(fi,parsed);
+}
+function parseNwtfvText(fi,text){
+ const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ const parsed=[];
+ for(let n=1;n<=8;n++){
+  const ix=lines.findIndex((x,i)=>x===String(n) && i<lines.length-2);
+  if(ix<0)continue;
+  let scoreIx=-1;
+  for(let j=ix+1;j<Math.min(lines.length,ix+8);j++){if(/^[0-2]\s*:\s*[0-2]$/.test(lines[j])){scoreIx=j;break}}
+  if(scoreIx<0)continue;
+  const before=lines.slice(ix+1,scoreIx).filter(x=>!/^Image$/i.test(x));
+  const after=lines.slice(scoreIx+1,scoreIx+5).filter(x=>!/^Image$/i.test(x)&&!/^[1-8]$/.test(x));
+  const m=lines[scoreIx].match(/([0-2])\s*:\s*([0-2])/);
+  parsed.push({idx:n-1,home:before.join(' / '),away:after.join(' / '),winner:Number(m[1])>Number(m[2])?'home':Number(m[2])>Number(m[1])?'away':''});
+ }
+ return applyParsed(fi,parsed);
+}
+function applyParsed(fi,parsed){
+ if(!parsed.length)return 0;
+ const f=R().fixtures[fi];
+ const existing=f.games.some(g=>g.homePlayers||g.awayPlayers||g.winner);
+ if(existing&&!confirm('Es sind bereits manuelle Aufstellungs-/Ergebnisdaten vorhanden. Mit den NWTFV-Daten überschreiben?'))return -1;
+ parsed.forEach(p=>{if(f.games[p.idx]){f.games[p.idx].homePlayers=p.home;f.games[p.idx].awayPlayers=p.away;f.games[p.idx].winner=p.winner||''}});
+ save();return parsed.length;
+}
+async function importNwtfv(fi){
+ const input=document.getElementById('url'+fi),msg=document.getElementById('msg'+fi);const url=input.value.trim();if(!url){msg.textContent='Bitte zuerst die NWTFV-Begegnungs-URL einfügen.';return}
+ setUrl(fi,url);msg.textContent='Lade Daten…';
+ try{
+  const res=await fetch(url,{credentials:'omit'});if(!res.ok)throw new Error('HTTP '+res.status);
+  const html=await res.text();const count=parseNwtfvHtml(fi,html);
+  msg.textContent=count>0?`${count} Spiele von NWTFV übernommen.`:'Die Seite wurde geladen, aber die Spieltabelle konnte nicht erkannt werden.';
+ }catch(e){
+  msg.textContent='Direkter Abruf wurde vom Browser/NWTFV blockiert. Öffne die NWTFV-Seite, kopiere die Spieltabelle und füge sie unten ein.';
+ }
+}
+function importPasted(fi){
+ const txt=document.getElementById('paste'+fi).value;const msg=document.getElementById('msg'+fi);if(!txt.trim()){msg.textContent='Bitte zuerst Tabelleninhalt oder HTML einfügen.';return}
+ let count=0;if(/<table|<tr|<td/i.test(txt))count=parseNwtfvHtml(fi,txt);else count=parseNwtfvText(fi,txt);
+ msg.textContent=count>0?`${count} Spiele übernommen.`:'Keine verwertbaren 8 Spielzeilen erkannt. Die manuelle Eingabe bleibt unverändert.';
+}
+function switchRound(r){if(r===state.currentRound)return;if(R().tables.some(t=>t.fixture!==null)&&!confirm('Es laufen noch Partien. Trotzdem wechseln?')){document.getElementById('roundSel').value=state.currentRound;return}state.currentRound=r;save()}
+function resetRound(){if(!confirm('Aktuelle Runde zurücksetzen? Aufstellungen, Ergebnisse und Tischbelegungen werden gelöscht.'))return;state.rounds[state.currentRound]=makeRound(state.currentRound);save()}
+function render(){const rs=document.getElementById('roundSel');if(rs)rs.value=state.currentRound;if(!isDisplay()){renderFixtures();renderTables()}renderDisplay()}
+function isDisplay(){return location.hash==='#display'}
+function applyMode(){const d=isDisplay();document.getElementById('adminView').classList.toggle('hidden',d);document.getElementById('displayView').classList.toggle('hidden',!d);render()}
+function openDisplay(){const w=window.open(location.href.split('#')[0]+'#display','alemanniaDisplay','popup=yes,width=1600,height=950');if(!w)alert('Popup wurde blockiert. Bitte Pop-ups für diese Datei erlauben.')}
+function tick(){const c=document.getElementById('clock');if(c)c.textContent=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}
+setInterval(tick,1000);tick();window.addEventL
