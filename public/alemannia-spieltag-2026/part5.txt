@@ -1,0 +1,3 @@
+istener('hashchange',applyMode);applyMode();
+</script>
+</body></html>
