@@ -1,0 +1,73 @@
+===fi)R().tables[ti]={fixture:null,game:null}});
+ R().fixtures[fi].group=val;save();
+}
+function renderFixtures(){
+ document.getElementById('fixtures').innerHTML=R().fixtures.map((f,fi)=>{
+  const s=fixtureScore(f);
+  return `<div class="fixture f${fi+1}">
+   <div class="fixture-head">
+    <div><div class="fixture-title">${esc(f.home)} – ${esc(f.away)}</div><div class="fixture-meta">${schedule[state.currentRound].time} Uhr · ${groupName(f.group)}</div>
+     <div class="assignment"><b style="font-size:12px;color:#9da6b1">TISCHGRUPPE</b><select onchange="setGroup(${fi},this.value)"><option value="12" ${f.group==='12'?'selected':''}>Tisch 1 + 2</option><option value="34" ${f.group==='34'?'selected':''}>Tisch 3 + 4</option><option value="5" ${f.group==='5'?'selected':''}>Tisch 5</option></select></div>
+    </div>
+    <div class="scorebox"><div class="scorebig">${s.h} : ${s.a}</div></div>
+   </div>
+   <details class="lineup" ${fi===0?'open':''}><summary>Aufstellung & Ergebnisse manuell</summary>
+    <div class="lineup-grid">
+     <div class="hdr">Nr.</div><div class="hdr">Spiel</div><div class="hdr">${esc(f.home)}</div><div class="hdr">Ergebnis</div><div class="hdr">${esc(f.away)}</div>
+     ${f.games.map((g,gi)=>`<div class="${gameDone(g)?'done':''}"><b>${gi+1}</b></div>
+      <div class="${busyTable(fi,gi)>=0?'running':''}"><input value="${esc(g.type)}" onchange="setGame(${fi},${gi},'type',this.value)"></div>
+      <div><input placeholder="${g.type.startsWith('Doppel')?'Spieler 1 / Spieler 2':'Spielername'}" value="${esc(g.homePlayers)}" onchange="setGame(${fi},${gi},'homePlayers',this.value)"></div>
+      <div class="result-input"><select onchange="setGame(${fi},${gi},'winner',this.value)"><option value="" ${g.winner===''?'selected':''}>offen</option><option value="home" ${g.winner==='home'?'selected':''}>Heim gewonnen</option><option value="away" ${g.winner==='away'?'selected':''}>Gast gewonnen</option></select></div>
+      <div><input placeholder="${g.type.startsWith('Doppel')?'Spieler 1 / Spieler 2':'Spielername'}" value="${esc(g.awayPlayers)}" onchange="setGame(${fi},${gi},'awayPlayers',this.value)"></div>`).join('')}
+    </div>
+   </details>
+   <details><summary>Aufstellung von NWTFV laden</summary>
+    <div class="importbox">
+      <input id="url${fi}" placeholder="NWTFV-Begegnungs-URL einfügen" value="${esc(f.nwtfvUrl||'')}" onchange="setUrl(${fi},this.value)">
+      <button class="btn primary" onclick="importNwtfv(${fi})">Von NWTFV laden</button>
+      <textarea id="paste${fi}" placeholder="Falls der direkte Abruf vom Browser blockiert wird: NWTFV-Spielplan-Tabelle oder Seitenquelltext hier einfügen und anschließend „Text übernehmen“ klicken."></textarea>
+      <button class="btn" style="grid-column:2" onclick="importPasted(${fi})">Text übernehmen</button>
+      <div class="importmsg" id="msg${fi}">Bestehende manuelle Namen werden beim Import nur nach Rückfrage überschrieben.</div>
+    </div>
+   </details>
+  </div>`;
+ }).join('');
+}
+function gamesOptions(fi){
+ return R().fixtures[fi].games.map((g,gi)=>`<option value="${gi}" ${gameDone(g)||busyTable(fi,gi)>=0?'disabled':''}>${gi+1}. ${esc(g.type)}${gameDone(g)?' ✓':busyTable(fi,gi)>=0?' (läuft)':''}</option>`).join('');
+}
+function renderTables(){
+ document.getElementById('tables').innerHTML=R().tables.map((t,ti)=>{
+  const fi=R().fixtures.findIndex(f=>groupTables(f.group).includes(ti));
+  const f=fi>=0?R().fixtures[fi]:null;
+  if(t.fixture!==null){
+   const ff=R().fixtures[t.fixture],g=ff.games[t.game],s=fixtureScore(ff);
+   return `<div class="table-card"><h3>Tisch ${ti+1}</h3><div class="group-pill">${esc(ff.home)} – ${esc(ff.away)}</div><div class="current"><div class="game">${esc(g.type)}</div><div class="players"><b>${esc(g.homePlayers||'Heimspieler offen')}</b><br>gegen<br><b>${esc(g.awayPlayers||'Gastspieler offen')}</b></div><div class="current-score">${g.winner==="home"?"Heim gewonnen":g.winner==="away"?"Gast gewonnen":"läuft"}</div><div style="color:#9da6b1;margin-top:5px">Begegnung ${s.h}:${s.a}</div></div><div class="actions"><button class="btn green" onclick="finish(${ti})">Spiel beendet</button><button class="btn red" onclick="clearTable(${ti})">Freigeben</button></div></div>`;
+  }
+  if(!f)return `<div class="table-card"><h3>Tisch ${ti+1}</h3><div class="free">NICHT ZUGEORDNET</div></div>`;
+  const s=fixtureScore(f);
+  return `<div class="table-card"><h3>Tisch ${ti+1}</h3><div class="group-pill">${esc(f.home)} – ${esc(f.away)}</div><div style="font-size:22px;font-weight:1000;margin:8px 0">Stand ${s.h} : ${s.a}</div><div class="free">FREI</div><select id="gsel${ti}"><option value="">Spiel auswählen…</option>${gamesOptions(fi)}</select><div class="actions"><button class="btn primary" onclick="start(${ti},${fi})">Starten</button></div></div>`;
+ }).join('');
+}
+function start(ti,fi){
+ const s=document.getElementById('gsel'+ti);if(!s||s.value===''){alert('Bitte ein Spiel auswählen.');return}
+ const gi=Number(s.value);if(gameDone(R().fixtures[fi].games[gi])){alert('Spiel bereits beendet.');return}
+ R().tables[ti]={fixture:fi,game:gi};save();
+}
+function finish(ti){
+ const t=R().tables[ti];if(t.fixture===null)return;
+ const g=R().fixtures[t.fixture].games[t.game];
+ if(!gameDone(g)){alert('Bitte zuerst in der Aufstellung auswählen, wer das Spiel gewonnen hat.');return}
+ R().tables[ti]={fixture:null,game:null};save();
+}
+function clearTable(ti){R().tables[ti]={fixture:null,game:null};save()}
+function renderMatchScores(){
+ const el=document.getElementById('matchScores');if(!el)return;
+ el.innerHTML=R().fixtures.map((f,fi)=>{const s=fixtureScore(f);return `<div class="matchscore c${fi+1}"><div class="ms-teams">${esc(f.home)}<br>${esc(f.away)}</div><div class="ms-score">${s.h} : ${s.a}</div></div>`}).join('');
+}
+function renderDisplay(){
+ renderMatchScores();
+ document.getElementById('displayTables').innerHTML=R().tables.map((t,ti)=>{
+  const fiA=R().fixtures.findIndex(f=>groupTables(f.group).includes(ti));
+  if(t.fixture===null){
+   
