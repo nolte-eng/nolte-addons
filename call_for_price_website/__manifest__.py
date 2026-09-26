@@ -33,7 +33,7 @@
     'depends': ['website_sale', 'website_sale_stock', 'website_sale_wishlist',
                 'website_sale_comparison'],
     'data': [
-        'security/ir.model.access.csv',
+        'security/ir.access.csv',
         'views/custom_templates.xml',
         'views/call_for_price_layout.xml',
         'views/call_for_price_views.xml',

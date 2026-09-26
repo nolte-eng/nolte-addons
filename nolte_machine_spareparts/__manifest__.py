@@ -11,7 +11,7 @@
     "license": "LGPL-3",
     "depends": ["stock", "sale", "maintenance", "mrp", "contacts", "web"],
     "data": [
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "views/maintenance_equipment_views.xml",
         "report/spare_parts_report.xml",
     ],

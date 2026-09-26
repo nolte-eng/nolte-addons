@@ -10,7 +10,7 @@
     "post_init_hook": "post_init_hook",
     "data": [
         "data/product_data.xml",
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "views/overtime_import_wizard_views.xml",
         "views/nolte_overtime_settings_views.xml",
         "views/menu.xml",

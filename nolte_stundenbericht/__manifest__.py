@@ -8,7 +8,7 @@
     "depends": ["website", "project", "sale_management", "hr", "hr_attendance", "mail", "nolte_spesenbericht", "nolte_overtime_billing"],
     "data": [
         "security/groups.xml",
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "data/sequence.xml",
         "views/service_report_views.xml",
         "views/project_task_views.xml",

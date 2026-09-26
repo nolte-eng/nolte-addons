@@ -7,7 +7,7 @@
     "license": "LGPL-3",
     "depends": ["product", "sale_management"],
     "data": [
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "wizard/pricelist_variant_wizard_views.xml",
         "views/product_pricelist_views.xml"
     ],

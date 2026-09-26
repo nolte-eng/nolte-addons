@@ -7,7 +7,7 @@
     "license": "LGPL-3",
     "depends": ["website_sale", "mail", "crm"],
     "data": [
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "data/website_page_data.xml",
         "views/product_template_views.xml",
         "views/faltenbalg_inquiry_views.xml",

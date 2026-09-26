@@ -8,7 +8,7 @@
     "depends": ["website", "mail", "hr", "hr_holidays", "hr_expense", "product"],
     "data": [
         "security/spesenbericht_security.xml",
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "data/nolte.bmf.rate.csv",
         "views/spesenbericht_views.xml",
         "views/spesenbericht_templates.xml",
