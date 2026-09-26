@@ -17,7 +17,6 @@
     <field name="model">nolte.overtime.export.wizard</field>
     <field name="report_type">qweb-pdf</field>
     <field name="report_name">nolte_spesenbericht.report_overtime_year</field>
-    <field name="report_file">nolte_spesenbericht.report_overtime_year</field>
     <field name="paperformat_id" ref="paperformat_overtime_year"/>
     <field name="print_report_name">'Überstunden_%s_%s' % (object.company_id.name.replace(' ', '_'), object.year)</field>
   </record>

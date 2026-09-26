@@ -24,7 +24,6 @@
         <field name="model">sale.order</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">nolte_reports_next.report_saleorder</field>
-        <field name="report_file">nolte_reports_next.report_saleorder</field>
         <field name="binding_model_id" ref="sale.model_sale_order"/>
         <field name="binding_type">report</field>
         <field name="paperformat_id" ref="paperformat_next"/>

@@ -6,7 +6,6 @@
         <field name="model">maintenance.equipment</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">nolte_machine_spareparts.report_spare_parts_catalog</field>
-        <field name="report_file">nolte_machine_spareparts.report_spare_parts_catalog</field>
         <field name="print_report_name">'Ersatzteilkatalog - %s' % (object.name or '')</field>
         <field name="binding_model_id" ref="maintenance.model_maintenance_equipment"/>
         <field name="binding_type">report</field>

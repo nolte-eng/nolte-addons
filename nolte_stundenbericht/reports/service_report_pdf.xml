@@ -17,7 +17,6 @@
         <field name="model">nolte.service.report</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">nolte_stundenbericht.report_customer_service_report</field>
-        <field name="report_file">nolte_stundenbericht.report_customer_service_report</field>
         <field name="binding_model_id" ref="model_nolte_service_report"/>
         <field name="binding_type">report</field>
         <field name="paperformat_id" ref="paperformat_customer_service_report"/>
