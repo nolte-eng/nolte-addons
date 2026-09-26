@@ -523,7 +523,7 @@ class NolteServiceReport(models.Model):
             parameters = report.env["ir.config_parameter"].sudo()
             products = {}
             for key, parameter in product_keys.items():
-                value = parameters.get_param(parameter) or ""
+                value = parameters.get_str(parameter) or ""
                 product = report.env["product.product"].browse(int(value)) if value.isdigit() else report.env["product.product"]
                 if key not in ("kilometers", "overnights") and not product:
                     raise UserError(_("Für %s ist im Überstundenmodul kein Abrechnungsprodukt konfiguriert.") % labels[key])

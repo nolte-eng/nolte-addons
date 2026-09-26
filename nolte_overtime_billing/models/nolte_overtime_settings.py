@@ -34,7 +34,7 @@ class NolteOvertimeSettings(models.TransientModel):
         icp = self.env["ir.config_parameter"].sudo()
 
         def _get_m2o(key: str):
-            val = icp.get_param(key) or ""
+            val = icp.get_str(key) or ""
             try:
                 pid = int(val)
             except Exception:
@@ -63,7 +63,7 @@ class NolteOvertimeSettings(models.TransientModel):
         icp = self.env["ir.config_parameter"].sudo()
 
         def _set(key: str, m2o):
-            icp.set_param(key, str(m2o.id) if m2o else "")
+            icp.set_str(key, str(m2o.id) if m2o else "")
 
         _set("nolte_overtime_billing.product_work_id", self.product_work_id)
         _set("nolte_overtime_billing.product_travel_id", self.product_travel_id)

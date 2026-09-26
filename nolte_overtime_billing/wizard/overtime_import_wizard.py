@@ -231,7 +231,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 _logger.exception("Contact preview could not be read from the CSV.")
 
     def _cfg_pid(self, key: str):
-        v = self.env["ir.config_parameter"].sudo().get_param(key)
+        v = self.env["ir.config_parameter"].sudo().get_str(key)
         if not v:
             return False
         try:

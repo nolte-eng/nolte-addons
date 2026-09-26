@@ -10,17 +10,17 @@ def post_init_hook(cr, registry=None):
     key_allowance = "nolte_overtime_billing.product_allowance_id"
 
     # Default Overnight Allowance
-    if not ICP.get_param(key_overnight):
+    if not ICP.get_str(key_overnight):
         tmpl = env.ref("nolte_overtime_billing.product_template_overnight", raise_if_not_found=False)
         if tmpl:
             product = tmpl.sudo().product_variant_id
             if product:
-                ICP.set_param(key_overnight, str(product.id))
+                ICP.set_str(key_overnight, str(product.id))
 
     # Default Allowance
-    if not ICP.get_param(key_allowance):
+    if not ICP.get_str(key_allowance):
         tmpl_a = env.ref("nolte_overtime_billing.product_template_allowance", raise_if_not_found=False)
         if tmpl_a:
             prod_a = tmpl_a.sudo().product_variant_id
             if prod_a:
-                ICP.set_param(key_allowance, str(prod_a.id))
+                ICP.set_str(key_allowance, str(prod_a.id))

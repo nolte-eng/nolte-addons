@@ -416,7 +416,7 @@ class NolteExpenseReport(models.Model):
     def _notify_approvers_submitted(self):
         """Queue one notification per active approver with an email address."""
         approver_group = self.env.ref("nolte_spesenbericht.group_spesenbericht_approver")
-        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url", "")
+        base_url = self.env["ir.config_parameter"].sudo().get_str("web.base.url", "")
         for report in self:
             recipients = approver_group.sudo().user_ids.filtered(
                 lambda user: user.active
