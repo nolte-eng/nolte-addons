@@ -1,4 +1,3 @@
-import base64
 import csv
 import io
 import logging
@@ -208,7 +207,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
             if not wizard.csv_file:
                 continue
             try:
-                raw = base64.b64decode(wizard.csv_file)
+                raw = bytes(wizard.csv_file)
                 text = raw.decode("utf-8-sig", errors="replace")
                 meta, activities = wizard._read_kv_csv(text)
                 vals = wizard._extract_partner_data_from_meta(meta)
@@ -587,7 +586,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
         self.ensure_one()
         prods = self._get_products()
 
-        raw = base64.b64decode(self.csv_file)
+        raw = bytes(self.csv_file)
         text = raw.decode("utf-8-sig", errors="replace")
         meta, activities = self._read_kv_csv(text)
         if not activities:
