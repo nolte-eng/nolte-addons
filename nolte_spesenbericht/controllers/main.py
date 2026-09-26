@@ -4,7 +4,8 @@ from datetime import date
 
 from odoo import fields, http, _
 from odoo.exceptions import AccessError, UserError
-from odoo.http import content_disposition, request
+from odoo.http import request
+from odoo.http.stream import content_disposition
 
 
 class NolteSpesenberichtController(http.Controller):
