@@ -129,15 +129,15 @@
                                     <t t-foreach="company.partner_id.bank_ids[:2]" t-as="bank">
                                         <li>
                                             <i class="fa fa-fw fa-bank"/>
-                                            <span t-field="bank.bank_id.name"/>
+                                            <span t-field="bank.bank_name"/>
                                         </li>
                                         <li>
                                             <i class="fa fa-fw fa-money"/>
-                                            <span t-field="bank.acc_number"/>
+                                            <span t-field="bank.account_number"/>
                                         </li>
                                         <li>
                                             <i class="fa fa-fw fa-building"/>
-                                            <span t-field="bank.bank_id.bic"/>
+                                            <span t-field="bank.bank_bic"/>
                                         </li>
                                     </t>
                                 </ul>
