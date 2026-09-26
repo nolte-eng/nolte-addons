@@ -1,0 +1,114 @@
+<odoo>
+    <record id="view_nolte_service_report_tree" model="ir.ui.view">
+        <field name="name">nolte.service.report.list</field>
+        <field name="model">nolte.service.report</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="service_date"/>
+                <field name="partner_id"/>
+                <field name="task_id"/>
+                <field name="country_rate_key"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_nolte_service_report_form" model="ir.ui.view">
+        <field name="name">nolte.service.report.form</field>
+        <field name="model">nolte.service.report</field>
+        <field name="arch" type="xml">
+            <form string="Einsatzbericht">
+                <header>
+                    <button name="action_submit_review" type="object" string="Zur Prüfung" invisible="state not in ('customer_confirmed', 'internally_amended', 'returned')"/>
+                    <button name="action_compute_billing_preview" type="object" string="Abrechnungsvorschau" invisible="state not in ('customer_confirmed', 'internally_amended', 'under_review')" groups="nolte_stundenbericht.group_stundenbericht_approver"/>
+                    <button name="action_sync_spesenbericht" type="object" string="An Spesenbericht übergeben" invisible="state not in ('customer_confirmed', 'internally_amended', 'under_review')" groups="nolte_stundenbericht.group_stundenbericht_approver"/>
+                    <button name="action_sync_attendance" type="object" string="An Anwesenheit übergeben" invisible="state not in ('customer_confirmed', 'internally_amended', 'under_review', 'ready_to_bill')" groups="nolte_stundenbericht.group_stundenbericht_approver"/>
+                    <button name="action_open_billing_approval_wizard" type="object" string="Abrechnung freigeben" invisible="state not in ('under_review', 'ready_to_bill')" groups="nolte_stundenbericht.group_stundenbericht_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,customer_confirmed,internally_amended,under_review,ready_to_bill,billed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="service_date"/>
+                            <field name="partner_id"/>
+                            <field name="manual_customer_name" invisible="partner_id"/>
+                            <field name="manual_customer_street" invisible="partner_id"/>
+                            <field name="manual_customer_zip" invisible="partner_id"/>
+                            <field name="manual_customer_city" invisible="partner_id"/>
+                            <field name="manual_contact_name" invisible="partner_id"/>
+                            <field name="manual_contact_phone" invisible="partner_id"/>
+                            <field name="manual_contact_email" invisible="partner_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="task_id"/>
+                            <field name="machine_number"/>
+                            <field name="machine_type"/>
+                            <field name="overnight_count"/>
+                        </group>
+                        <group>
+                            <field name="country_rate_key"/>
+                            <field name="service_location"/>
+                            <field name="mobile_uuid" readonly="1"/>
+                            <field name="server_revision" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Mitarbeiter">
+                            <field name="member_ids">
+                                <list editable="bottom">
+                                    <field name="employee_id"/>
+                                    <field name="billing_state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Bemerkungen">
+                            <group><field name="work_description"/><field name="work_result"/><field name="public_note"/><field name="internal_note"/></group>
+                        </page>
+                        <page string="Material">
+                            <field name="material_ids">
+                                <list editable="bottom"><field name="product_id"/><field name="name"/><field name="quantity"/><field name="unit"/><field name="note"/></list>
+                            </field>
+                        </page>
+                        <page string="Checkliste">
+                            <field name="checklist_ids">
+                                <list editable="bottom"><field name="checked"/><field name="name"/><field name="note"/></list>
+                            </field>
+                        </page>
+                        <page string="Fotos">
+                            <field name="photo_ids" widget="many2many_binary" readonly="state not in ('draft', 'returned')"/>
+                        </page>
+                        <page string="Abrechnung">
+                            <group><field name="spesen_sync_state" readonly="1"/><field name="spesen_sync_message" readonly="1"/><field name="attendance_sync_state" readonly="1"/><field name="attendance_sync_message" readonly="1"/></group>
+                            <field name="member_ids" readonly="1">
+                                <list>
+                                    <field name="employee_id"/>
+                                    <field name="billing_state"/>
+                                    <field name="billing_preview"/>
+                                    <field name="billing_approved"/>
+                                    <field name="billing_sale_line_ids" widget="many2many_tags"/>
+                                    <field name="attendance_ids" widget="many2many_tags"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Konflikte">
+                            <field name="conflict_ids" readonly="1">
+                                <list><field name="employee_id"/><field name="conflict_date"/><field name="conflict_type"/><field name="state"/></list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_nolte_service_report" model="ir.actions.act_window">
+        <field name="name">Einsatzberichte</field>
+        <field name="res_model">nolte.service.report</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_nolte_stundenbericht_root" name="Stundenbericht" sequence="40"/>
+    <menuitem id="menu_nolte_service_report" name="Einsatzberichte" parent="menu_nolte_stundenbericht_root" action="action_nolte_service_report" sequence="10"/>
+</odoo>

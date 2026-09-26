@@ -1,0 +1,166 @@
+/*
+ * Nolte Engineering – Produktdetailseite
+ * Preis, Varianten und Kaufaktionen als kompakte Funktionsbereiche.
+ */
+
+#product_detail
+.o_wsale_product_details_content_section_price {
+    margin: 12px 0 !important;
+    padding: 15px 17px !important;
+    border: 1px solid #c7deeb;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #f4f9fc 0%, #eaf4f9 100%);
+}
+#product_detail
+.o_wsale_product_details_content_section_price
+.product_price {
+    margin: 0 !important;
+}
+
+#product_detail
+.o_wsale_product_details_content_section_price
+.oe_price {
+    color: #075584 !important;
+    font-size: 27px !important;
+    font-weight: 800 !important;
+    line-height: 1.2;
+}
+
+/* Varianten wie Zustand, Größe oder Ausführung */
+#product_detail
+.o_wsale_product_details_content_section_attributes:not(.d-none) {
+    margin: 0 0 12px !important;
+    padding: 14px 16px !important;
+    border: 1px solid #d8e3ea;
+    border-radius: 11px;
+    background: #fff;
+}
+
+/* Warenkorb, Merkliste und Bedingungen */
+#product_detail
+.o_wsale_product_details_content_section_cta {
+    margin: 0 0 12px !important;
+    padding: 15px 16px !important;
+    border: 1px solid #c7deeb;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #f4f9fc 0%, #eaf4f9 100%);
+}
+
+#product_detail #o_wsale_cta_wrapper {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+}
+
+#product_detail #add_to_cart_wrap {
+    width: 100% !important;
+    flex-grow: 1 !important;
+}
+
+#product_detail #add_to_cart {
+    min-height: 46px;
+    border-radius: 9px;
+    background: #075584;
+    font-weight: 700;
+    box-shadow: 0 6px 14px rgba(7, 85, 132, 0.16);
+}
+
+#product_detail #add_to_cart:hover {
+    background: #06466d;
+    transform: translateY(-1px);
+}
+
+#product_detail .css_quantity,
+#product_detail .o_add_wishlist,
+#product_detail .o_add_compare {
+    min-height: 46px;
+    border-color: #b8d2e1 !important;
+    border-radius: 9px !important;
+    background: #fff;
+}
+
+/* Sicherheit gegen leere Editor-Abschlusszeilen */
+#product_detail
+.o_wsale_product_details_content_section_title
+.oe_structure
+> p:has(> br:only-child),
+#product_detail
+.o_wsale_product_details_content_section_title
+.oe_structure
+> div:has(> br:only-child) {
+    display: none !important;
+}
+
+@media (max-width: 575.98px) {
+    #product_detail
+    .o_wsale_product_details_content_section_price,
+    #product_detail
+    .o_wsale_product_details_content_section_attributes:not(.d-none),
+    #product_detail
+    .o_wsale_product_details_content_section_cta {
+        padding: 13px !important;
+    }
+
+    #product_detail
+    .o_wsale_product_details_content_section_price
+    .oe_price {
+        font-size: 23px !important;
+    }
+}
+
+/* Nolte: kompakte CTA-Zeile auf Tablet und Desktop */
+@media (min-width: 576px) {
+    #product_detail #o_wsale_cta_wrapper {
+        display: flex !important;
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 10px !important;
+    }
+
+    #product_detail #add_to_cart_wrap {
+        display: flex !important;
+        width: auto !important;
+        min-width: 0;
+        flex: 1 1 auto !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+    }
+
+    #product_detail #add_to_cart_wrap .css_quantity {
+        width: 110px !important;
+        flex: 0 0 110px !important;
+    }
+
+    #product_detail #add_to_cart {
+        width: auto !important;
+        min-width: 0;
+        flex: 1 1 auto !important;
+        white-space: nowrap;
+    }
+
+    #product_detail #product_option_block {
+        width: auto !important;
+        flex: 0 0 auto !important;
+        flex-wrap: nowrap !important;
+    }
+}
+
+/* ==========================================================
+   Nolte Engineering – Produktdetailbilder vollständig anzeigen
+   Odoo 19 Standard verwendet object-fit: cover
+   ========================================================== */
+
+#o-carousel-product .carousel-inner img {
+    object-fit: contain !important;
+    object-position: center center !important;
+    padding: 18px !important;
+    box-sizing: border-box !important;
+}
+
+.o_wsale_product_page_grid_column
+.o_product_detail_img_wrapper > .product_detail_img {
+    object-fit: contain !important;
+    object-position: center center !important;
+    padding: 18px !important;
+    box-sizing: border-box !important;
+}

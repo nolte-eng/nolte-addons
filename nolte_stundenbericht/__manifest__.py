@@ -1,0 +1,22 @@
+{
+    "name": "Nolte Stundenbericht",
+    "version": "20.0.1.0.0",
+    "category": "Services/Project",
+    "summary": "Offlinefähige Einsatz- und Stundenberichte",
+    "author": "Nolte Engineering",
+    "license": "LGPL-3",
+    "depends": ["website", "project", "sale_management", "hr", "hr_attendance", "mail", "nolte_spesenbericht", "nolte_overtime_billing"],
+    "data": [
+        "security/groups.xml",
+        "security/ir.model.access.csv",
+        "data/sequence.xml",
+        "views/service_report_views.xml",
+        "views/project_task_views.xml",
+        "views/mobile_templates.xml",
+        "wizard/billing_approval_wizard_views.xml",
+        "reports/service_report_pdf.xml",
+    ],
+    "assets": {"web.assets_frontend": ["nolte_stundenbericht/static/src/scss/mobile.scss", "nolte_stundenbericht/static/src/js/mobile.js"]},
+    "application": True,
+    "installable": True,
+}

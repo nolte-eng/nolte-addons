@@ -1,0 +1,210 @@
+<?xml version="1.0"?>
+<odoo>
+  <template id="mobile_page_v2" name="Mobiler Stundenbericht – Mehrtägig">
+    <t t-call="website.layout">
+      <main id="wrap" class="ns-mobile-app">
+        <section class="ns-app-shell" id="nolte-stundenbericht-mobile">
+          <aside class="ns-sidebar" aria-label="Stundenbericht Navigation">
+            <div class="ns-logo" aria-label="Nolte Engineering"><img t-att-src="'/web/image/res.company/%s/logo' % request.env.company.id" alt="Nolte Engineering"/></div>
+            <nav>
+              <a href="#" data-view-target="home"><i>▣</i>Berichte</a>
+              <button type="button" data-new-report=""><i>＋</i>Neuer Bericht</button>
+              <a href="#" data-view-target="general"><i>ⓘ</i>Allgemein</a>
+              <a href="#" data-view-target="times"><i>◷</i>Zeiterfassung</a>
+              <a href="#" data-view-target="materials"><i>▤</i>Material</a>
+              <a href="#" data-view-target="photos"><i>◉</i>Fotos</a>
+              <a href="#" data-view-target="checklist"><i>✓</i>Checkliste</a>
+            </nav>
+            <div class="ns-user"><span>LN</span><small>Lars Nolte<br/>Monteur</small></div>
+          </aside>
+          <div class="ns-main" id="ns-top">
+          <header class="ns-app-header mb-3">
+            <div>
+              <h1>Stundenbericht</h1>
+              <p>Service. Maschinen. Mehr erreichen.</p>
+            </div>
+            <div class="text-end ns-header-actions"><span class="badge text-bg-secondary" data-status="">Offline bereit</span><small class="d-block mt-1" data-draft-state=""></small><button class="btn btn-primary mt-2" type="button" data-new-report="">＋ Neuer Bericht</button></div>
+          </header>
+          <div class="alert ns-message" data-message="">Entw&#xFC;rfe werden auf diesem Ger&#xE4;t gespeichert und bei Verbindung synchronisiert.</div>
+          <section class="card mb-3" data-report-view="home" data-recent-reports=""><div class="card-body"><h2 class="h5 mb-2">Letzte Berichte</h2><p class="small text-muted mb-0">Wird geladen …</p></div></section>
+          <section class="card mb-3" data-report-view="home" data-local-drafts=""><div class="card-body"><h2 class="h5 mb-2">Entwürfe auf diesem Gerät</h2><p class="small text-muted mb-0">Keine lokalen Entwürfe.</p></div></section>
+          <nav class="ns-section-nav mb-3" aria-label="Berichtsbereiche">
+            <a href="#" data-view-target="general">Allgemein</a><a href="#" data-view-target="times">Zeiterfassung</a><a href="#" data-view-target="materials">Material</a><a href="#" data-view-target="photos">Fotos</a><a href="#" data-view-target="checklist">Checkliste</a><a href="#" data-view-target="notes">Bemerkungen</a><a href="#" data-view-target="signature">Unterschrift</a>
+          </nav>
+          <form data-report-form="" style="display:block">
+            <div class="card mb-3" id="ns-section-einsatz" data-report-view="general">
+              <div class="card-body">
+                <h2 class="h5">Einsatz</h2>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label>Datum</label>
+                    <input class="form-control" type="date" name="serviceDate" required="required"/>
+                  </div>
+                  <div class="col-12">
+                    <label>Einsatzauftrag</label>
+                    <select class="form-select" name="taskId">
+                      <option value="">Ohne Zuordnung</option>
+                    </select>
+                  </div>
+                  <div class="col-12 d-none" data-customer-card="">
+                    <div class="border rounded bg-light p-3">
+                      <div class="fw-bold" data-customer-display="">Kunde</div>
+                      <div class="small text-muted" data-customer-address=""/>
+                      <div class="small mt-2 d-none" data-contact-display=""><strong>Ansprechpartner:</strong> <span data-contact-name=""/> <span data-contact-phone=""/> <span data-contact-email=""/></div>
+                    </div>
+                  </div>
+                  <div class="col-12" data-manual-customer="">
+                    <div class="border rounded bg-light p-3">
+                      <div class="fw-bold mb-2">Firma und Ansprechpartner</div>
+                      <p class="small text-muted mb-2">Für einen Bericht ohne Einsatzauftrag werden diese Daten nur für diesen Bericht erfasst.</p>
+                      <div class="row g-2">
+                        <div class="col-12"><label>Firma</label><input class="form-control" name="manualCustomerName" placeholder="Firmenname"/></div>
+                        <div class="col-12"><label>Straße / Hausnummer</label><input class="form-control" name="manualCustomerStreet"/></div>
+                        <div class="col-4"><label>PLZ</label><input class="form-control" name="manualCustomerZip"/></div>
+                        <div class="col-8"><label>Ort</label><input class="form-control" name="manualCustomerCity"/></div>
+                        <div class="col-12"><label>Ansprechpartner</label><input class="form-control" name="manualContactName"/></div>
+                        <div class="col-6"><label>Telefon</label><input class="form-control" type="tel" name="manualContactPhone"/></div>
+                        <div class="col-6"><label>E-Mail</label><input class="form-control" type="email" name="manualContactEmail"/></div>
+                      </div>
+                    </div>
+                  </div>
+                  <input type="hidden" data-customer-name=""/>
+                  <div class="col-6">
+                    <label>Land</label>
+                    <input class="form-control" name="countryRateKey" value="DE" required="required"/>
+                  </div>
+                  <div class="col-12" data-service-location-wrap="">
+                    <label data-service-location-label="">Einsatzort</label>
+                    <input class="form-control" name="serviceLocation"/>
+                  </div>
+                  <div class="col-6"><label>Maschinen-Nr.</label><input class="form-control" name="machineNumber"/></div>
+                  <div class="col-6"><label>Maschinentyp</label><input class="form-control" name="machineType"/></div>
+                  <div class="col-6"><label>Übernachtungen</label><input class="form-control" type="number" min="0" step="1" value="0" name="overnightCount"/></div>
+                  <div class="col-12">
+                    <label>Bemerkung</label>
+                    <textarea class="form-control" name="publicNote"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card mb-3" id="ns-section-zeiten" data-report-view="times">
+              <div class="card-body">
+                <h2 class="h5">Zeiten und Fahrt</h2>
+                <p class="text-muted small mb-3">Jeder Einsatztag wird einzeln erfasst. Fahrt, Arbeit und beliebig viele Pausen lassen sich direkt im aufgeklappten Tag ergänzen.</p>
+                <div class="d-flex justify-content-between align-items-end gap-2 mb-3">
+                  <div><label class="form-label mb-1">Neuer Einsatztag</label><input class="form-control" type="date" data-day-date=""/></div>
+                  <button class="btn btn-primary" type="button" data-day-add="">＋ Einsatztag hinzufügen</button>
+                </div>
+                <div data-day-list=""/>
+              </div>
+            </div>
+            <section class="card mb-3" data-report-view="times" data-live-summary="">
+              <div class="card-body">
+                <h2 class="h5 mb-3">Gesamtsumme des Berichts</h2>
+                <div class="row g-2 text-center small">
+                  <div class="col-6"><div class="ns-summary-value" data-summary-work="">–</div><div class="text-muted">Arbeit</div></div>
+                  <div class="col-6"><div class="ns-summary-value" data-summary-travel="">–</div><div class="text-muted">Fahrt</div></div>
+                  <div class="col-6"><div class="ns-summary-value" data-summary-break="">–</div><div class="text-muted">Pause</div></div>
+                  <div class="col-6"><div class="ns-summary-value text-primary" data-summary-total="">–</div><div class="text-muted">Einsatzzeit</div></div>
+                </div>
+                <p class="small text-muted mb-0 mt-3">Vorläufige Übersicht. Die verbindliche interne Bewertung erfolgt nach der Synchronisation.</p>
+              </div>
+            </section>
+            <section class="card mb-3" id="ns-section-arbeiten" data-report-view="notes">
+              <div class="card-body"><h2 class="h5">Ausgeführte Arbeiten</h2><label>Arbeiten</label><textarea class="form-control mb-2" name="workDescription" rows="4" placeholder="Welche Arbeiten wurden durchgeführt?"/><label>Fazit / weiterer Handlungsbedarf</label><textarea class="form-control" name="workResult" rows="3" placeholder="Ergebnis, Empfehlung oder weitere Arbeiten"/></div>
+            </section>
+            <section class="card mb-3" data-report-view="times" data-time-table="">
+              <div class="card-body"><h2 class="h5">Zeiterfassung</h2><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Art</th><th>Von</th><th>Bis</th><th>Dauer</th><th class="text-end">km</th></tr></thead><tbody data-time-table-body=""><tr><td colspan="5" class="text-muted">Noch keine Zeiten erfasst.</td></tr></tbody></table></div></div>
+            </section>
+            <section class="card mb-3" id="ns-section-material" data-report-view="materials" data-material-entry="">
+              <div class="card-body">
+                <h2 class="h5">Material <span class="text-muted small">optional</span></h2>
+                <div class="row g-2">
+                  <div class="col-12"><label>Odoo-Artikel suchen</label><div class="input-group"><input class="form-control" placeholder="Artikelname oder Nummer" data-product-search=""/><button class="btn btn-outline-secondary" type="button" data-product-search-button="">Suchen</button></div><div class="list-group mt-1 d-none" data-product-results=""/></div>
+                  <div class="col-12"><label>Artikel / Material</label><input class="form-control" data-material-name=""/></div>
+                  <div class="col-6"><label>Menge</label><input class="form-control" type="number" min="0" step="0.1" value="1" data-material-quantity=""/></div>
+                  <div class="col-6"><label>Einheit</label><input class="form-control" value="Stk." data-material-unit=""/></div>
+                  <div class="col-12"><label>Bemerkung</label><input class="form-control" data-material-note=""/></div>
+                </div>
+                <button class="btn btn-outline-primary w-100 mt-3" type="button" data-material-add="">Material hinzufügen</button>
+                <div class="small mt-3" data-material-list=""/>
+              </div>
+            </section>
+            <section class="card mb-3" id="ns-section-checkliste" data-report-view="checklist" data-checklist-entry="">
+              <div class="card-body">
+                <h2 class="h5">Checkliste <span class="text-muted small">optional</span></h2>
+                <label>Neuer Prüfpunkt</label>
+                <div class="input-group"><input class="form-control" data-checklist-name=""/><button class="btn btn-outline-primary" type="button" data-checklist-add="">Hinzufügen</button></div>
+                <div class="mt-3" data-checklist-list=""/>
+              </div>
+            </section>
+            <section class="card mb-3" id="ns-section-fotos" data-report-view="photos" data-photo-entry="">
+              <div class="card-body">
+                <h2 class="h5">Fotos <span class="text-muted small">optional</span></h2>
+                <div class="d-flex flex-wrap gap-2">
+                  <label class="btn btn-primary mb-0">Foto aufnehmen<input class="d-none" type="file" accept="image/*" capture="environment" data-photo-input=""/></label>
+                  <label class="btn btn-outline-primary mb-0">Datei auswählen<input class="d-none" type="file" accept="image/*" multiple="multiple" data-photo-input=""/></label>
+                </div>
+                <p class="small text-muted mb-0 mt-2" data-photo-status="">Fotos werden zusammen mit dem nächsten Synchronisieren hochgeladen.</p>
+                <div class="row g-2 mt-1" data-photo-preview=""/>
+              </div>
+            </section>
+            <div class="ns-sync-actions d-grid gap-2" id="ns-sync">
+              <button class="btn btn-outline-primary" type="button" data-save="">Auf diesem Ger&#xE4;t speichern</button>
+              <button class="btn btn-primary" type="button" data-sync="">Jetzt synchronisieren</button>
+            </div>
+          </form>
+          <section class="card mt-3 d-none" id="ns-section-unterschrift" data-report-view="signature" data-confirmation="">
+            <div class="card-body">
+              <h2 class="h5">Kundenbestätigung</h2>
+              <p class="small mb-2">Mit der Unterschrift wird die Kundenfassung festgeschrieben. Eine vorher eingetragene Rückfahrt bleibt darin enthalten; eine fehlende Rückfahrt kann danach intern ergänzt werden.</p>
+              <div class="border rounded bg-light p-2 small mb-3" data-confirmation-preview=""/>
+              <label>Name des Unterzeichners</label>
+              <input class="form-control mb-2" name="signerName" data-signer-name=""/>
+              <label>Unterschrift</label>
+              <canvas class="w-100 border rounded bg-white" data-signature="" height="180" aria-label="Unterschriftsfeld"></canvas>
+              <div class="d-flex gap-2 mt-2">
+                <button class="btn btn-outline-secondary" type="button" data-signature-clear="">L&#xF6;schen</button>
+                <button class="btn btn-success flex-grow-1" type="button" data-confirm="">Kundenbest&#xE4;tigung abschlie&#xDF;en</button>
+              </div>
+            </div>
+          </section>
+          <section class="card mt-3 d-none" data-report-view="signature" data-pdf-preview="">
+            <div class="card-body text-center"><h2 class="h5" data-pdf-title="">PDF-Vorschau</h2><p class="small text-muted" data-pdf-description="">So sieht der Bericht für den Kunden aus. Die finale Fassung enthält zusätzlich die Kundenunterschrift.</p><a class="btn btn-outline-primary w-100" target="_blank" data-pdf-link="">PDF-Vorschau öffnen</a></div>
+          </section>
+          <section class="card mt-3 d-none" data-report-view="times" data-return-trip="">
+            <div class="card-body">
+              <h2 class="h5">Interne Rückfahrt</h2>
+              <p class="small">Diese Angaben werden nach der Kundenbestätigung nur intern gespeichert.</p>
+              <div class="row g-2">
+                <div class="col-6"><label>von</label><input class="form-control" type="time" data-return-start=""/></div>
+                <div class="col-6"><label>bis</label><input class="form-control" type="time" data-return-end=""/></div>
+                <div class="col-12"><label>Kilometer</label><input class="form-control" type="number" min="0" step="0.1" data-return-km=""/></div>
+              </div>
+              <button class="btn btn-primary w-100 mt-3" type="button" data-return-save="">Rückfahrt intern speichern</button>
+            </div>
+          </section>
+          </div>
+        </section>
+      </main>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=30"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/materials.js?v=5"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/checklist.js?v=3"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/photos.js?v=6"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/recent_reports.js?v=1"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/confirmation_preview.js?v=2"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/pdf_preview.js?v=2"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/local_drafts.js?v=2"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/view_navigation.js?v=1"/>
+    </t>
+  </template>
+  <!-- The website quick-login widget can be unavailable in a freshly cloned database.
+         Keep the regular Odoo login form accessible in all environments. -->
+  <template id="login_form_always_visible" inherit_id="web.login">
+    <xpath expr="//form[@t-attf-class]" position="attributes">
+      <attribute name="t-attf-class">oe_login_form</attribute>
+    </xpath>
+  </template>
+</odoo>

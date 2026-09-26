@@ -1,0 +1,21 @@
+<odoo>
+    <record id="view_project_task_form_nolte_service_defaults" model="ir.ui.view">
+        <field name="name">project.task.form.nolte.service.defaults</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Einsatz-Stammdaten" name="nolte_service_defaults">
+                    <group>
+                        <field name="partner_id" string="Kunde"/>
+                        <field name="nolte_service_location"/>
+                        <field name="nolte_machine_number"/>
+                        <field name="nolte_machine_type"/>
+                        <field name="nolte_overnight_count"/>
+                    </group>
+                    <p class="text-muted">Diese Angaben werden in jeden neuen Tagesbericht dieses Einsatzauftrags übernommen.</p>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

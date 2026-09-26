@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_pricelist_form_nolte_tools" model="ir.ui.view">
+        <field name="name">product.pricelist.form.nolte.tools</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="product.product_pricelist_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button name="action_open_add_variants_wizard"
+                            type="object"
+                            string="Varianten hinzufügen"
+                            class="btn-primary"
+                            groups="sales_team.group_sale_manager"/>
+                    <button name="action_open_pricelist_items"
+                            type="object"
+                            string="Preislistenpositionen"
+                            groups="sales_team.group_sale_manager"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Odoo 19 already hides prices and cart actions whenever
+         prevent_zero_price_sale is set by _get_combination_info(). -->
+    <template id="product" inherit_id="website_sale.product" name="Call For Price">
+        <xpath expr="//div[@id='o_wsale_product_details_content']/form" position="attributes">
+            <attribute name="t-if">is_add_to_cart_possible and not product.price_call</attribute>
+        </xpath>
+
+        <xpath expr="//div[@id='o_wsale_product_details_content']/form" position="before">
+            <t t-if="product.price_call">
+                <t t-call="website_sale.product_title"/>
+                <div class="my-3">
+                    <button type="button"
+                            class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#call_for_price_modal">
+                        Preis anfragen
+                    </button>
+                </div>
+            </t>
+        </xpath>
+
+        <!-- Keep the dialog outside the product gallery's stacking context. -->
+        <xpath expr="//div[@id='wrap']" position="after">
+            <div t-if="product.price_call"
+                 id="call_for_price_modal"
+                 class="modal fade o_call_for_price_modal"
+                 tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="call_for_price_modal_title">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <form method="post" action="/call_for_price/submit">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="product_id" t-att-value="product.id"/>
+                            <div class="modal-header">
+                                <h5 id="call_for_price_modal_title" class="modal-title">Preis anfragen</h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Schließen"/>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="call_price_first_name" class="form-label">Vorname</label>
+                                    <input id="call_price_first_name"
+                                           type="text"
+                                           class="form-control"
+                                           name="first_name"
+                                           required="required"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="call_price_last_name" class="form-label">Nachname</label>
+                                    <input id="call_price_last_name"
+                                           type="text"
+                                           class="form-control"
+                                           name="last_name"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="call_price_email" class="form-label">E-Mail</label>
+                                    <input id="call_price_email"
+                                           type="email"
+                                           class="form-control"
+                                           name="email"
+                                           required="required"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="call_price_phone" class="form-label">Telefon</label>
+                                    <input id="call_price_phone"
+                                           type="tel"
+                                           class="form-control"
+                                           name="phone"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="call_price_quantity" class="form-label">Menge</label>
+                                    <input id="call_price_quantity"
+                                           type="number"
+                                           min="1"
+                                           value="1"
+                                           class="form-control"
+                                           name="quantity"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="call_price_message" class="form-label">Nachricht</label>
+                                    <textarea id="call_price_message"
+                                              class="form-control"
+                                              name="message"
+                                              rows="3"/>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    Schließen
+                                </button>
+                                <button type="submit" class="btn btn-primary">Anfrage senden</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="products_call_for_price"
+              inherit_id="website_sale.products_item"
+              name="Product Call for price">
+        <xpath expr="//*[hasclass('product_price')]" position="after">
+            <div t-if="product.price_call" class="product_price">
+                <span class="h6 mb-0">Preis auf Anfrage</span>
+            </div>
+        </xpath>
+    </template>
+</odoo>

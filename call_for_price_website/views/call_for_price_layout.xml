@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template
+        id="nolte_call_for_price_product_layout"
+        inherit_id="website_sale.product_title"
+        name="Nolte: Anfragebox unter Produktname"
+    >
+        <xpath expr="//h1" position="after">
+            <div
+                t-if="product.price_call"
+                class="nolte_call_price_box"
+            >
+                <div class="nolte_call_price_box_text">
+                    <strong>Preis auf Anfrage</strong>
+                    <span>
+                        Fordern Sie jetzt Ihr individuelles und unverbindliches Angebot an.
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-primary nolte_call_price_button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#call_for_price_modal"
+                >
+                    <i class="fa fa-envelope-o" aria-hidden="true"/>
+                    <span>Preis anfragen</span>
+                </button>
+            </div>
+        </xpath>
+    </template>
+</odoo>

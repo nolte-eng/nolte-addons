@@ -1,0 +1,955 @@
+/*
+ * Nolte Engineering: ruhiger Weiss-Hellgrau-Verlauf fuer Produktbilder.
+ * Durch #products_grid bleibt die Anpassung auf das Shop-Raster begrenzt.
+ */
+#products_grid .oe_product_image {
+    background: radial-gradient(
+        circle at 50% 38%,
+        #fff 0%,
+        #f8fafb 58%,
+        #f1f4f6 100%
+    ) !important;
+}
+
+/*
+ * Produkt vollständig und mittig darstellen.
+ * Der Innenabstand verhindert Berührung mit den Kartenrändern.
+ */
+#products_grid .oe_product_image img,
+#products_grid img.oe_product_image_img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+}
+
+/*
+ * Nolte Engineering: kompakte Kategorienkarten im Shop.
+ */
+#o_wsale_categories_filmstrip.o_wsale_filmstrip_grid {
+    margin: 10px 0 28px !important;
+    overflow: visible !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_wrapper {
+    width: 100%;
+    margin: 0 !important;
+    padding: 4px 4px 14px !important;
+    border: 0 !important;
+    overflow-x: auto !important;
+    scrollbar-width: thin;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip {
+    width: max-content !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip > li {
+    width: 176px !important;
+    min-height: 164px;
+    flex: 0 0 176px;
+    aspect-ratio: unset !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+    height: 100% !important;
+    min-height: 164px;
+    padding: 14px 12px 12px !important;
+    gap: 10px !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    border: 1px solid #dce5ec !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 5px 16px rgba(10, 38, 64, 0.06);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_image {
+    width: 96px !important;
+    height: 96px !important;
+    flex: 0 0 96px;
+    border-radius: 12px !important;
+    background-color: #f3f6f8 !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+    display: flex !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    text-align: center;
+    color: #102a43;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-decoration: none !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_link:hover
+.o_wsale_filmstrip_item:not(.active) {
+    transform: translateY(-3px);
+    border-color: #69b9e6 !important;
+    background: #fafdff !important;
+    box-shadow: 0 12px 26px rgba(10, 38, 64, 0.12);
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item.active,
+#o_wsale_categories_filmstrip input:checked + .o_wsale_filmstrip_item {
+    border-color: #1685c0 !important;
+    background: #eaf5fc !important;
+    box-shadow: 0 8px 20px rgba(7, 85, 132, 0.13);
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item.active span,
+#o_wsale_categories_filmstrip input:checked + .o_wsale_filmstrip_item span {
+    color: #075584 !important;
+    text-decoration: none !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_link:focus-visible {
+    outline: 3px solid rgba(22, 133, 192, 0.3);
+    outline-offset: 3px;
+    border-radius: 16px;
+}
+
+@media (max-width: 767.98px) {
+    #o_wsale_categories_filmstrip.o_wsale_filmstrip_grid {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip > li {
+        width: 145px !important;
+        min-height: 146px;
+        flex-basis: 145px;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+        min-height: 146px;
+        padding: 12px 10px 10px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_image {
+        width: 78px !important;
+        height: 78px !important;
+        flex-basis: 78px;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+        min-height: 36px;
+        font-size: 13px;
+    }
+}
+
+/*
+ * Nolte Engineering: alle acht Hauptkategorien als festes Raster.
+ * Desktop/iPad quer: 4 Spalten
+ * Tablet/iPad hoch: 3 Spalten
+ * Smartphone: 2 Spalten
+ */
+#o_wsale_categories_filmstrip.o_wsale_filmstrip_grid {
+    display: block !important;
+    width: 100% !important;
+    margin: 12px 0 34px !important;
+    overflow: visible !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_wrapper {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    cursor: default !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip > li {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: auto !important;
+    flex: none !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_link {
+    display: block !important;
+    height: 100% !important;
+    border-radius: 16px;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+    display: grid !important;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center !important;
+    justify-content: stretch !important;
+    gap: 14px !important;
+    min-height: 126px !important;
+    height: 100% !important;
+    padding: 14px !important;
+    border: 1px solid #dce5ec !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 5px 16px rgba(10, 38, 64, 0.07);
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_image {
+    display: block !important;
+    position: relative !important;
+    width: 96px !important;
+    height: 96px !important;
+    min-width: 96px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    background-color: #f2f5f7 !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    text-align: left !important;
+    color: #102a43 !important;
+    font-size: 16px !important;
+    font-weight: 750 !important;
+    line-height: 1.25 !important;
+    text-decoration: none !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_link:hover
+.o_wsale_filmstrip_item {
+    transform: translateY(-3px);
+    border-color: #50a9da !important;
+    box-shadow: 0 12px 28px rgba(10, 38, 64, 0.13);
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item.active,
+#o_wsale_categories_filmstrip input:checked + .o_wsale_filmstrip_item {
+    border-color: #1685c0 !important;
+    background: #eaf5fc !important;
+}
+
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item.active span,
+#o_wsale_categories_filmstrip input:checked + .o_wsale_filmstrip_item span {
+    color: #075584 !important;
+    text-decoration: none !important;
+}
+
+/* iPad hochkant und kleinere Tablets */
+@media (max-width: 991.98px) {
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+        grid-template-columns: 78px minmax(0, 1fr);
+        min-height: 108px !important;
+        padding: 12px !important;
+        gap: 11px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_image {
+        width: 78px !important;
+        height: 78px !important;
+        min-width: 78px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+        font-size: 14px !important;
+    }
+}
+
+/* Smartphone */
+@media (max-width: 575.98px) {
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 158px !important;
+        padding: 10px !important;
+        gap: 8px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_image {
+        width: 88px !important;
+        height: 88px !important;
+        min-width: 88px !important;
+    }
+
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+        justify-content: center !important;
+        min-height: 36px !important;
+        text-align: center !important;
+        font-size: 13px !important;
+    }
+}
+
+/*
+ * Shopabschnitte klar trennen:
+ * Kategorien = Produktbereiche
+ * Produktliste = Alle Produkte
+ */
+#o_wsale_products_header.o_wsale_products_header_is_shop
+.o_wsale_shop_title {
+    font-size: 0 !important;
+    margin-bottom: 10px !important;
+}
+
+#o_wsale_products_header.o_wsale_products_header_is_shop
+.o_wsale_shop_title::after {
+    content: "Produktbereiche";
+    display: block;
+    color: #102a43;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+#products_grid .o_wsale_products_grid_table_wrapper::before {
+    content: "Alle Produkte";
+    display: block;
+    margin: 24px 4px 22px;
+    color: #102a43;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+@media (max-width: 767.98px) {
+    #o_wsale_products_header.o_wsale_products_header_is_shop
+    .o_wsale_shop_title::after,
+    #products_grid .o_wsale_products_grid_table_wrapper::before {
+        font-size: 24px;
+    }
+
+    #products_grid .o_wsale_products_grid_table_wrapper::before {
+        margin-top: 18px;
+        margin-bottom: 16px;
+    }
+}
+
+/* Ruhigere und gleichmäßigere Kategorienamen */
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em;
+}
+
+/* Lange Kategorienamen erhalten etwas mehr Platz */
+#o_wsale_categories_filmstrip
+a[href*="/werkzeugmaschinen-35"]
+.o_wsale_filmstrip_item span,
+#o_wsale_categories_filmstrip
+a[href*="/maschinenschutz-mechanik-124"]
+.o_wsale_filmstrip_item span {
+    font-size: 14.5px !important;
+    line-height: 1.32 !important;
+}
+
+/* Werkzeugmaschinen auf zwei ausgewogene Zeilen setzen */
+#o_wsale_categories_filmstrip
+a[href*="/werkzeugmaschinen-35"]
+.o_wsale_filmstrip_item span {
+    font-size: 0 !important;
+}
+
+#o_wsale_categories_filmstrip
+a[href*="/werkzeugmaschinen-35"]
+.o_wsale_filmstrip_item span::after {
+    content: "Werkzeug-\A maschinen";
+    display: block;
+    white-space: pre-line;
+    color: #102a43;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+/*
+ * Übersichtlicheres Produktraster:
+ * Desktop 4, Tablet 3, Smartphone 2 Produkte.
+ */
+#products_grid #o_wsale_products_grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    --o-wsale-ppr: 4 !important;
+}
+
+#products_grid #o_wsale_products_grid > .oe_product {
+    grid-column: auto !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+#products_grid .oe_product_image {
+    min-height: 220px !important;
+}
+
+#products_grid .oe_product_cart h2,
+#products_grid .oe_product_cart .h2 {
+    min-height: 3.9em;
+    font-size: 15px !important;
+    line-height: 1.3 !important;
+}
+
+/* Tablet */
+@media (max-width: 991.98px) {
+    #products_grid #o_wsale_products_grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+        --o-wsale-ppr: 3 !important;
+    }
+
+    #products_grid .oe_product_image {
+        min-height: 190px !important;
+    }
+}
+
+/* Smartphone */
+@media (max-width: 575.98px) {
+    #products_grid #o_wsale_products_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        --o-wsale-ppr: 2 !important;
+    }
+
+    #products_grid .oe_product_image {
+        min-height: 150px !important;
+    }
+
+    #products_grid .oe_product_cart h2,
+    #products_grid .oe_product_cart .h2 {
+        font-size: 13px !important;
+    }
+}
+
+/* Einheitlicher Informationsbereich der Produktkarten */
+#products_grid .oe_product_cart {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#products_grid .o_wsale_product_information {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    padding: 13px 12px 11px !important;
+}
+
+#products_grid .o_wsale_product_info_attributes_wrapper,
+#products_grid .o_wsale_product_information_text {
+    min-width: 0;
+}
+
+#products_grid .o_wsale_products_item_title {
+    display: -webkit-box !important;
+    min-height: 3.9em !important;
+    max-height: 3.9em !important;
+    margin: 0 0 11px !important;
+    overflow: hidden !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+}
+
+#products_grid .o_wsale_product_sub {
+    display: flex !important;
+    margin-top: auto !important;
+}
+
+/* Gemeinsame Preisfläche */
+#products_grid .product_price {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 34px !important;
+    align-items: center !important;
+    padding: 6px 10px !important;
+    border-radius: 9px !important;
+}
+
+/* Produkte mit festem Preis */
+#products_grid .product_price:has(.oe_currency_value) {
+    justify-content: flex-start !important;
+    border: 1px solid #cfe4f1 !important;
+    background: #eef7fc !important;
+    color: #075584 !important;
+}
+
+#products_grid .product_price:has(.oe_currency_value) .h6 {
+    color: #075584 !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+}
+
+/* Produkte ohne veröffentlichten Preis */
+#products_grid .product_price:not(:has(.oe_currency_value)) {
+    justify-content: center !important;
+    border: 1px solid #9fcce5 !important;
+    background: #e6f3fa !important;
+    color: #075584 !important;
+}
+
+#products_grid .product_price:not(:has(.oe_currency_value)) .h6 {
+    color: #075584 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+}
+
+/* Versteckte Aktionsplatzhalter sollen die Preisbreite nicht verkleinern */
+#products_grid .o_wsale_product_btn:has(
+    .o_add_compare_placeholder
+) {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 575.98px) {
+    #products_grid .o_wsale_product_information {
+        padding: 10px 9px 9px !important;
+    }
+
+    #products_grid .o_wsale_products_item_title {
+        font-size: 13px !important;
+    }
+
+    #products_grid .product_price:not(:has(.oe_currency_value)) .h6 {
+        font-size: 12px !important;
+    }
+}
+
+/* Sichtbare Produktsuche zwischen Kategorien und Produktliste */
+#products_grid .nolte_shop_product_search {
+    width: 100%;
+    margin: 24px 0 4px;
+}
+
+#products_grid .nolte_shop_search_form {
+    width: 100%;
+    max-width: 760px;
+}
+
+#products_grid .nolte_shop_search_form .input-group {
+    min-height: 52px;
+    overflow: hidden;
+    border: 1px solid #cbdbe6;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 5px 16px rgba(10, 38, 64, 0.07);
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+#products_grid .nolte_shop_search_form .input-group:focus-within {
+    border-color: #1685c0;
+    box-shadow: 0 0 0 4px rgba(22, 133, 192, 0.12);
+}
+
+#products_grid .nolte_shop_search_form input {
+    min-width: 0;
+    padding: 12px 16px !important;
+    border: 0 !important;
+    background: #fff !important;
+    color: #102a43;
+    font-size: 16px;
+    box-shadow: none !important;
+}
+
+#products_grid .nolte_shop_search_form input::placeholder {
+    color: #6b7f90;
+    opacity: 1;
+}
+
+#products_grid .nolte_shop_search_form button {
+    min-width: 118px;
+    padding: 10px 18px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #075584 !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+
+#products_grid .nolte_shop_search_form button:hover {
+    background: #003b70 !important;
+}
+
+@media (max-width: 575.98px) {
+    #products_grid .nolte_shop_product_search {
+        margin-top: 18px;
+    }
+
+    #products_grid .nolte_shop_search_form .input-group {
+        min-height: 48px;
+    }
+
+    #products_grid .nolte_shop_search_form input {
+        padding: 10px 12px !important;
+        font-size: 14px;
+    }
+
+    #products_grid .nolte_shop_search_form button {
+        min-width: 52px;
+        padding: 10px 14px !important;
+    }
+}
+
+/* Die sichtbare Suche ersetzt die schwebende Suchlupe */
+#o_wsale_floating_bar
+div:has(> a[data-bs-target="#o_wsale_search_modal"]) {
+    display: none !important;
+}
+
+/* Leere Trennlinie neben der entfernten Suchlupe ausblenden */
+#o_wsale_floating_bar
+div:has(> a[data-bs-target="#o_wsale_search_modal"])
++ .border-start {
+    display: none !important;
+}
+
+/* Auf Desktop verschwindet die nun leere schwebende Leiste vollständig */
+@media (min-width: 992px) {
+    #o_wsale_floating_bar_rail {
+        display: none !important;
+    }
+}
+
+/* Bei Suchergebnissen ist die zusätzliche Überschrift überflüssig */
+#o_wsale_products_header:has(.o_wsale_category_title_is_search)
++ .o_wsale_products_grid_table_wrapper::before {
+    display: none !important;
+}
+
+/* Suchergebnisüberschrift klarer gestalten */
+#o_wsale_products_header .o_wsale_category_title_is_search {
+    margin: 12px 0 18px !important;
+    color: #102a43 !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+}
+
+#o_wsale_products_header
+.o_wsale_category_title_is_search .text-muted {
+    color: #536b7e !important;
+}
+
+@media (max-width: 575.98px) {
+    #o_wsale_products_header .o_wsale_category_title_is_search {
+        font-size: 21px !important;
+    }
+}
+
+/* Suche und Sortierung als gemeinsame Werkzeugleiste */
+#products_grid .nolte_shop_product_search {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+}
+
+#products_grid .nolte_shop_product_search .nolte_shop_search_form {
+    flex: 1 1 auto;
+    max-width: 760px;
+}
+
+#products_grid .nolte_shop_sort_button {
+    display: inline-flex !important;
+    flex: 0 0 auto;
+    min-width: 132px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 17px !important;
+    border: 1px solid #b9cedc !important;
+    border-radius: 13px !important;
+    background: #fff !important;
+    color: #173b62 !important;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 5px 16px rgba(10, 38, 64, 0.06);
+}
+
+#products_grid .nolte_shop_sort_button:hover {
+    border-color: #1685c0 !important;
+    background: #eef7fc !important;
+    color: #075584 !important;
+}
+
+@media (max-width: 575.98px) {
+    #products_grid .nolte_shop_product_search {
+        flex-wrap: wrap;
+        gap: 9px !important;
+    }
+
+    #products_grid .nolte_shop_product_search .nolte_shop_search_form {
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    #products_grid .nolte_shop_sort_button {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+/* Passende Produktüberschrift auf Kategorieseiten */
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
++ .o_wsale_products_grid_table_wrapper::before {
+    content: "Produkte in dieser Kategorie" !important;
+}
+
+/* Kategoriename auf Unterseiten hervorheben */
+#o_wsale_products_header
+.o_wsale_category_title:not(.o_wsale_category_title_is_search) {
+    margin: 8px 0 12px !important;
+    color: #102a43 !important;
+    font-size: 30px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.025em;
+}
+
+/* Breadcrumb-Navigation ruhiger gestalten */
+#o_wsale_products_header .breadcrumb {
+    margin-bottom: 2px !important;
+    color: #60788c;
+    font-size: 14px;
+}
+
+#o_wsale_products_header .breadcrumb a {
+    color: #075584;
+    text-decoration: none;
+}
+
+#o_wsale_products_header .breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 575.98px) {
+    #o_wsale_products_header
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search) {
+        font-size: 24px !important;
+    }
+
+    #o_wsale_products_header:has(
+        .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+    )
+    + .o_wsale_products_grid_table_wrapper::before {
+        font-size: 22px !important;
+    }
+}
+
+/*
+ * Unterkategorieseiten:
+ * Kategoriename sichtbar und Unterkategorien als kompakte Textkarten.
+ */
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
+.o_wsale_category_title {
+    display: flex !important;
+    margin: 6px 0 16px !important;
+}
+
+/* Unterkategorien kompakter als die acht Hauptbereiche darstellen */
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
+#o_wsale_categories_filmstrip {
+    margin-bottom: 20px !important;
+}
+
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
+#o_wsale_categories_filmstrip .o_wsale_filmstrip {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+}
+
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+    display: flex !important;
+    min-height: 64px !important;
+    padding: 11px 14px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+}
+
+/* Wiederholte oder fehlende Bilder auf Unterkategorien ausblenden */
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_image {
+    display: none !important;
+}
+
+#o_wsale_products_header:has(
+    .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+)
+#o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+    justify-content: center !important;
+    min-height: 0 !important;
+    text-align: center !important;
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+}
+
+/* Kategorien ohne veröffentlichte Produkte angemeldet zurückhaltend darstellen */
+#o_wsale_products_header
+#o_wsale_categories_filmstrip li[data-publish="off"] {
+    opacity: 0.48;
+}
+
+/* Tablet */
+@media (max-width: 991.98px) {
+    #o_wsale_products_header:has(
+        .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+    )
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Smartphone */
+@media (max-width: 575.98px) {
+    #o_wsale_products_header:has(
+        .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+    )
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    #o_wsale_products_header:has(
+        .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+    )
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item {
+        min-height: 58px !important;
+        padding: 9px 10px !important;
+    }
+
+    #o_wsale_products_header:has(
+        .o_wsale_category_title:not(.o_wsale_category_title_is_search)
+    )
+    #o_wsale_categories_filmstrip .o_wsale_filmstrip_item span {
+        font-size: 13px !important;
+    }
+}
+
+/* Preis- und Anfragefläche als klar erkennbare Produktverlinkung */
+#products_grid a.nolte_product_price_link {
+    cursor: pointer !important;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+}
+
+#products_grid a.nolte_product_price_link:hover {
+    border-color: #65b5df !important;
+    background: #dceffa !important;
+    box-shadow: 0 4px 12px rgba(7, 85, 132, 0.12);
+    color: #064b75 !important;
+    transform: translateY(-1px);
+}
+
+#products_grid a.nolte_product_price_link:focus-visible {
+    outline: 3px solid rgba(24, 151, 216, 0.3);
+    outline-offset: 2px;
+}
+
+#products_grid a.nolte_product_price_link:active {
+    box-shadow: none;
+    transform: translateY(0);
+}
+
+/*
+ * Klickbare Preisfläche, ohne die ursprüngliche Preislogik zu ersetzen.
+ * Dadurch bleiben ausgeblendete Preise und „Bitte Preis anfragen“ erhalten.
+ */
+#products_grid .product_price {
+    position: relative !important;
+}
+
+#products_grid .product_price .nolte_product_price_overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+    cursor: pointer;
+}
+
+#products_grid .product_price:has(.nolte_product_price_overlay) {
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+}
+
+#products_grid .product_price:has(.nolte_product_price_overlay):hover {
+    border-color: #65b5df !important;
+    background: #dceffa !important;
+    box-shadow: 0 4px 12px rgba(7, 85, 132, 0.12);
+    transform: translateY(-1px);
+}
+
+#products_grid .product_price:has(
+    .nolte_product_price_overlay:focus-visible
+) {
+    outline: 3px solid rgba(24, 151, 216, 0.3);
+    outline-offset: 2px;
+}

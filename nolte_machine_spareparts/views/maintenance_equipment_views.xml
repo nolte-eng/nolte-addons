@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_maintenance_equipment_form_inherit_nolte_machine_spareparts" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.nolte.machine.spareparts</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='product_information']//field[@name='partner_id']" position="after">
+                <field name="product_id"/>
+                <field name="bom_id" readonly="1" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_spare_parts"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-wrench"
+                        invisible="not product_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Ersatzteile</span>
+                    </div>
+                </button>
+                <button name="action_print_spare_parts_catalog"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-pdf-o"
+                        invisible="not product_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">PDF Katalog</span>
+                    </div>
+                </button>
+                <button name="action_open_spareparts_quote_wizard"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        invisible="not product_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Angebot</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_mrp_bom_line_list_nolte_machine_spareparts" model="ir.ui.view">
+        <field name="name">mrp.bom.line.list.nolte.machine.spareparts</field>
+        <field name="model">mrp.bom.line</field>
+        <field name="arch" type="xml">
+            <list string="Ersatzteile" create="false" delete="false" edit="false">
+                <field name="product_id"/>
+                <field name="qty_available" string="Bestand"/>
+                <field name="product_qty" string="Menge"/>
+                <field name="product_uom_id" string="ME"/>
+                <field name="bom_id" invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_nolte_spareparts_quotation_wizard_form" model="ir.ui.view">
+        <field name="name">nolte.spareparts.quotation.wizard.form</field>
+        <field name="model">nolte.spareparts.quotation.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Angebot aus Ersatzteilen">
+                <group>
+                    <field name="equipment_id" readonly="1"/>
+                    <field name="partner_id" readonly="1"/>
+                </group>
+
+                <group>
+                    <field name="target"/>
+                    <field name="existing_order_id" invisible="target != 'existing'"/>
+                    <field name="merge_same_product"/>
+                </group>
+
+                <separator string="Positionen"/>
+                <field name="line_ids">
+                    <list editable="bottom">
+                        <field name="selected"/>
+                        <field name="product_id"/>
+                        <field name="quantity"/>
+                        <field name="product_uom_id"/>
+                    </list>
+                </field>
+
+                <footer>
+                    <button string="Abbrechen" class="btn-secondary" special="cancel"/>
+                    <button string="Angebot erstellen"
+                            class="btn-primary"
+                            type="object"
+                            name="action_create_or_update_quotation"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

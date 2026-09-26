@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template
+        id="nolte_shop_product_price_link"
+        inherit_id="website_sale.products_item"
+        name="Nolte Shop: clickable product price"
+    >
+        <xpath expr="//div[hasclass('product_price')]" position="inside">
+            <a
+                t-att-href="product_href"
+                class="nolte_product_price_overlay"
+                aria-label="Produktdetails öffnen"
+                title="Produktdetails öffnen"
+            >
+                <span class="visually-hidden">Produktdetails öffnen</span>
+            </a>
+        </xpath>
+    </template>
+</odoo>

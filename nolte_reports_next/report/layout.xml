@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="styles">
+        <style>
+            .nn-report { font-family: Arial, sans-serif; color: #202d39; font-size: 10pt; line-height: 1.38; }
+            .nn-report h2 { color: #173f70; font-size: 27pt; margin: 7mm 0 5mm; font-weight: 700; }
+            .nn-report .nn-address-table { width: 100%; table-layout: fixed; margin: 0 0 4mm; }
+            .nn-report .nn-address-table td { vertical-align: top; padding: 0; }
+            .nn-report .nn-address-table, .nn-report .nn-address-table tr, .nn-report .nn-address-table td, .nn-report .nn-address-table table { border: 0 !important; }
+            .nn-report .nn-address { width: 52%; padding-right: 7mm !important; overflow-wrap: anywhere; word-wrap: break-word; }
+            .nn-report .nn-sender { color: #58728b; font-size: 7pt; line-height: 1.4; margin-bottom: 3mm; }
+            .nn-report .nn-data { width: 48%; }
+            .nn-report .nn-data table { width: 100%; table-layout: fixed; font-size: 9pt; }
+            .nn-report .nn-data td { padding: 0 0 1mm 2mm; overflow-wrap: anywhere; word-wrap: break-word; }
+            .nn-report .nn-data td:first-child { color: #58728b; width: 49%; }
+            .nn-report .nn-secondary-address { font-size: 9pt; margin-top: 4mm; }
+            .nn-report .nn-rule { border-top: 0.6pt solid #329dcc; margin-top: 4mm; }
+            .nn-report .o_main_table { margin-top: 0 !important; width: 100%; font-size: 9pt; }
+            .nn-report .o_main_table thead { display: table-header-group !important; }
+            .nn-report .o_main_table thead th { background: #eaf1f6 !important; color: #173f70 !important; padding: 2.5mm 1.5mm; border: 0 !important; }
+            .nn-report .o_main_table td { padding: 2mm 1.5mm; vertical-align: top; border-bottom: 0.4pt solid #dde6ee; }
+            .nn-report .o_main_table tbody, .nn-report .o_main_table tr, .nn-report .o_main_table td { page-break-inside: auto !important; }
+            .nn-report .nn-section-start { table-layout: fixed; }
+            .nn-report .o_main_table tr.nn-keep-start { page-break-inside: avoid !important; }
+            .nn-report .o_main_table td.nn-group-cell { padding: 0 !important; border: 0 !important; }
+            .nn-report .nn-section-start { width: 100%; margin: 0 !important; font-size: inherit; }
+            .nn-report .o_main_table .o_line_section, .nn-report .o_main_table .o_line_subsection { page-break-after: avoid !important; }
+            .nn-report .o_line_section td, .nn-report .o_line_subsection td { background: #edf3f7 !important; color: #173f70 !important; border-top: 0.6pt solid #329dcc; }
+            .nn-report .o_line_note { font-style: normal !important; }
+            .nn-report .nn-product-title { font-weight: 700; color: #202d39; }
+            .nn-report .nn-product-description { white-space: pre-line; overflow-wrap: anywhere; word-wrap: break-word; }
+            .nn-report .o_main_table tr.nn-detail-row { page-break-inside: avoid !important; }
+            .nn-report .o_main_table tr.nn-detail-row td { border: 0 !important; padding: 0 1.5mm; line-height: 1.4; }
+            .nn-report .o_main_table tr.nn-detail-row .nn-empty-line { height: 2mm; }
+            .nn-report .o_total_table { font-size: 10pt; page-break-inside: avoid; }
+            .nn-report .o_total_table td { color: #202d39 !important; padding: 2mm; background: white !important; }
+            .nn-report .o_total_table .o_total td, .nn-report .o_total_table .o_total td * { color: #173f70 !important; background: #eaf1f6 !important; font-weight: 700; border-top: 0.7pt solid #329dcc !important; }
+            .nn-report [name='so_total_summary'] { page-break-inside: avoid; margin: 5mm 0; }
+            .nn-report .nn-terms { margin-top: 4mm; font-size: 9pt; }
+            .nn-report .nn-terms p { orphans: 3; widows: 3; }
+            .nn-report .nn-terms h3 { font-size: 10pt; color: #173f70; page-break-after: avoid; }
+            .nn-header { width: 100%; height: 25mm !important; text-align: right; padding-top: 0 !important; }
+            .nn-header img { display: block; float: right; max-width: 46mm; max-height: 23mm; width: auto; height: auto; }
+            .nn-footer { color: #58728b; font-family: Arial, sans-serif; font-size: 7pt; }
+            .nn-footer .nn-pages { text-align: right; margin-bottom: 2mm; }
+            .nn-footer table { width: 100%; table-layout: fixed; border-top: 0.6pt solid #329dcc; }
+            .nn-footer td, .nn-footer tr { border: 0 !important; }
+            .nn-footer td { width: 20%; vertical-align: top; padding: 1.5mm 2mm 0 0; font-size: 6.5pt; line-height: 1.4; word-wrap: break-word; }
+            .nn-footer ul { list-style: none; padding: 0; margin: 0; }
+            .nn-footer p { margin: 0; }
+            .nn-footer a { color: #58728b; text-decoration: none; }
+        </style>
+    </template>
+    <template id="external_layout">
+        <t t-set="o" t-value="doc"/>
+        <t t-set="company" t-value="doc.company_id"/>
+        <div class="header nn-header"><t t-call="nolte_reports_next.styles"/><img t-if="company.logo" t-att-src="image_data_uri(company.logo)" alt="Logo"/></div>
+        <div class="article nn-report" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id" t-att-data-oe-lang="doc.env.context.get('lang')">
+            <t t-call="nolte_reports_next.styles"/>
+            <t t-out="0"/>
+        </div>
+        <div class="footer nn-footer">
+            <t t-call="nolte_reports_next.styles"/>
+            <div class="nn-pages"><span t-field="doc.name"/> · Seite <span class="page"/> von <span class="topage"/></div>
+            <table class="table-borderless"><tr>
+                <td><ul>
+                    <li><span t-field="company.name"/></li>
+                    <li t-if="company.street"><span t-field="company.street"/></li>
+                    <li t-if="company.street2"><span t-field="company.street2"/></li>
+                    <li><span t-field="company.zip"/> <span t-field="company.city"/></li>
+                </ul></td>
+                <td><ul>
+                    <li t-if="company.phone"><i class="fa fa-phone-square"/> <span t-field="company.phone"/></li>
+                    <li t-if="company.email"><i class="fa fa-envelope"/> <span t-field="company.email"/></li>
+                    <li t-if="company.website"><i class="fa fa-globe"/> <span t-field="company.website"/></li>
+                </ul></td>
+                <td><ul>
+                    <li t-if="forced_vat or company.vat"><t t-out="company.account_fiscal_country_id.vat_label or 'USt-IdNr.'"/>: <span t-out="forced_vat or company.vat"/></li>
+                    <li t-if="company.company_registry">HRB Nr: <span t-field="company.company_registry"/></li>
+                </ul><div t-if="company.report_footer" t-field="company.report_footer"/></td>
+                <td><ul><li>Geschäftsführer</li><li t-foreach="company._nolte_next_directors()" t-as="director" t-out="director"/></ul></td>
+                <td><ul><t t-foreach="company.partner_id.bank_ids[:2]" t-as="bank">
+                    <li><i class="fa fa-bank"/> <span t-field="bank.bank_id.name"/></li>
+                    <li><i class="fa fa-money"/> <span t-field="bank.acc_number"/></li>
+                    <li><i class="fa fa-building"/> <span t-field="bank.bank_id.bic"/></li>
+                </t></ul></td>
+            </tr></table>
+        </div>
+    </template>
+    <template id="address_and_title">
+        <table class="nn-address-table table-borderless"><tr>
+            <td class="nn-address">
+                <div class="nn-sender"><span t-field="doc.company_id.name"/> | <span t-field="doc.company_id.street"/><t t-if="doc.company_id.street2"> | <span t-field="doc.company_id.street2"/></t> | <span t-field="doc.company_id.zip"/> <span t-field="doc.company_id.city"/></div>
+                <t t-set="main_partner" t-value="doc.partner_invoice_id if is_proforma else doc.partner_id"/>
+                <div t-out="main_partner" t-options="{'widget': 'contact', 'fields': ['name', 'address'], 'no_marker': True}"/>
+                <div t-if="main_partner.vat">USt-IdNr.: <span t-field="main_partner.vat"/></div>
+            </td>
+            <td class="nn-data"><table class="table-borderless">
+                <tr><td><t t-if="is_proforma">Pro-forma-Nr.</t><t t-elif="doc.state in ('draft', 'sent')">Angebotsnummer</t><t t-else="">Auftragsnummer</t></td><td><span t-field="doc.name"/></td></tr>
+                <tr t-if="doc._nolte_next_customer_reference()"><td>Kundennummer</td><td t-out="doc._nolte_next_customer_reference()"/></tr>
+                <tr t-if="doc.date_order"><td><t t-if="doc.state in ('draft', 'sent')">Angebotsdatum</t><t t-else="">Auftragsdatum</t></td><td><span t-field="doc.date_order" t-options="{'widget': 'date'}"/></td></tr>
+                <tr t-if="doc.validity_date and doc.state in ('draft', 'sent')"><td>Gültig bis</td><td><span t-field="doc.validity_date"/></td></tr>
+                <tr t-if="doc.client_order_ref"><td>Ihre Referenz</td><td><span t-field="doc.client_order_ref"/></td></tr>
+                <tr t-if="doc.commitment_date"><td>Lieferdatum</td><td><span t-field="doc.commitment_date" t-options="{'widget': 'date'}"/></td></tr>
+                <tr t-if="doc.user_id"><td>Ihr Ansprechpartner</td><td><span t-field="doc.user_id.name"/></td></tr>
+                <tr t-if="'incoterm' in doc._fields and doc.incoterm"><td>Incoterm</td><td><span t-field="doc.incoterm.code"/> <span t-if="'incoterm_location' in doc._fields" t-field="doc.incoterm_location"/></td></tr>
+            </table></td>
+        </tr></table>
+        <div class="nn-secondary-address" t-if="information_block"><t t-out="information_block"/></div>
+        <div class="nn-rule"/>
+        <h2><t t-if="is_proforma">Pro-forma-Rechnung</t><t t-elif="doc.state in ('draft', 'sent')">Angebot</t><t t-else="">Auftragsbestätigung</t></h2>
+    </template>
+</odoo>

@@ -1,0 +1,13 @@
+id,name,model_id,group_id/id,operation,domain
+access_report_user,Spesenbericht Mitarbeiter,nolte.expense.report,nolte_spesenbericht.group_spesenbericht_user,cru,"[('employee_id.user_id', '=', user.id)]"
+access_report_approver,Spesenbericht Prüfer,nolte.expense.report,nolte_spesenbericht.group_spesenbericht_approver,cru,"[('company_id', 'in', company_ids)]"
+access_line_user,Spesenzeilen Mitarbeiter,nolte.expense.report.line,nolte_spesenbericht.group_spesenbericht_user,crud,"[('report_id.employee_id.user_id', '=', user.id)]"
+access_line_approver,Spesenzeilen Prüfer,nolte.expense.report.line,nolte_spesenbericht.group_spesenbericht_approver,cru,"[('report_id.company_id', 'in', company_ids)]"
+access_report_manager,Spesenbericht Administrator,nolte.expense.report,nolte_spesenbericht.group_spesenbericht_manager,crud,
+access_line_manager,Spesenzeilen Administrator,nolte.expense.report.line,nolte_spesenbericht.group_spesenbericht_manager,crud,
+access_config_manager,Spesenkonfiguration,nolte.expense.config,nolte_spesenbericht.group_spesenbericht_manager,crud,
+access_work_report_manager,Stundenbericht Administrator,nolte.work.report,nolte_spesenbericht.group_spesenbericht_manager,crud,
+access_work_report_line_manager,Stundenberichtzeile Administrator,nolte.work.report.line,nolte_spesenbericht.group_spesenbericht_manager,crud,
+access_bmf_rate_user,BMF-Pauschalen lesen,nolte.bmf.rate,nolte_spesenbericht.group_spesenbericht_user,r,
+access_bmf_rate_manager,BMF-Pauschalen verwalten,nolte.bmf.rate,nolte_spesenbericht.group_spesenbericht_manager,crud,
+access_overtime_export_manager,Überstundenexport,nolte.overtime.export.wizard,nolte_spesenbericht.group_spesenbericht_manager,crud,

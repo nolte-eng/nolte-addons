@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_comev_actions" inherit_id="website_sale.product">
+        <!--
+            product_details is the stable container of the product information
+            column.  The former o_wsale_cta_wrapper anchor is not present in
+            every Odoo 19 website_sale/template combination.
+        -->
+        <xpath expr="//div[@id='product_details']" position="inside">
+            <div t-if="product.is_comev_product" class="comev-product-actions mt-3" aria-label="Produktaktionen">
+                <a t-att-href="'/maschinen/anfrage/%s?attribute_values=%s' % (product.id, request.params.get('attribute_values', ''))"
+                   t-att-data-base-url="'/maschinen/anfrage/%s' % product.id"
+                   class="btn btn-primary comev-action-main js-product-quote-link">
+                    <i class="fa fa-envelope-o me-2" aria-hidden="true"/>
+                    Individuelles Angebot anfragen
+                </a>
+                <a t-if="product.product_cta_detail_href" t-att-href="product.product_cta_detail_href" class="btn btn-outline-primary comev-action-secondary">
+                    <i class="fa fa-info-circle me-2" aria-hidden="true"/>
+                    Technische Details ansehen
+                </a>
+                <a t-if="product.product_cta_brochure_href" t-att-href="product.product_cta_brochure_href" class="comev-brochure-link" target="_blank" rel="noopener">
+                    <i class="fa fa-file-pdf-o me-2" aria-hidden="true"/>
+                    <t t-if="product.product_cta_manufacturer"><t t-esc="product.product_cta_manufacturer"/>-Prospekt herunterladen</t>
+                    <t t-else="">Prospekt herunterladen</t>
+                </a>
+                <p class="comev-action-note mb-0">Persönliche Beratung · Individuelle Ausstattung · Verbindliches Angebot</p>
+            </div>
+        </xpath>
+    </template>
+</odoo>

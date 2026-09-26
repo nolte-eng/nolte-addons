@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="quote_request_form" name="Produkt-Anfrage">
+        <t t-call="website.layout">
+            <main id="wrap" class="comev-request-page">
+                <section class="container py-5">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 col-xl-7">
+                            <a t-att-href="product.website_url" class="comev-back-link">← Zurück zur Maschine</a>
+                            <div class="comev-request-card mt-3">
+                                <span class="comev-eyebrow"><t t-if="product.product_cta_manufacturer"><t t-esc="product.product_cta_manufacturer"/> · </t>Persönliche Beratung</span>
+                                <h1>Individuelles Angebot anfragen</h1>
+                                <p class="comev-request-product" t-esc="product.name"/>
+                                <p t-if="variant" class="comev-request-variant">
+                                    Gewählte Ausführung: <strong t-esc="variant.display_name"/>
+                                    <t t-if="variant.default_code"> · Art.-Nr. <t t-esc="variant.default_code"/></t>
+                                </p>
+                                <p>Wir beraten Sie zu Modell, Ausstattung und Optionen und erstellen anschließend Ihr individuelles Angebot.</p>
+                                <div t-if="error" class="alert alert-danger" role="alert" t-esc="error"/>
+                                <form t-att-action="'/maschinen/anfrage/%s' % product.id" method="post" class="row g-3">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="attribute_values" t-att-value="attribute_values"/>
+                                    <input type="hidden" name="product_variant_id" t-att-value="product_variant_id or ''"/>
+                                    <div class="comev-honeypot" aria-hidden="true">
+                                        <label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"/></label>
+                                    </div>
+                                    <div class="col-md-6"><label class="form-label">Name *</label><input class="form-control" name="name" required="required" t-att-value="values.get('name', '')"/></div>
+                                    <div class="col-md-6"><label class="form-label">Unternehmen</label><input class="form-control" name="company" t-att-value="values.get('company', '')"/></div>
+                                    <div class="col-md-6"><label class="form-label">E-Mail *</label><input class="form-control" type="email" name="email" required="required" t-att-value="values.get('email', '')"/></div>
+                                    <div class="col-md-6"><label class="form-label">Telefon</label><input class="form-control" type="tel" name="phone" t-att-value="values.get('phone', '')"/></div>
+                                    <div class="col-12"><label class="form-label">Ihre Anforderungen</label><textarea class="form-control" name="message" rows="5" placeholder="Gewünschtes Modell, Spitzenweite, Ausstattung oder besondere Anforderungen …" t-esc="values.get('message', '')"/></div>
+                                    <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="privacy" value="1" id="comev_privacy" required="required"/><label class="form-check-label" for="comev_privacy">Ich habe die <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung der Anfrage zu. *</label></div></div>
+                                    <div class="col-12"><button type="submit" class="btn btn-primary btn-lg">Anfrage unverbindlich senden</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </t>
+    </template>
+
+    <template id="quote_request_thanks" name="Produkt-Anfrage gesendet">
+        <t t-call="website.layout">
+            <main id="wrap" class="comev-request-page">
+                <section class="container py-5 text-center">
+                    <div class="comev-request-card comev-thanks mx-auto">
+                        <i class="fa fa-check-circle" aria-hidden="true"/>
+                        <h1>Vielen Dank für Ihre Anfrage</h1>
+                        <p>Wir melden uns persönlich bei Ihnen und besprechen die passende Ausführung der <strong t-esc="variant.display_name if variant else product.name"/>.</p>
+                        <a t-att-href="product.website_url" class="btn btn-primary">Zurück zur Maschine</a>
+                    </div>
+                </section>
+            </main>
+        </t>
+    </template>
+</odoo>

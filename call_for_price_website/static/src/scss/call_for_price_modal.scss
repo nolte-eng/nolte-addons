@@ -1,0 +1,109 @@
+// Only the product price-request dialog receives this stacking correction.
+.o_call_for_price_modal {
+    z-index: 2147483647 !important;
+
+    .modal-content,
+    .modal-body {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .modal-body {
+        overflow-x: hidden;
+    }
+}
+
+// Bootstrap inserts the backdrop below <body>. Raise it only while this
+// particular dialog is open, so other Odoo modals remain unchanged.
+body:has(.o_call_for_price_modal.show) > .modal-backdrop {
+    z-index: 2147483646 !important;
+}
+
+@media (max-width: 575.98px) {
+    .o_call_for_price_modal {
+        .modal-dialog {
+            width: auto;
+            max-width: calc(100% - 1rem);
+            margin: 0.5rem;
+        }
+
+        .modal-footer {
+            gap: 0.5rem;
+        }
+    }
+}
+
+/* Neue Anfragebox direkt unter dem Produktnamen */
+#product_detail .nolte_call_price_box {
+    display: flex;
+    width: 100%;
+    margin: 16px 0 22px;
+    padding: 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border: 1px solid #b8d8ea;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f1f8fc 0%, #e5f2f9 100%);
+    box-shadow: 0 7px 20px rgba(7, 85, 132, 0.08);
+}
+
+#product_detail .nolte_call_price_box_text {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#product_detail .nolte_call_price_box_text strong {
+    color: #102a43;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+#product_detail .nolte_call_price_box_text span {
+    color: #526b7e;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+#product_detail .nolte_call_price_button {
+    display: inline-flex;
+    min-height: 46px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 20px;
+    border-radius: 9px;
+    background: #075584;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 6px 14px rgba(7, 85, 132, 0.18);
+}
+
+#product_detail .nolte_call_price_button:hover {
+    background: #06466d;
+    transform: translateY(-1px);
+}
+
+/* Den bisherigen einzelnen Button unter der Beschreibung ausblenden */
+#o_wsale_product_details_content
+> .my-3:has(
+    button[data-bs-target="#call_for_price_modal"]
+) {
+    display: none !important;
+}
+
+@media (max-width: 767.98px) {
+    #product_detail .nolte_call_price_box {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    #product_detail .nolte_call_price_button {
+        width: 100%;
+    }
+}

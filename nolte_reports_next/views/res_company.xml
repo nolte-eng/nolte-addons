@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="company_form_next_reports" model="ir.ui.view">
+        <field name="name">res.company.form.nolte.reports.next</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Nolte Berichte – Next" groups="base.group_system">
+                    <field name="nolte_next_sale_enabled"/>
+                    <field name="nolte_next_director_1"/>
+                    <field name="nolte_next_director_2"/>
+                    <div class="text-muted" colspan="2">Zunächst über „Angebot / Auftrag – Nolte Next (Test)“ prüfen. Die Aktivierung gilt für alle Angebotsvorlagen dieser Firma. Vor Deinstallation des alten Moduls die Geschäftsführung hier übernehmen.</div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

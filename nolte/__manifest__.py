@@ -1,7 +1,8 @@
 {
     'name': 'Nolte Addon',
-    'version': '19.0.1.0.0',
+    'version': '20.0.1.0.0',
     'category': 'Sales',
+    'author': "Lars Nolte",
     'summary': 'Customized Calendar and CRM Enhancements',
     'description': """This module extends the Calendar and CRM capabilities with custom views and functionalities.""",
     'depends': ['base', 'calendar', 'crm'],
@@ -10,7 +11,6 @@
         'views/calendar_event_view.xml',
         'views/calendar_month_view.xml',
         'views/crm_archive_button.xml',
-        'security/ir.model.access.csv',
         'data/demo.xml',
     ],
     'demo': ['data/demo.xml'],

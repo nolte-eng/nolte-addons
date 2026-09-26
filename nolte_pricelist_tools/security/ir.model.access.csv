@@ -1,0 +1,2 @@
+id,name,model_id,group_id/id,operation,domain
+access_nolte_pricelist_variant_wizard_sales_manager,Nolte pricelist variant wizard sales manager,nolte.pricelist.variant.wizard,sales_team.group_sale_manager,crud,

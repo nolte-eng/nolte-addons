@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="page_spesenbericht" name="Nolte Spesenbericht">
+    <t t-call="website.layout">
+      <t t-set="additional_title">Spesenbericht</t>
+      <main id="wrap" class="o_nolte_spesen_page">
+        <section class="ns-shell" id="nolte-spesenbericht-app">
+          <header class="ns-page-head">
+            <div><span class="ns-eyebrow">MEIN ARBEITSMONAT</span><h1>Spesenbericht</h1><p>Arbeitszeiten und Reisekosten direkt in Odoo erfassen.</p></div>
+            <div class="ns-page-controls"><label class="ns-employee-picker d-none js_ns_employee_wrap"><span>Mitarbeiter</span><select class="js_ns_employee" aria-label="Mitarbeiter auswählen"></select></label><div class="ns-month-picker"><button type="button" class="js_ns_prev" aria-label="Vorheriger Monat">‹</button><strong class="js_ns_month">–</strong><button type="button" class="js_ns_next" aria-label="Nächster Monat">›</button></div></div>
+          </header>
+          <div class="ns-summary">
+            <article class="primary"><i>◷</i><span><small>Arbeitszeit</small><strong class="js_ns_work">0:00 Std.</strong><em>Aktueller Monat</em></span></article>
+            <article><i>↗</i><span><small>Überstunden</small><strong class="js_ns_overtime">0:00 Std.</strong><em class="js_ns_overtime_basis">Monatssaldo</em></span></article>
+            <article><i>€</i><span><small>Verpflegung</small><strong class="js_ns_allowance">0,00 €</strong><em>BMF-Pauschalen</em></span></article>
+            <article><i>▤</i><span><small>Auslagen</small><strong class="js_ns_expenses">0,00 €</strong><em>Hotel &amp; Sonstiges</em></span></article>
+          </div>
+          <section class="ns-workspace">
+            <header><div><h2>Tageserfassung</h2><p>Änderungen werden direkt im Odoo-Bericht gespeichert.</p></div><span class="ns-status js_ns_status">Lädt …</span></header>
+            <div class="ns-table-wrap"><table class="ns-table"><thead><tr><th>Datum</th><th>Kunde / Projekt</th><th>Start</th><th>Ende</th><th>Pause</th><th>Arbeitszeit</th><th>Spesen</th><th>Pauschale</th><th>Hotel</th><th>Auslagen</th><th>Summe</th><th>Beleg</th></tr></thead><tbody class="js_ns_rows"><tr><td colspan="12" class="ns-loading">Odoo-Daten werden geladen …</td></tr></tbody></table></div>
+            <footer class="ns-actions"><div class="ns-save-state js_ns_save_state">● Mit Odoo verbunden · Urlaub automatisch synchronisiert</div><div><button type="button" class="btn btn-outline-primary js_ns_csv">↓ CSV</button><button type="button" class="btn btn-outline-primary js_ns_print">⎙ Drucken / PDF</button><button type="button" class="btn btn-primary js_ns_submit">Monat einreichen</button><button type="button" class="btn btn-primary js_ns_approve d-none">Freigeben</button><button type="button" class="btn btn-primary js_ns_export d-none">Odoo-Spesen erzeugen</button></div></footer>
+          </section>
+          <div class="ns-message js_ns_message d-none" role="status"></div>
+        </section>
+      </main>
+    </t>
+  </template>
+
+  <template id="page_spesenbericht_print" name="Spesenbericht Druckansicht">
+    <t t-call="web.html_container">
+      <style>
+        @page { size: A4 landscape; margin: 6mm; }
+        * { box-sizing: border-box; }
+        body { margin: 0; color: #0f2d52; background: #edf1f5; font-family: Arial, sans-serif; }
+        .ns-print-toolbar { height: 54px; padding: 8px 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; color: #fff; background: #0f2d52; font-size: 13px; }
+        .ns-print-toolbar button { padding: 9px 15px; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,.5); border-radius: 7px; font-weight: 700; }
+        .ns-print-toolbar button.primary { color: #0f2d52; background: #fff; }
+        .ns-print-report { width: 285mm; min-height: 198mm; margin: 14px auto; padding: 5mm; background: #fff; box-shadow: 0 10px 35px rgba(15,45,82,.15); }
+        .ns-print-report > header { height: 18mm; display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #093e85; }
+        .ns-print-report header small { color: #64768c; font-size: 8.5pt; font-weight: 700; letter-spacing: .12em; }
+        .ns-print-report h1 { margin: .5mm 0; font-size: 19pt; line-height: 1.05; }
+        .ns-print-report header p { margin: 0; font-size: 8.5pt; white-space: nowrap; }
+        .ns-print-brand { width: 46mm; height: 13mm; display: flex; align-items: center; justify-content: flex-end; }
+        .ns-print-brand img { display: block; max-width: 46mm; max-height: 13mm; object-fit: contain; object-position: right center; }
+        .ns-print-totals { height: 14mm; display: grid; grid-template-columns: repeat(6,1fr); gap: 1.5mm; padding: 1.5mm 0; }
+        .ns-print-totals div { padding: 1.2mm 2mm; background: #f2f5f8; border-radius: 1.5mm; }
+        .ns-print-totals div.total { color: #fff; background: #093e85; }
+        .ns-print-totals span,.ns-print-totals strong { display: block; }.ns-print-totals span { font-size: 7pt; }.ns-print-totals strong { margin-top: .4mm; font-size: 9.5pt; }
+        .ns-print-report table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .ns-print-report th { height: 5.5mm; padding: .8mm 1mm; color: #fff; background: #0f2d52; border: .2mm solid #fff; text-align: left; font-size: 7.4pt; }
+        .ns-print-report td { height: 4.35mm; padding: .55mm 1mm; overflow: hidden; border: .2mm solid #bcc8d3; font-size: 7.8pt; line-height: 1; white-space: nowrap; text-overflow: ellipsis; }
+        .ns-print-report tbody tr:nth-child(even) { background: #f5f7f9; }.ns-print-report td:nth-child(n+9) { text-align: right; }.ns-print-report td.sum { font-weight: 800; }
+        .ns-print-report th:nth-child(1){width:14mm}.ns-print-report th:nth-child(2){width:8mm}.ns-print-report th:nth-child(3){width:45mm}.ns-print-report th:nth-child(4),.ns-print-report th:nth-child(5){width:13mm}.ns-print-report th:nth-child(6){width:11mm}.ns-print-report th:nth-child(7){width:13mm}.ns-print-report th:nth-child(8){width:67mm}.ns-print-report th:nth-child(9),.ns-print-report th:nth-child(10),.ns-print-report th:nth-child(11),.ns-print-report th:nth-child(12){width:20mm}
+        .ns-print-report > footer { margin-top: 4mm; display: grid; grid-template-columns: 1fr 1fr; gap: 20mm; }.ns-print-report > footer div { padding-top: 3mm; border-top: .3mm solid #64768c; font-size: 7.5pt; }
+        @media print { html,body { margin: 0; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }.ns-print-toolbar { display: none; }.ns-print-report { width: 100%; max-width: none; min-height: 0; margin: 0; padding: 0; box-shadow: none; } }
+      </style>
+      <div class="ns-print-toolbar">
+        <button type="button" onclick="window.close()">Zurück</button>
+        <span>Druckansicht · Im Druckdialog „Als PDF sichern“ wählen.</span>
+        <button type="button" class="primary" onclick="window.print()">Drucken / PDF</button>
+      </div>
+      <article class="ns-print-report">
+        <header>
+          <div><small>NOLTE · SPESENBERICHT</small><h1 t-esc="month_label"/><p>Mitarbeiter: <strong t-esc="data['employee']['name']"/> · Status: <strong t-esc="state_labels.get(data['state'], data['state'])"/></p></div>
+          <div class="ns-print-brand"><img t-att-src="'/web/image/res.company/%s/logo' % company.id" t-att-alt="company.name"/></div>
+        </header>
+        <section class="ns-print-totals">
+          <div><span>Arbeitszeit</span><strong t-esc="time_value(data['totals']['work']) + ' Std.'"/></div>
+          <div><span>Überstunden · Soll <t t-esc="time_value(data['totals']['target'])"/></span><strong t-esc="time_value(data['totals']['overtime']) + ' Std.'"/></div>
+          <div><span>Verpflegung</span><strong t-esc="money(data['totals']['allowance'])"/></div>
+          <div><span>Hotel</span><strong t-esc="money(data['totals']['hotel'])"/></div>
+          <div><span>Auslagen</span><strong t-esc="money(data['totals']['expenses'])"/></div>
+          <div class="total"><span>Gesamt</span><strong t-esc="money(data['totals']['allowance'] + data['totals']['hotel'] + data['totals']['expenses'])"/></div>
+        </section>
+        <table>
+          <thead><tr><th>Datum</th><th>Tag</th><th>Kunde / Projekt</th><th>Start</th><th>Ende</th><th>Pause</th><th>Arbeit</th><th>Spesen</th><th>Pauschale</th><th>Hotel</th><th>Auslagen</th><th>Summe</th></tr></thead>
+          <tbody>
+            <t t-foreach="data['rows']" t-as="row">
+              <tr>
+                <td t-esc="row['date'][8:10] + '.' + row['date'][5:7] + '.'"/><td t-esc="row['weekday']"/>
+                <td><t t-esc="row['customer'] or row['absenceName'] or '–'"/></td><td t-esc="row['start'] or '–'"/><td t-esc="row['end'] or '–'"/><td t-esc="row['breakMinutes'] or '–'"/>
+                <td t-esc="time_value(row['workHours'])"/>
+                <td><t t-esc="country_labels.get(row['country'] or '', '–')"/><t t-if="row['travelType']"> · <t t-esc="travel_labels.get(row['travelType'], '')"/></t><t t-if="row['breakfast'] or row['lunch'] or row['dinner']"> · Abzug <t t-if="row['breakfast']">F</t><t t-if="row['lunch']">M</t><t t-if="row['dinner']">A</t></t></td>
+                <td t-esc="money(row['allowance'])"/><td t-esc="money(row['hotelAmount'])"/><td t-esc="money(row['expenses'])"/><td class="sum" t-esc="money(row['allowance'] + row['hotelAmount'] + row['expenses'])"/>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+        <footer><div>Datum / Unterschrift Mitarbeiter</div><div>Datum / Freigabe</div></footer>
+      </article>
+    </t>
+  </template>
+</odoo>

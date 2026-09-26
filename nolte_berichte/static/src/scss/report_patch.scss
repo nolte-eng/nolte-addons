@@ -4,3 +4,20 @@
 .company_details {
     color: $o-default-report-primary-color !important;
 }
+
+// Preserve the established Odoo 18 DIN 5008 report appearance in Odoo 19.
+.din_page.invoice_note {
+    .colored_address,
+    h2,
+    .h2,
+    .page .o_main_table th,
+    .page [name="invoice_line_table"] th,
+    .page [name="stock_move_table"] th {
+        color: $o-default-report-primary-color !important;
+    }
+}
+
+.nolte_long_order_note .nolte_order_note_line {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}

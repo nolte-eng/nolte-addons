@@ -1,0 +1,14 @@
+<odoo>
+    <record id="group_stundenbericht_user" model="res.groups">
+        <field name="name">Stundenbericht Monteur</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+    <record id="group_stundenbericht_approver" model="res.groups">
+        <field name="name">Stundenbericht Prüfer</field>
+        <field name="implied_ids" eval="[(4, ref('group_stundenbericht_user'))]"/>
+    </record>
+    <record id="group_stundenbericht_manager" model="res.groups">
+        <field name="name">Stundenbericht Administrator</field>
+        <field name="implied_ids" eval="[(4, ref('group_stundenbericht_approver'))]"/>
+    </record>
+</odoo>

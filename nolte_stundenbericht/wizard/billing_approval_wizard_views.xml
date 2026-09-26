@@ -1,0 +1,30 @@
+<odoo>
+    <record id="view_nolte_service_report_billing_wizard_form" model="ir.ui.view">
+        <field name="name">nolte.service.report.billing.wizard.form</field>
+        <field name="model">nolte.service.report.billing.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Abrechnung freigeben">
+                <group><field name="report_id"/></group>
+                <div class="alert alert-info" role="alert"><strong>Prüfen vor Freigabe:</strong> Links stehen die berechneten Mengen. Die Felder „Freigabe“ dürfen reduziert oder auf null gesetzt werden; die Originalzeiten bleiben unverändert.</div>
+                <field name="line_ids">
+                    <list editable="bottom" create="false" delete="false">
+                        <field name="member_id" column_invisible="True"/>
+                        <field name="employee_id"/>
+                        <field name="calculated_work_normal"/><field name="work_normal" string="Freigabe Arbeit normal"/>
+                        <field name="calculated_work_ot30"/><field name="work_ot30" string="Freigabe Arbeit 30 %"/>
+                        <field name="calculated_work_ot50"/><field name="work_ot50" string="Freigabe Arbeit 50 %"/>
+                        <field name="calculated_travel_normal"/><field name="travel_normal" string="Freigabe Fahrt normal"/>
+                        <field name="calculated_travel_ot30"/><field name="travel_ot30" string="Freigabe Fahrt 30 %"/>
+                        <field name="calculated_travel_ot50"/><field name="travel_ot50" string="Freigabe Fahrt 50 %"/>
+                        <field name="calculated_kilometers"/><field name="kilometers" string="Freigabe Kilometer"/>
+                        <field name="calculated_overnights"/><field name="overnights" string="Freigabe Übernachtungen"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_approve" type="object" string="Auftragspositionen erzeugen" class="btn-primary"/>
+                    <button string="Abbrechen" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

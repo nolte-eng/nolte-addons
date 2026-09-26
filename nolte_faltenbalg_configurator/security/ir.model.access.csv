@@ -1,0 +1,2 @@
+id,name,model_id,group_id/id,operation,domain
+access_faltenbalg_inquiry_user,Faltenbalg inquiry user,nolte.faltenbalg.inquiry,base.group_user,crud,

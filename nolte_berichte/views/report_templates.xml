@@ -21,7 +21,7 @@
                         </td>
                         <td>
                             <img t-if="company.logo" t-att-src="image_data_uri(company.logo)"
-                                 t-att-style="'max-height: %dmm;' % (din_header_spacing or 27)"/>
+                                 style="max-height: 27mm;"/>
                         </td>
                     </tr>
                 </table>
@@ -152,6 +152,20 @@
 
 
 
+        </template>
+
+        <template id="report_saleorder_long_note" inherit_id="sale.report_saleorder_document">
+            <xpath expr="//span[@name='order_note']" position="replace">
+                <t t-if="not doc._nolte_is_csv_import_note()">
+                    <t t-set="nolte_note_lines" t-value="doc._nolte_pdf_note_lines()"/>
+                    <div t-if="nolte_note_lines" name="order_note" class="nolte_long_order_note">
+                        <div t-foreach="nolte_note_lines" t-as="nolte_note_line" class="nolte_order_note_line">
+                            <span t-out="nolte_note_line"/>
+                        </div>
+                    </div>
+                    <span t-else="" name="order_note" t-field="doc.note"/>
+                </t>
+            </xpath>
         </template>
 
     </data>

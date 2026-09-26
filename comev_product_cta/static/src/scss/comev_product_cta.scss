@@ -1,0 +1,32 @@
+.comev-product-actions {
+    display: grid;
+    gap: .75rem;
+    max-width: 34rem;
+    padding: 1.15rem;
+    border: 1px solid #dbe3eb;
+    border-radius: 14px;
+    background: #f7f9fb;
+}
+.comev-product-actions .btn { min-height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 8px; }
+.comev-action-main { background: #003b70; border-color: #003b70; }
+.comev-action-main:hover { background: #002d57; border-color: #002d57; }
+.comev-action-secondary { color: #003b70; border-color: #003b70; }
+.comev-brochure-link { color: #4c5b68; text-align: center; font-weight: 600; text-decoration: none; }
+.comev-brochure-link:hover { color: #003b70; text-decoration: underline; }
+.comev-action-note { color: #687784; font-size: .82rem; text-align: center; }
+.comev-request-page { background: linear-gradient(135deg, #f4f7fa 0%, #fff 70%); min-height: 70vh; }
+.comev-back-link { color: #4c5b68; text-decoration: none; }
+.comev-request-card { padding: clamp(1.4rem, 4vw, 3rem); border: 1px solid #dbe3eb; border-radius: 18px; background: #fff; box-shadow: 0 18px 50px rgba(18, 48, 74, .09); }
+.comev-request-card h1 { color: #12304a; font-weight: 750; margin: .45rem 0 .5rem; }
+.comev-eyebrow { color: #0072bc; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.comev-request-product { color: #003b70; font-size: 1.15rem; font-weight: 700; }
+.comev-request-card .form-control { min-height: 48px; border-color: #ccd7e1; }
+.comev-request-card textarea.form-control { min-height: 130px; }
+.comev-request-card .btn-primary { background: #003b70; border-color: #003b70; }
+.comev-honeypot { position: absolute !important; left: -10000px !important; width: 1px; height: 1px; overflow: hidden; }
+.comev-thanks { max-width: 44rem; }
+.comev-thanks > .fa { color: #2b9a66; font-size: 4rem; }
+@media (max-width: 575.98px) {
+    .comev-product-actions { max-width: none; padding: .9rem; }
+    .comev-product-actions .btn { white-space: normal; }
+}

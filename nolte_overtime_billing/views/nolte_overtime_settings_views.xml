@@ -5,41 +5,41 @@
     <field name="name">nolte.overtime.settings.form</field>
     <field name="model">nolte.overtime.settings</field>
     <field name="arch" type="xml">
-      <form string="Nolte Überstunden – Einstellungen">
+      <form string="Nolte Overtime – Settings">
         <sheet>
           <group>
-            <separator string="Basispositionen" colspan="2"/>
+            <separator string="Base Items" colspan="2"/>
             <group col="2">
-              <field name="product_work_id" string="Arbeitszeit (normal)" options="{'no_create': False, 'no_open': False}"/>
-              <field name="product_travel_id" string="Fahrzeit (normal)" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_work_id" string="Work Time (Regular)" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_travel_id" string="Travel Time (Regular)" options="{'no_create': False, 'no_open': False}"/>
             </group>
 
-            <separator string="Überstundenpositionen" colspan="2"/>
+            <separator string="Overtime Items" colspan="2"/>
             <group col="2">
-              <field name="product_work_ot30_id" string="Arbeitszeit 30 %" options="{'no_create': False, 'no_open': False}"/>
-              <field name="product_work_ot50_id" string="Arbeitszeit 50 %" options="{'no_create': False, 'no_open': False}"/>
-              <field name="product_travel_ot30_id" string="Fahrzeit 30 %" options="{'no_create': False, 'no_open': False}"/>
-              <field name="product_travel_ot50_id" string="Fahrzeit 50 %" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_work_ot30_id" string="Work Time 30%" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_work_ot50_id" string="Work Time 50%" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_travel_ot30_id" string="Travel Time 30%" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_travel_ot50_id" string="Travel Time 50%" options="{'no_create': False, 'no_open': False}"/>
             </group>
 
-            <separator string="Pauschalen und Zuschläge" colspan="2"/>
+            <separator string="Flat Rates and Surcharges" colspan="2"/>
             <group col="2">
-              <field name="product_km_id" string="Kilometerpauschale" options="{'no_create': False, 'no_open': False}"/>
-              <field name="product_overnight_id" string="Übernachtungspauschale" options="{'no_create': False, 'no_open': False}"/>
-              <field name="product_allowance_id" string="Auslöse / pro Tag" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_km_id" string="Mileage Allowance" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_overnight_id" string="Overnight Allowance" options="{'no_create': False, 'no_open': False}"/>
+              <field name="product_allowance_id" string="Daily Allowance" options="{'no_create': False, 'no_open': False}"/>
             </group>
           </group>
         </sheet>
         <footer>
-          <button name="action_save" type="object" class="btn-primary" string="Speichern"/>
-          <button special="cancel" class="btn-secondary" string="Abbrechen"/>
+          <button name="action_save" type="object" class="btn-primary" string="Save"/>
+          <button special="cancel" class="btn-secondary" string="Cancel"/>
         </footer>
       </form>
     </field>
   </record>
 
   <record id="action_nolte_overtime_settings" model="ir.actions.act_window">
-    <field name="name">Einstellungen</field>
+    <field name="name">Settings</field>
     <field name="res_model">nolte.overtime.settings</field>
     <field name="view_mode">form</field>
     <field name="target">new</field>

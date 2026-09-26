@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140" role="img" aria-labelledby="t d">
+    <title id="t">Pult-Führungsrahmen</title>
+    <desc id="d">Pultform mit Bemaßung a b c f</desc>
+    <defs>
+        <marker id="arrowStart" markerWidth="8" markerHeight="8" refX="1.6" refY="4" orient="auto"
+                markerUnits="strokeWidth">
+            <path d="M6.8 0 L0 4 L6.8 8 z" fill="#dc2626"/>
+        </marker>
+        <marker id="arrowEnd" markerWidth="8" markerHeight="8" refX="6.8" refY="4" orient="auto"
+                markerUnits="strokeWidth">
+            <path d="M0 0 L6.8 4 L0 8 z" fill="#dc2626"/>
+        </marker>
+    </defs>
+    <rect class="base" x="1" y="1" width="218" height="138" rx="14" fill="none" stroke="#e2e8f0" stroke-width="1.2"/>
+    <path d="M 24 56 L 196 40 L 196 110 L 160 110 L 160 82 L 60 92 L 60 110 L 24 110 Z" fill="#8a8a8a" stroke="#111111"
+          stroke-width="0.8"/>
+    <line x1="24" y1="18" x2="196" y2="18" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="110.0" y="14" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif"
+          fill="#dc2626">A
+    </text>
+    <line x1="24" y1="56" x2="24" y2="18" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="196" y1="56" x2="196" y2="18" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="12" y1="56" x2="12" y2="110" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="7" y="85.0" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif" fill="#dc2626">
+        C
+    </text>
+    <line x1="24" y1="56" x2="12" y2="56" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="24" y1="110" x2="12" y2="110" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="208" y1="40" x2="208" y2="110" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="213" y="77.0" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif"
+          fill="#dc2626">D
+    </text>
+    <line x1="196" y1="40" x2="208" y2="40" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="196" y1="110" x2="208" y2="110" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="24" y1="126" x2="60" y2="126" stroke="#dc2626" stroke-width="0.8" marker-start="url(#arrowStart)"
+          marker-end="url(#arrowEnd)"/>
+    <text x="42.0" y="140" text-anchor="middle" font-size="14" font-family="Arial, Helvetica, sans-serif"
+          fill="#dc2626">B
+    </text>
+    <line x1="24" y1="110" x2="24" y2="126" stroke="#dc2626" stroke-width="0.7"/>
+    <line x1="60" y1="110" x2="60" y2="126" stroke="#dc2626" stroke-width="0.7"/>
+</svg>

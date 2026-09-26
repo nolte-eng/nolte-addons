@@ -47,6 +47,11 @@ def _parse_date(val: str):
     return None
 
 
+def _first_text_line(val: str) -> str:
+    text = str(val or "").replace("\r\n", "\n").replace("\r", "\n")
+    return next((line.strip() for line in text.split("\n") if line.strip()), "")
+
+
 def _dt(date_val: str, hhmm: str):
     p = _parse_hhmm(hhmm)
     d = _parse_date(date_val)
@@ -122,28 +127,37 @@ def _alloc_overtime_fallback(work_h, travel_h):
 
 class NolteOvertimeImportWizard(models.TransientModel):
     _name = "nolte.overtime.import.wizard"
-    _description = "Import Überstunden CSV und erstelle Verkaufsauftrag"
+    _description = "Import Overtime CSV and Create Sales Order"
 
-    csv_file = fields.Binary(string="CSV-Datei", required=True)
-    csv_filename = fields.Char(string="Dateiname")
+    csv_file = fields.Binary(string="CSV File", required=True)
+    csv_filename = fields.Char(string="File Name")
 
     import_target = fields.Selection([
-        ("new", "Neuen Verkaufsauftrag erstellen"),
-        ("existing", "In bestehenden Verkaufsauftrag importieren"),
-    ], string="Importziel", default="new", required=True)
+        ("new", "Create New Sales Order"),
+        ("existing", "Import into Existing Sales Order"),
+    ], string="Import Target", default="new", required=True)
     order_id = fields.Many2one(
         "sale.order",
-        string="Bestehender Verkaufsauftrag",
+        string="Existing Sales Order",
         domain="[('state', 'in', ['draft', 'sent'])]",
     )
-    partner_id = fields.Many2one("res.partner", string="Kunde")
-    detected_partner_name = fields.Char(string="Erkannter Kunde", readonly=True)
-    create_partner_if_missing = fields.Boolean(string="Partner automatisch neu anlegen, wenn nicht gefunden", default=False)
-    new_partner_name = fields.Char(string="Neuer Partnername")
-    new_partner_street = fields.Char(string="Straße")
-    new_partner_zip = fields.Char(string="PLZ")
-    new_partner_city = fields.Char(string="Ort")
-    new_partner_country_id = fields.Many2one("res.country", string="Land")
+    partner_id = fields.Many2one("res.partner", string="Customer")
+    detected_partner_name = fields.Char(string="Detected Customer", readonly=True)
+    create_partner_if_missing = fields.Boolean(string="Create contact automatically if not found", default=False)
+    new_partner_name = fields.Char(string="New Contact Name")
+    new_partner_street = fields.Char(string="Street")
+    new_partner_zip = fields.Char(string="ZIP")
+    new_partner_city = fields.Char(string="City")
+    new_partner_country_id = fields.Many2one("res.country", string="Country")
+    import_to_expense_report = fields.Boolean(
+        string="Also import times into the expense report",
+        default=True,
+    )
+    detected_employee_name = fields.Char(string="Detected Employee", readonly=True)
+    expense_employee_id = fields.Many2one(
+        "hr.employee",
+        string="Expense Report Employee",
+    )
 
 
     @api.onchange("order_id")
@@ -189,12 +203,14 @@ class NolteOvertimeImportWizard(models.TransientModel):
             wizard.new_partner_zip = False
             wizard.new_partner_city = False
             wizard.new_partner_country_id = False
+            wizard.detected_employee_name = False
+            wizard.expense_employee_id = False
             if not wizard.csv_file:
                 continue
             try:
                 raw = base64.b64decode(wizard.csv_file)
                 text = raw.decode("utf-8-sig", errors="replace")
-                meta, _activities = wizard._read_kv_csv(text)
+                meta, activities = wizard._read_kv_csv(text)
                 vals = wizard._extract_partner_data_from_meta(meta)
                 wizard.detected_partner_name = vals.get("name") or False
                 wizard.new_partner_name = vals.get("name") or False
@@ -206,8 +222,13 @@ class NolteOvertimeImportWizard(models.TransientModel):
                     partner = wizard.env["res.partner"].search([("name", "ilike", vals["name"])], limit=1)
                     if partner:
                         wizard.partner_id = partner
+                groups = wizard._activity_employee_groups(activities)
+                employees = groups and [group["employee"] for group in groups.values()] or []
+                wizard.detected_employee_name = ", ".join(employee.name for employee in employees) or False
+                if len(employees) == 1:
+                    wizard.expense_employee_id = employees[0]
             except Exception:
-                _logger.exception("Partner-Vorschau aus CSV konnte nicht gelesen werden.")
+                _logger.exception("Contact preview could not be read from the CSV.")
 
     def _cfg_pid(self, key: str):
         v = self.env["ir.config_parameter"].sudo().get_param(key)
@@ -230,7 +251,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
         pids = {k: self._cfg_pid(v) for k, v in keys.items()}
         if not all(pids.values()):
             raise UserError(_(
-                "Bitte in Einstellungen alle 6 Produkte zuordnen: Arbeitszeit/Fahrzeit normal sowie OT30/OT50 jeweils."
+                "Please assign all six products in Settings: regular work/travel time and OT30/OT50 for each."
             ))
         km_pid = self._cfg_pid("nolte_overtime_billing.product_km_id")
         overnight_pid = self._cfg_pid("nolte_overtime_billing.product_overnight_id")
@@ -262,14 +283,61 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 meta[key] = val
         return meta, activities
 
+    def _activity_employee_groups(self, activities, selected_employee=False):
+        """Resolve real Odoo employees and assign generic activity rows to the nearest one.
+
+        Some CSV exports use ``taetigkeitN.name`` both for the technician and for
+        labels such as "Vorbereitung" or "Nachbearbeitung". Only names matching an
+        Odoo employee are treated as people.
+        """
+        self.ensure_one()
+        recognized = {}
+        for idx, activity in activities.items():
+            name = (activity.get("name") or "").strip()
+            if not name:
+                continue
+            employee = self.env["hr.employee"].search([
+                ("name", "=ilike", name),
+                ("company_id", "in", self.env.companies.ids),
+            ], limit=1)
+            if employee:
+                recognized[idx] = employee
+
+        unique_ids = {employee.id for employee in recognized.values()}
+        if selected_employee and len(unique_ids) <= 1:
+            recognized = {idx: selected_employee for idx in recognized} or {
+                idx: selected_employee for idx in activities
+            }
+
+        if not recognized:
+            if selected_employee:
+                return {
+                    selected_employee.id: {
+                        "employee": selected_employee,
+                        "activities": dict(activities),
+                    }
+                }
+            return {}
+
+        recognized_indexes = sorted(recognized)
+        groups = {}
+        for idx, activity in sorted(activities.items()):
+            employee = recognized.get(idx)
+            if not employee:
+                nearest_idx = min(recognized_indexes, key=lambda known: (abs(known - idx), known > idx))
+                employee = recognized[nearest_idx]
+            group = groups.setdefault(employee.id, {"employee": employee, "activities": {}})
+            group["activities"][idx] = activity
+        return groups
+
     def _partner_from_meta(self, meta):
         vals = self._extract_partner_data_from_meta(meta)
         name = (vals.get("name") or "").strip()
         if not name:
-            raise UserError(_("Kunde konnte nicht ermittelt werden (rechnungsadresse fehlt)."))
+            raise UserError(_("Customer could not be determined (billing address is missing)."))
         partner = self.env["res.partner"].search([("name", "ilike", name)], limit=1)
         if not partner:
-            raise UserError(_("Kunde '%s' nicht gefunden. Bitte Partner in Odoo anlegen oder Name anpassen.") % name)
+            raise UserError(_("Customer '%s' was not found. Create the contact in Odoo or adjust the name.") % name)
         return partner
 
     def _resolve_partner(self, meta):
@@ -280,14 +348,14 @@ class NolteOvertimeImportWizard(models.TransientModel):
         vals = self._extract_partner_data_from_meta(meta)
         name = (vals.get("name") or self.new_partner_name or "").strip()
         if not name:
-            raise UserError(_("Kunde konnte nicht ermittelt werden (rechnungsadresse fehlt)."))
+            raise UserError(_("Customer could not be determined (billing address is missing)."))
 
         partner = self.env["res.partner"].search([("name", "ilike", name)], limit=1)
         if partner:
             return partner
 
         if not self.create_partner_if_missing:
-            raise UserError(_("Kunde '%s' nicht gefunden. Bitte Partner in Odoo anlegen, im Assistenten auswählen oder automatische Neuanlage aktivieren.") % name)
+            raise UserError(_("Customer '%s' was not found. Create or select the contact, or enable automatic creation.") % name)
 
         create_vals = {
             "name": name,
@@ -305,32 +373,34 @@ class NolteOvertimeImportWizard(models.TransientModel):
         date_str = a.get("datum")
         segments = []
 
+        # Breaks in the Hinz report apply to the complete attendance period.
+        # On travel-only days the break lies inside the driving interval, so it
+        # must be removed from travel just as it is removed from work.  Otherwise
+        # a 06:00-15:00 trip with a 12:00-13:00 break is billed as nine instead
+        # of the exported eight hours and creates one artificial overtime hour.
+        pauses = []
+        for start_key, end_key in (
+            ("pausenzeitBeginn", "pausenzeitEnde"),
+            ("pausenzeit2Beginn", "pausenzeit2Ende"),
+        ):
+            pause_start = _dt(date_str, a.get(start_key))
+            pause_end = _dt(date_str, a.get(end_key))
+            if pause_start and pause_end and pause_end < pause_start:
+                pause_end += timedelta(days=1)
+            if pause_start and pause_end and pause_end > pause_start:
+                pauses.append((pause_start, pause_end))
+
         to_s = _dt(date_str, a.get("fahrzeitAbfahrt"))
         to_e = _dt(date_str, a.get("fahrzeitAnkunft"))
         if to_s and to_e and to_e < to_s:
             to_e += timedelta(days=1)
         if to_s and to_e and to_e > to_s:
-            segments.append((to_s, to_e, "travel"))
+            segments.extend((start, end, "travel") for start, end in _subtract_pauses(to_s, to_e, pauses))
 
         w_s = _dt(date_str, a.get("arbeitszeitBeginn"))
         w_e = _dt(date_str, a.get("arbeitszeitEnde"))
         if w_s and w_e and w_e < w_s:
             w_e += timedelta(days=1)
-
-        pauses = []
-        p1s = _dt(date_str, a.get("pausenzeitBeginn"))
-        p1e = _dt(date_str, a.get("pausenzeitEnde"))
-        if p1s and p1e and p1e < p1s:
-            p1e += timedelta(days=1)
-        if p1s and p1e and p1e > p1s:
-            pauses.append((p1s, p1e))
-
-        p2s = _dt(date_str, a.get("pausenzeit2Beginn"))
-        p2e = _dt(date_str, a.get("pausenzeit2Ende"))
-        if p2s and p2e and p2e < p2s:
-            p2e += timedelta(days=1)
-        if p2s and p2e and p2e > p2s:
-            pauses.append((p2s, p2e))
 
         if w_s and w_e and w_e > w_s:
             for ws, we in _subtract_pauses(w_s, w_e, pauses):
@@ -341,7 +411,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
         if tb_s and tb_e and tb_e < tb_s:
             tb_e += timedelta(days=1)
         if tb_s and tb_e and tb_e > tb_s:
-            segments.append((tb_s, tb_e, "travel"))
+            segments.extend((start, end, "travel") for start, end in _subtract_pauses(tb_s, tb_e, pauses))
 
         return segments
 
@@ -360,47 +430,158 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 return n
         return 0.0
 
+    def _pause_minutes(self, activity):
+        total = 0
+        date_str = activity.get("datum")
+        for start_key, end_key in (
+            ("pausenzeitBeginn", "pausenzeitEnde"),
+            ("pausenzeit2Beginn", "pausenzeit2Ende"),
+        ):
+            start = _dt(date_str, activity.get(start_key))
+            end = _dt(date_str, activity.get(end_key))
+            if start and end:
+                if end < start:
+                    end += timedelta(days=1)
+                total += max(0, round((end - start).total_seconds() / 60))
+        return total
+
+    def _import_expense_report_times(self, meta, activities, employee):
+        if not employee:
+            raise UserError(_(
+                "Select the employee whose expense report should be updated."
+            ))
+
+        daily = {}
+        for activity in activities.values():
+            day = _parse_date(activity.get("datum"))
+            if not day:
+                continue
+
+            start = (
+                _dt(activity.get("datum"), activity.get("fahrzeitAbfahrt"))
+                or _dt(activity.get("datum"), activity.get("arbeitszeitBeginn"))
+            )
+            end = (
+                _dt(activity.get("datum"), activity.get("fahrzeitAbAnkunft"))
+                or _dt(activity.get("datum"), activity.get("arbeitszeitEnde"))
+                or _dt(activity.get("datum"), activity.get("fahrzeitAnkunft"))
+            )
+            if not start or not end:
+                raise UserError(_(
+                    "Start or end time is missing on %s for the expense report import."
+                ) % day.strftime("%d.%m.%Y"))
+            if end < start:
+                end += timedelta(days=1)
+
+            values = daily.setdefault(day, {"starts": [], "ends": [], "break_minutes": 0})
+            values["starts"].append(start)
+            values["ends"].append(end)
+            values["break_minutes"] += self._pause_minutes(activity)
+
+        if not daily:
+            raise UserError(_("No valid days for the expense report were found in the CSV."))
+
+        report_model = self.env["nolte.expense.report"].sudo()
+        line_model = self.env["nolte.expense.report.line"].sudo()
+        affected_reports = report_model
+        imported_lines = line_model
+        customer = _first_text_line(meta.get("ausfuehrungsort")) or self.partner_id.display_name
+        first_day = min(daily)
+        last_day = max(daily)
+        source_reference = meta.get("berichtNr") or self.csv_filename or "CSV"
+        travel_sequence_key = "csv:%s:%s:%s:%s" % (
+            employee.id,
+            source_reference,
+            first_day.isoformat(),
+            last_day.isoformat(),
+        )
+        for day, values in daily.items():
+            month = day.replace(day=1)
+            report = report_model.search([
+                ("employee_id", "=", employee.id),
+                ("month", "=", month),
+            ], limit=1)
+            if not report:
+                report = report_model.create({"employee_id": employee.id, "month": month})
+            affected_reports |= report
+            if report.state not in ("draft", "rejected"):
+                raise UserError(_(
+                    "Expense report %s is already locked and was not changed."
+                ) % report.display_name)
+            line = line_model.search([
+                ("report_id", "=", report.id),
+                ("date", "=", day),
+            ], limit=1)
+            if line.absence_hours:
+                raise UserError(_(
+                    "An absence is already recorded on %s. The CSV time was not imported."
+                ) % day.strftime("%d.%m.%Y"))
+
+            start = min(values["starts"])
+            end = max(values["ends"])
+            vals = {
+                "report_id": report.id,
+                "date": day,
+                "customer": customer,
+                "start_time": start.strftime("%H:%M"),
+                "end_time": end.strftime("%H:%M"),
+                "break_minutes": values["break_minutes"],
+                "travel_sequence_key": travel_sequence_key,
+            }
+            if line:
+                line.write(vals)
+                imported_lines |= line
+            else:
+                imported_lines |= line_model.create(vals)
+        ordered_lines = imported_lines.sorted("date")
+        if len(ordered_lines) >= 2:
+            for index, line in enumerate(ordered_lines):
+                travel_type = "arrival" if index == 0 else (
+                    "departure" if index == len(ordered_lines) - 1 else "full"
+                )
+                line.write({
+                    "country": line.country or "DE",
+                    "travel_type": travel_type,
+                    "travel_type_automatic": True,
+                })
+        affected_reports.sync_automatic_travel_allowances()
+
     def _add_note_line(self, order, meta, activities):
         note_lines = []
-
-        # Zeitraum
         dates = []
-        for a in activities.values():
-            d = _parse_date(a.get("datum"))
-            if d:
-                dates.append(d)
-        zeitraum = f"{min(dates).strftime('%d.%m.%Y')} – {max(dates).strftime('%d.%m.%Y')}" if dates else ""
+        for activity in activities.values():
+            activity_date = _parse_date(activity.get("datum"))
+            if activity_date:
+                dates.append(activity_date)
 
-        # Meta
-        ausfuehrungsort = meta.get("ausfuehrungsort")
-        maschinennr = meta.get("auswahleintrag1") or meta.get("auswahleintrag_1")
-        maschinentyp = meta.get("auswahleintrag2") or meta.get("auswahleintrag_2")
+        period = (
+            f"{min(dates).strftime('%d.%m.%Y')} – {max(dates).strftime('%d.%m.%Y')}"
+            if dates else ""
+        )
+        location = meta.get("ausfuehrungsort")
+        machine_number = meta.get("auswahleintrag1") or meta.get("auswahleintrag_1")
+        machine_type = meta.get("auswahleintrag2") or meta.get("auswahleintrag_2")
+        first_activity = activities[min(activities)] if activities else {}
+        technician = first_activity.get("name")
 
-        # Servicetechniker aus erster Tätigkeit
-        first = activities[min(activities.keys())] if activities else {}
-        servicetechniker = first.get("name")
+        if location:
+            note_lines.append(f"Work Site: {location}")
+        if technician:
+            note_lines.append(f"Service Technician: {technician}")
+        if machine_type:
+            note_lines.append(f"Machine Type: {machine_type}")
+        if machine_number:
+            note_lines.append(f"Machine No.: {machine_number}")
+        if period:
+            note_lines.append(f"Period: {period}")
 
-        # Reihenfolge: Auführungsort, servicetechniker, Machinentyp, Maschinennr, Zeitraum
-        if ausfuehrungsort:
-            note_lines.append(f"Ausführungsort: {ausfuehrungsort}")
-        if servicetechniker:
-            note_lines.append(f"Servicetechniker: {servicetechniker}")
-        if maschinentyp:
-            note_lines.append(f"Maschinentyp: {maschinentyp}")
-        if maschinennr:
-            note_lines.append(f"Maschinen Nr.: {maschinennr}")
-        if zeitraum:
-            note_lines.append(f"Zeitraum: {zeitraum}")
-
-        if not note_lines:
-            return
-
-        self.env["sale.order.line"].create({
-            "order_id": order.id,
-            "display_type": "line_note",
-            "name": "\n".join(note_lines),
-            "sequence": 1,
-        })
+        if note_lines:
+            self.env["sale.order.line"].create({
+                "order_id": order.id,
+                "display_type": "line_note",
+                "name": "\n".join(note_lines),
+                "sequence": 1,
+            })
 
     def action_import_create_sale_order(self):
         self.ensure_one()
@@ -410,20 +591,36 @@ class NolteOvertimeImportWizard(models.TransientModel):
         text = raw.decode("utf-8-sig", errors="replace")
         meta, activities = self._read_kv_csv(text)
         if not activities:
-            raise UserError(_("Keine 'taetigkeitN.*' Einträge in der CSV gefunden."))
+            raise UserError(_("No 'taetigkeitN.*' entries were found in the CSV."))
 
         partner = self._resolve_partner(meta)
-        origin = meta.get("berichtNr") or self.csv_filename or _("Überstunden-Import")
+        employee_groups = self._activity_employee_groups(activities, self.expense_employee_id)
+        if self.import_to_expense_report and not employee_groups:
+            names = sorted({
+                (activity.get("name") or "").strip()
+                for activity in activities.values()
+                if (activity.get("name") or "").strip()
+            })
+            raise UserError(_(
+                "No Odoo employee could be matched from the CSV names (%s). "
+                "Select the employee for the expense report."
+            ) % (", ".join(names) or _("no name")))
+        activity_employee = {
+            idx: group["employee"]
+            for group in employee_groups.values()
+            for idx in group["activities"]
+        }
+        origin = meta.get("berichtNr") or self.csv_filename or _("Overtime Import")
         order = False
 
         if self.import_target == "existing":
             if not self.order_id:
-                raise UserError(_("Bitte einen bestehenden Verkaufsauftrag auswählen."))
+                raise UserError(_("Select an existing sales order."))
             order = self.order_id
             if order.state not in ("draft", "sent"):
-                raise UserError(_("Es kann nur in einen Verkaufsauftrag im Status Angebot oder Angebot gesendet importiert werden."))
+                raise UserError(_("You can only import into a sales order in Quotation or Quotation Sent status."))
             if order.partner_id and order.partner_id != partner:
-                raise UserError(_("Der ausgewählte Verkaufsauftrag gehört zu '%s', die CSV jedoch zu '%s'. Bitte passenden Auftrag wählen oder Kunden-Auswahl anpassen.") % (order.partner_id.display_name, partner.display_name))
+                raise UserError(_("The selected sales order belongs to '%s', but the CSV belongs to '%s'. Select the correct order or customer.") % (order.partner_id.display_name, partner.display_name))
             if not order.partner_id:
                 order.partner_id = partner.id
             if not order.origin:
@@ -447,7 +644,6 @@ class NolteOvertimeImportWizard(models.TransientModel):
         totals = {"work": 0.0, "work_ot30": 0.0, "work_ot50": 0.0,
                   "travel": 0.0, "travel_ot30": 0.0, "travel_ot50": 0.0,
                   "km": 0.0, "overnight": 0.0}
-        detail_lines = []
         allowance_days = {}  # person -> set(day)
 
 
@@ -456,9 +652,8 @@ class NolteOvertimeImportWizard(models.TransientModel):
             date_str = a.get("datum") or ""
             d = _parse_date(date_str)
             day = d.isoformat() if d else str(date_str).strip()
-            person = a.get("name") or ""
-            note = (f"{day} {person}").strip()
-            # Auslöse: je Mitarbeiter & Einsatztag genau 1× zählen (auch bei nicht zusammenhängenden Tagen / Wochenende)
+            person = activity_employee[idx].name if idx in activity_employee else (a.get("name") or "")
+            # Allowance: je Employee & Einsatztag genau 1× zählen (auch bei nicht zusammenhängenden Dayen / Wochenende)
             person_key = (person or "").strip() or "_gesamt_"
             allowance_days.setdefault(person_key, set()).add(day)
 
@@ -488,16 +683,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
             totals["travel_ot50"] += trav_ot50
             totals["km"] += km
 
-            detail_lines.append(
-                f"{note}: Arbeit {work_normal:.2f}h (OT30 {work_ot30:.2f} / OT50 {work_ot50:.2f}), "
-                f"Fahrt {trav_normal:.2f}h (OT30 {trav_ot30:.2f} / OT50 {trav_ot50:.2f}), km {km:.0f}"
-            )
-
         totals["overnight"] = self._extract_overnights_from_meta(meta)
-
-        if detail_lines:
-            extra = f"\nÜbernachtungen (gesamt): {totals['overnight']:.0f}" if totals["overnight"] else ""
-            order.note = f"CSV Import: {origin}\n" + "\n".join(detail_lines) + extra
 
         def add_line(product, qty, label, seq):
             qty = float(qty or 0.0)
@@ -580,25 +766,25 @@ class NolteOvertimeImportWizard(models.TransientModel):
             line.sequence = seq
             self.env["sale.order.line"].create(line._convert_to_write(line._cache))
 
-        add_line(prods["work"], totals["work"], "Arbeitszeit", 10)
-        add_line(prods["work_ot30"], totals["work_ot30"], "Arbeitszeit Überstunden 30%", 11)
-        add_line(prods["work_ot50"], totals["work_ot50"], "Arbeitszeit Überstunden 50%", 12)
+        add_line(prods["work"], totals["work"], _("Work Time"), 10)
+        add_line(prods["work_ot30"], totals["work_ot30"], _("Work Time Overtime 30%"), 11)
+        add_line(prods["work_ot50"], totals["work_ot50"], _("Work Time Overtime 50%"), 12)
 
-        add_line(prods["travel"], totals["travel"], "Fahrzeit", 20)
-        add_line(prods["travel_ot30"], totals["travel_ot30"], "Fahrzeit Überstunden 30%", 21)
-        add_line(prods["travel_ot50"], totals["travel_ot50"], "Fahrzeit Überstunden 50%", 22)
+        add_line(prods["travel"], totals["travel"], _("Travel Time"), 20)
+        add_line(prods["travel_ot30"], totals["travel_ot30"], _("Travel Time Overtime 30%"), 21)
+        add_line(prods["travel_ot50"], totals["travel_ot50"], _("Travel Time Overtime 50%"), 22)
 
         if prods.get("km") and totals["km"] > 1e-6:
-            add_line(prods["km"], totals["km"], "Kilometer", 30)
+            add_line(prods["km"], totals["km"], _("Mileage"), 30)
         elif totals["km"] > 1e-6:
-            order.note = (order.note or "") + "\n\nHinweis: Kilometer vorhanden, aber kein Produkt konfiguriert."
+            order.note = (order.note or "") + "\n\nNote: Mileage is present, but no product is configured."
 
         if prods.get("overnight") and totals["overnight"] > 1e-6:
-            add_line(prods["overnight"], totals["overnight"], "Übernachtungspauschale", 40)
+            add_line(prods["overnight"], totals["overnight"], _("Overnight Allowance"), 40)
         elif totals["overnight"] > 1e-6:
-            order.note = (order.note or "") + "\n\nHinweis: Übernachtungen vorhanden, aber kein Produkt konfiguriert."
+            order.note = (order.note or "") + "\n\nNote: Overnight stays are present, but no product is configured."
         
-        # Auslöse je Mitarbeiter & Einsatztag
+        # Allowance je Employee & Einsatztag
         if allowance_days:
             if prods.get("allowance"):
                 seq = 50
@@ -606,13 +792,16 @@ class NolteOvertimeImportWizard(models.TransientModel):
                     qty = float(len(allowance_days[person_key]))
                     if qty <= 0:
                         continue
-                    label = "Auslöse" if person_key == "_gesamt_" else f"Auslöse ({person_key})"
+                    label = "Allowance" if person_key == "_gesamt_" else f"Allowance ({person_key})"
                     add_line(prods["allowance"], qty, label, seq)
                     seq += 1
             else:
                 total_days = sum(len(s) for s in allowance_days.values())
                 if total_days:
-                    order.note = (order.note or "") + f"\n\nHinweis: Auslöse-Tage ({total_days}) vorhanden, aber kein Produkt konfiguriert."
+                    order.note = (order.note or "") + f"\n\nNote: Allowance days ({total_days}) are present, but no product is configured."
 
+        if self.import_to_expense_report:
+            for group in employee_groups.values():
+                self._import_expense_report_times(meta, group["activities"], group["employee"])
 
         return {"type": "ir.actions.act_window", "res_model": "sale.order", "view_mode": "form", "res_id": order.id}

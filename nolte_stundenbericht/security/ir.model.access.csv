@@ -1,0 +1,18 @@
+id,name,model_id,group_id/id,operation,domain
+access_nolte_service_report_user,Nolte service report user,nolte.service.report,nolte_stundenbericht.group_stundenbericht_user,cru,"[('owner_user_id', '=', user.id)]"
+access_nolte_service_report_approver,Nolte service report approver,nolte.service.report,nolte_stundenbericht.group_stundenbericht_approver,cru,"[('company_id', 'in', company_ids)]"
+access_nolte_service_report_member_user,Nolte service report member user,nolte.service.report.member,nolte_stundenbericht.group_stundenbericht_user,cru,"[('report_id.owner_user_id', '=', user.id)]"
+access_nolte_service_report_member_approver,Nolte service report member approver,nolte.service.report.member,nolte_stundenbericht.group_stundenbericht_approver,cru,"[('report_id.company_id', 'in', company_ids)]"
+access_nolte_service_report_segment_user,Nolte service report segment user,nolte.service.report.segment,nolte_stundenbericht.group_stundenbericht_user,cru,"[('member_id.report_id.owner_user_id', '=', user.id)]"
+access_nolte_service_report_segment_approver,Nolte service report segment approver,nolte.service.report.segment,nolte_stundenbericht.group_stundenbericht_approver,cru,"[('report_id.company_id', 'in', company_ids)]"
+access_nolte_service_report_material_user,Nolte service report material,nolte.service.report.material,nolte_stundenbericht.group_stundenbericht_user,cru,
+access_nolte_service_report_checklist_user,Nolte service report checklist,nolte.service.report.checklist,nolte_stundenbericht.group_stundenbericht_user,cru,
+access_nolte_service_report_conflict_approver,Nolte service report conflict approver,nolte.service.report.conflict,nolte_stundenbericht.group_stundenbericht_approver,cru,
+access_nolte_service_report_manager,Nolte service report manager,nolte.service.report,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_member_manager,Nolte service report member manager,nolte.service.report.member,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_segment_manager,Nolte service report segment manager,nolte.service.report.segment,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_material_manager,Nolte service report material manager,nolte.service.report.material,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_checklist_manager,Nolte service report checklist manager,nolte.service.report.checklist,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_conflict_manager,Nolte service report conflict manager,nolte.service.report.conflict,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_billing_wizard_manager,Nolte service report billing wizard manager,nolte.service.report.billing.wizard,nolte_stundenbericht.group_stundenbericht_manager,crud,
+access_nolte_service_report_billing_wizard_line_manager,Nolte service report billing wizard line,nolte.service.report.billing.wizard.line,nolte_stundenbericht.group_stundenbericht_manager,crud,

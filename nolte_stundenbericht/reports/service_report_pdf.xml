@@ -1,0 +1,96 @@
+<odoo>
+    <record id="paperformat_customer_service_report" model="report.paperformat">
+        <field name="name">Nolte Stundenbericht A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">5</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_customer_service_report" model="ir.actions.report">
+        <field name="name">Kunden-Stundenbericht</field>
+        <field name="model">nolte.service.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nolte_stundenbericht.report_customer_service_report</field>
+        <field name="report_file">nolte_stundenbericht.report_customer_service_report</field>
+        <field name="binding_model_id" ref="model_nolte_service_report"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_customer_service_report"/>
+    </record>
+
+    <template id="report_customer_service_report">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="data" t-value="o.customer_snapshot_for_pdf() if o.customer_snapshot_payload else o.preview_customer_snapshot()"/>
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                <div class="page ns-service-report">
+                    <style>
+                        div.page.ns-service-report { color:#173b63; font-family:Arial,sans-serif; font-size:9pt; padding:5mm 7mm 13mm !important; margin:0 !important; }
+                        .ns-service-report * { box-sizing:border-box; }
+                        .ns-head { display:table; width:100%; border-bottom:2px solid #187ad3; padding-bottom:4mm; margin-bottom:5mm; }
+                        .ns-brand,.ns-title { display:table-cell; vertical-align:middle; }
+                        .ns-brand { width:27%; }
+                        .ns-brand img { max-width:43mm; max-height:18mm; }
+                        .ns-title { width:43%; }
+                        .ns-title h1 { margin:0; color:#064785; font-size:14pt; letter-spacing:.2pt; white-space:nowrap; }
+                        .ns-title p { margin:1mm 0 0; color:#187ad3; font-weight:bold; }
+                        .ns-meta { display:table-cell; width:30%; vertical-align:middle; text-align:right; font-size:8pt; color:#516b84; line-height:1.2; }
+                        .ns-meta .meta-label { display:block; margin-top:1mm; }
+                        .ns-meta strong { display:block; color:#0a396a; font-size:12pt; margin:.5mm 0; white-space:nowrap; }
+                        .ns-grid { display:table; width:100%; border-spacing:3mm 0; margin:0 -3mm 4mm; }
+                        .ns-cell { display:table-cell; width:50%; border:1px solid #b9d8ee; border-radius:2mm; padding:3mm; vertical-align:top; background:#f7fbff; min-height:31mm; }
+                        .ns-cell h3,.ns-section h2 { margin:0 0 2mm; color:#064785; font-size:11pt; }
+                        .ns-cell .label { color:#187ad3; font-weight:bold; font-size:8pt; text-transform:uppercase; }
+                        .ns-machine { width:100%; border-collapse:separate; border-spacing:2mm 0; margin:0 -2mm 4mm; }
+                        .ns-machine td { width:25%; border:1px solid #c7ddec; padding:2mm; background:#fff; vertical-align:top; }
+                        .ns-machine .label { display:block; color:#51708c; font-weight:bold; font-size:7.5pt; text-transform:uppercase; margin-bottom:1mm; }
+                        .ns-section { border:1px solid #c8dfef; border-radius:2mm; padding:3mm; margin:4mm 0; page-break-inside:avoid; }
+                        .ns-section h2 { border-bottom:1px solid #c8dfef; padding-bottom:2mm; }
+                        .ns-work { white-space:pre-line; color:#1f2f3d; line-height:1.35; }
+                        .ns-empty-work { margin:0; color:#506a80; }
+                        .ns-work-empty { height:24mm; }
+                        .ns-result { margin-top:3mm; padding-top:2mm; border-top:1px solid #d7e5ef; white-space:pre-line; }
+                        .ns-table { width:100%; border-collapse:collapse; color:#263746; font-size:8pt; }
+                        .ns-table th { background:#eaf5fd; color:#0b4a80; text-transform:uppercase; font-size:7pt; text-align:left; padding:2mm; border-bottom:1px solid #b7d8ed; }
+                        .ns-table td { padding:2mm; border-bottom:1px solid #dbeaf4; vertical-align:top; }
+                        .ns-duration { display:block; color:#647b91; font-size:7pt; margin-top:.5mm; }
+                        .ns-table tr:nth-child(even) td { background:#f8fcff; }
+                        .ns-km { text-align:right; white-space:nowrap; }
+                        .ns-table tfoot td { background:#f1f8fd; color:#064785; font-weight:bold; border-top:2px solid #b7d8ed; }
+                        .ns-check { color:#087840; font-weight:bold; } .ns-open { color:#a05a00; font-weight:bold; }
+                        .ns-footer { position:fixed; bottom:-7mm; left:7mm; right:7mm; border-top:1px solid #b9d8ee; padding-top:2mm; font-size:7.5pt; color:#506a80; }
+                        .ns-footer .right { float:right; }
+                        .ns-signature { display:table; width:100%; border-spacing:3mm 0; margin:7mm -3mm 0; }
+                        .ns-signature > div { display:table-cell; width:50%; border:1px solid #b9d8ee; padding:3mm; min-height:28mm; vertical-align:bottom; }
+                        .ns-signature img { max-width:47mm; max-height:18mm; display:block; margin:3mm 0; }
+                        .ns-photos { page-break-before:always; } .ns-photo { width:48%; display:inline-block; margin:0 1% 4mm 0; vertical-align:top; }
+                        .ns-photo img { width:100%; max-height:70mm; object-fit:contain; border:1px solid #c8dfef; }
+                    </style>
+                    <header class="ns-head">
+                        <div class="ns-brand"><t t-if="o.company_id.logo"><img t-att-src="image_data_uri(o.company_id.logo)"/></t></div>
+                        <div class="ns-title"><h1>STUNDENBERICHT</h1><p>Service. Maschinen. Mehr erreichen.</p></div>
+                        <div class="ns-meta"><span class="meta-label">Bericht Nr.</span><strong t-esc="data['report']['number']"/><span class="meta-label">Einsatzdatum</span><strong t-esc="data['report']['serviceDate']"/></div>
+                    </header>
+                    <div class="ns-grid">
+                        <div class="ns-cell"><span class="label">Kunde / Rechnungsadresse</span><h3 t-out="o.pdf_text(data['report']['customerName'] or '-')"/><div t-out="o.pdf_text(data['report'].get('customerAddress') or '-')"/><t t-if="data['report'].get('contactName')"><p><span class="label">Ansprechpartner</span><br/><span t-out="o.pdf_text(data['report']['contactName'])"/><t t-if="data['report'].get('contactPhone')"> - <span t-out="o.pdf_text(data['report']['contactPhone'])"/></t></p></t></div>
+                        <div class="ns-cell"><span class="label">Ausfuehrungsort</span><h3 t-out="o.pdf_text(data['report'].get('location') or data['report']['customerName'] or '-')"/><div t-out="o.pdf_text(data['report'].get('location') or data['report'].get('customerAddress') or '-')"/><t t-if="data['report'].get('taskName')"><p><span class="label">Einsatzauftrag</span><br/><span t-out="o.pdf_text(data['report']['taskName'])"/></p></t></div>
+                    </div>
+                    <table class="ns-machine"><tr><td><span class="label">Maschinen-Nr.</span><span t-esc="data['report'].get('machineNumber') or '-'"/></td><td><span class="label">Maschinentyp</span><span t-esc="data['report'].get('machineType') or '-'"/></td><td><span class="label">Uebernachtungen</span><span t-esc="data['report'].get('overnightCount') or 0"/></td><td><span class="label">Status</span><span t-esc="'Bestaetigt' if o.customer_snapshot_payload else 'Vorschau'"/></td></tr></table>
+                    <section t-att-class="'ns-section ns-work-empty' if not data['report'].get('workDescription') and not data['report'].get('workResult') else 'ns-section'" t-att-style="'height:24mm; overflow:hidden;' if not data['report'].get('workDescription') and not data['report'].get('workResult') else ''"><h2>Ausgefuehrte Arbeiten</h2><t t-if="data['report'].get('workDescription')"><div class="ns-work" t-out="o.pdf_text(data['report']['workDescription'])"/></t><t t-else=""><p class="ns-empty-work">Keine Beschreibung erfasst.</p></t><t t-if="data['report'].get('workResult')"><div class="ns-result"><strong>Fazit / weiterer Handlungsbedarf</strong><br/><span t-out="o.pdf_text(data['report']['workResult'])"/></div></t></section>
+                    <t t-if="data.get('checklist')"><section class="ns-section"><h2>Checkliste</h2><table class="ns-table"><thead><tr><th>Status</th><th>Pruefpunkt</th><th>Bemerkung</th></tr></thead><tbody><t t-foreach="data['checklist']" t-as="item"><tr><td t-att-class="'ns-check' if item['checked'] else 'ns-open'" t-esc="'Erledigt' if item['checked'] else 'Offen'"/><td t-out="o.pdf_text(item['name'])"/><td t-out="o.pdf_text(item['note'])"/></tr></t></tbody></table></section></t>
+                    <section class="ns-section"><h2>Zeiterfassung</h2><t t-set="time_totals" t-value="data.get('timeTotals', {})"/><table class="ns-table"><thead><tr><th>Datum</th><th>Mitarbeiter</th><th>Hinfahrt</th><th>Arbeitszeit</th><th>Pause</th><th>Rueckfahrt</th><th class="ns-km">Hin-km</th><th class="ns-km">Rueck-km</th><th class="ns-km">Gesamt-km</th></tr></thead><tbody><t t-foreach="data.get('timeRows', [])" t-as="row"><tr><td t-out="o.pdf_text(row['serviceDate'])"/><td t-out="o.pdf_text(row['employeeName'])"/><td><span t-out="o.pdf_text(row['outbound'] or '-')"/><t t-if="row['outbound']"><span class="ns-duration" t-esc="row['outboundDuration']"/></t></td><td><span t-out="o.pdf_text(row['work'] or '-')"/><t t-if="row['work']"><span class="ns-duration" t-esc="row['workDuration']"/></t></td><td><span t-out="o.pdf_text(row['breaks'] or '-')"/><t t-if="row['breaks']"><span class="ns-duration" t-esc="row['breakDuration']"/></t></td><td><span t-out="o.pdf_text(row['return'] or '-')"/><t t-if="row['return']"><span class="ns-duration" t-esc="row['returnDuration']"/></t></td><td class="ns-km" t-esc="row['outboundKilometers'] or '-'"/><td class="ns-km" t-esc="row['returnKilometers'] or '-'"/><td class="ns-km" t-esc="row['kilometers'] or '-'"/></tr></t><t t-if="not data.get('timeRows')"><tr><td colspan="9">Keine Zeiten erfasst.</td></tr></t></tbody><tfoot><tr><td colspan="2">Gesamtsumme</td><td t-esc="time_totals.get('outboundTravel', '0:00 h')"/><td t-esc="time_totals.get('work', '0:00 h')"/><td t-esc="time_totals.get('breaks', '0:00 h')"/><td t-esc="time_totals.get('returnTravel', '0:00 h')"/><td class="ns-km" t-esc="time_totals.get('outboundKilometers', 0.0)"/><td class="ns-km" t-esc="time_totals.get('returnKilometers', 0.0)"/><td class="ns-km" t-esc="time_totals.get('kilometers', 0.0)"/></tr></tfoot></table></section>
+                    <t t-if="data.get('materials')"><section class="ns-section"><h2>Material</h2><table class="ns-table"><thead><tr><th>Artikel / Material</th><th class="ns-km">Menge</th><th>Einheit</th><th>Bemerkung</th></tr></thead><tbody><t t-foreach="data['materials']" t-as="material"><tr><td t-out="o.pdf_text(material['name'])"/><td class="ns-km" t-esc="material['quantity']"/><td t-out="o.pdf_text(material['unit'])"/><td t-out="o.pdf_text(material['note'])"/></tr></t></tbody></table></section></t>
+                    <t t-if="data['report'].get('note')"><section class="ns-section"><h2>Bemerkung</h2><div t-out="o.pdf_text(data['report']['note'])"/></section></t>
+                    <div class="ns-signature"><div><strong>Ausgefuehrt durch</strong><br/><t t-foreach="data.get('memberNames', [])" t-as="employee_name"><span t-out="o.pdf_text(employee_name)"/><br/></t></div><div><strong>Kundenbestaetigung</strong><t t-if="o.customer_signature"><img t-att-src="image_data_uri(o.customer_signature)"/></t><br/><span t-out="o.pdf_text(o.customer_signer_name or 'Unterschrift erfolgt bei Kundenbestaetigung')"/></div></div>
+                    <t t-if="o.photo_ids"><section class="ns-section ns-photos"><h2>Fotos und Anhaenge</h2><t t-foreach="o.photo_ids" t-as="photo"><div class="ns-photo"><img t-att-src="image_data_uri(photo.datas)"/><p t-out="o.pdf_text(photo.name)"/></div></t></section></t>
+                    <footer class="ns-footer"><span t-out="o.pdf_text(o.company_id.name)"/> - <span t-out="o.pdf_text(o.company_id.phone or '')"/> - <span t-out="o.pdf_text(o.company_id.email or '')"/><span class="right">Kundenstundenbericht</span></footer>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

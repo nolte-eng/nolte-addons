@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_comev_cta" model="ir.ui.view">
+        <field name="name">product.template.form.product.cta</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="website_sale.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales']" position="inside">
+                <group string="Shop-Produktaktionen">
+                    <field name="is_comev_product"/>
+                    <field name="product_cta_manufacturer" placeholder="z. B. COMEV, DELTA, ABENE oder Belotti" invisible="not is_comev_product"/>
+                    <field name="product_cta_website_page_id"
+                           placeholder="Vorhandene Website-Seite suchen …"
+                           options="{'no_create': True, 'no_create_edit': True}"
+                           invisible="not is_comev_product"/>
+                    <field name="product_cta_brochure_attachment_id"
+                           placeholder="Vorhandenen PDF-Dateianhang suchen …"
+                           options="{'no_create': True, 'no_create_edit': True}"
+                           invisible="not is_comev_product"/>
+                    <field name="comev_detail_url" invisible="1"/>
+                    <field name="comev_brochure_url" invisible="1"/>
+                    <field name="product_cta_notification_email" placeholder="info@nolte-eng.de" invisible="not is_comev_product"/>
+                    <field name="product_cta_customer_confirmation" invisible="not is_comev_product"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
