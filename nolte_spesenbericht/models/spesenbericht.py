@@ -289,7 +289,7 @@ class NolteExpenseReport(models.Model):
             days = monthrange(self.month.year, self.month.month)[1]
             return sum(8.0 for day in range(1, days + 1) if date(self.month.year, self.month.month, day).weekday() < 5)
         next_month = (self.month.replace(day=28) + timedelta(days=4)).replace(day=1)
-        calendar_tz = ZoneInfo(calendar.tz or "UTC")
+        calendar_tz = ZoneInfo(self.company_id.tz or self.env.company.tz or "UTC")
         start_dt = datetime.combine(self.month, time.min, tzinfo=calendar_tz)
         end_dt = datetime.combine(next_month, time.min, tzinfo=calendar_tz)
         return calendar.get_work_hours_count(start_dt, end_dt, compute_leaves=True)
