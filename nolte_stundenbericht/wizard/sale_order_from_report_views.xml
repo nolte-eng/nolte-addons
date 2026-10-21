@@ -1,0 +1,22 @@
+<odoo>
+    <record id="view_nolte_service_report_sale_order_wizard_form" model="ir.ui.view">
+        <field name="name">nolte.service.report.sale.order.wizard.form</field>
+        <field name="model">nolte.service.report.sale.order.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Auftrag aus Stundenbericht erstellen">
+                <group>
+                    <field name="report_id"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="partner_id" options="{'no_create': True, 'no_create_edit': True}"/>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    Es wird ein Angebotsentwurf angelegt und mit dem Stundenbericht verknüpft. Abrechenbare Zeit- und Fahrtpositionen werden nach Prüfung über „Abrechnung freigeben“ ergänzt. Die Rechnung wird anschließend im Verkaufsauftrag erstellt.
+                </div>
+                <footer>
+                    <button name="action_create_sale_order" type="object" string="Angebotsentwurf erstellen" class="btn-primary"/>
+                    <button string="Abbrechen" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

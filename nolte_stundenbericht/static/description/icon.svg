@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#18233b" flood-opacity=".12"/>
+    </filter>
+  </defs>
+  <rect x="46" y="46" width="420" height="420" rx="40" fill="#fff" stroke="#e2e5e9" stroke-width="8" filter="url(#shadow)"/>
+
+  <!-- Clipboard and timesheet grid: clearly distinct from the expense report's clock. -->
+  <path d="M166 134h180a28 28 0 0 1 28 28v220a28 28 0 0 1-28 28H166a28 28 0 0 1-28-28V162a28 28 0 0 1 28-28Z" fill="#164b8e"/>
+  <path d="M214 118h84a18 18 0 0 1 18 18v28H196v-28a18 18 0 0 1 18-18Z" fill="#16c7b2"/>
+  <rect x="190" y="198" width="132" height="28" rx="8" fill="#fff" opacity=".96"/>
+
+  <rect x="184" y="240" width="144" height="46" rx="9" fill="#fff" opacity=".12"/>
+  <rect x="184" y="300" width="144" height="46" rx="9" fill="#fff" opacity=".12"/>
+  <rect x="184" y="360" width="144" height="46" rx="9" fill="#fff" opacity=".12"/>
+
+  <!-- Day markers and work/travel time blocks -->
+  <rect x="196" y="253" width="16" height="20" rx="4" fill="#18c7b3"/>
+  <rect x="222" y="253" width="48" height="20" rx="5" fill="#fff"/>
+  <rect x="277" y="253" width="38" height="20" rx="5" fill="#38b8ee"/>
+
+  <rect x="196" y="313" width="16" height="20" rx="4" fill="#ffb547"/>
+  <rect x="222" y="313" width="62" height="20" rx="5" fill="#fff"/>
+  <rect x="291" y="313" width="24" height="20" rx="5" fill="#18c7b3"/>
+
+  <rect x="196" y="373" width="16" height="20" rx="4" fill="#38b8ee"/>
+  <rect x="222" y="373" width="38" height="20" rx="5" fill="#fff"/>
+  <rect x="267" y="373" width="48" height="20" rx="5" fill="#18c7b3"/>
+</svg>

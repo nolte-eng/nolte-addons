@@ -1,0 +1,73 @@
+<odoo>
+    <!-- Service users may need Odoo's internal "Note" subtype while the
+         chatter prepares a project task. Keep the exception limited to that
+         single subtype; the portal/public rule still hides other internal
+         notification types. -->
+    <record id="rule_stundenbericht_read_note_subtype" model="ir.rule">
+        <field name="name">Stundenbericht: Notiz-Subtyp lesen</field>
+        <field name="model_id" ref="mail.model_mail_message_subtype"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
+        <field name="domain_force" eval="&quot;[('id', '=', %s)]&quot; % ref('mail.mt_note')"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_nolte_service_report_user_own" model="ir.rule">
+        <field name="name">Eigene Einsatzberichte</field>
+        <field name="model_id" ref="model_nolte_service_report"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
+        <field name="domain_force">[('owner_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/><field name="perm_write" eval="True"/><field name="perm_create" eval="True"/><field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_nolte_service_report_member_user_own" model="ir.rule">
+        <field name="name">Eigene Einsatzbericht-Mitarbeiter</field>
+        <field name="model_id" ref="model_nolte_service_report_member"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
+        <field name="domain_force">[('report_id.owner_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/><field name="perm_write" eval="True"/><field name="perm_create" eval="True"/><field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_nolte_service_report_segment_user_own" model="ir.rule">
+        <field name="name">Eigene Einsatzbericht-Segmente</field>
+        <field name="model_id" ref="model_nolte_service_report_segment"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
+        <field name="domain_force">[('member_id.report_id.owner_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/><field name="perm_write" eval="True"/><field name="perm_create" eval="True"/><field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_nolte_service_report_manager_all" model="ir.rule">
+        <field name="name">Alle Einsatzberichte verwalten</field>
+        <field name="model_id" ref="model_nolte_service_report"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_nolte_service_report_approver_company" model="ir.rule">
+        <field name="name">Unternehmensberichte prüfen</field>
+        <field name="model_id" ref="model_nolte_service_report"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_report_member_manager_all" model="ir.rule">
+        <field name="name">Alle Einsatzbericht-Mitarbeiter verwalten</field>
+        <field name="model_id" ref="model_nolte_service_report_member"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_nolte_service_report_member_approver_company" model="ir.rule">
+        <field name="name">Unternehmens-Mitarbeiterzeilen prüfen</field>
+        <field name="model_id" ref="model_nolte_service_report_member"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/>
+        <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_report_segment_manager_all" model="ir.rule">
+        <field name="name">Alle Einsatzbericht-Segmente verwalten</field>
+        <field name="model_id" ref="model_nolte_service_report_segment"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_nolte_service_report_segment_approver_company" model="ir.rule">
+        <field name="name">Unternehmenssegmente prüfen</field>
+        <field name="model_id" ref="model_nolte_service_report_segment"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/>
+        <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>
