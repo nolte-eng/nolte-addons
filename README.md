@@ -12,6 +12,7 @@ Je nach Ausbaustand befinden sich unter anderem folgende Module im Repository:
 
 - `nolte`
 - `nolte_berichte`
+- `nolte_stundenbericht`
 - `nolte_overtime_billing`
 - `portal_travel_expense`
 

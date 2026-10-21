@@ -1,0 +1,60 @@
+<odoo>
+    <record id="view_nolte_service_intake_wizard_form" model="ir.ui.view">
+        <field name="name">nolte.service.intake.wizard.form</field>
+        <field name="model">nolte.service.intake.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Neuen Serviceeinsatz anlegen">
+                <header>
+                    <button name="action_create_service_task" type="object" string="Einsatz anlegen" class="oe_highlight"/>
+                    <button string="Abbrechen" special="cancel"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="z. B. Wartung an Maschine 1234"/></h1>
+                    </div>
+                    <group>
+                        <group string="Auftrag">
+                            <field name="project_id" options="{'no_create': True}"/>
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="service_contact_id" options="{'no_create': True}"/>
+                        </group>
+                        <group string="Einsatzplanung">
+                            <field name="technician_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="planned_date"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Einsatzort">
+                        <field name="service_location_contact_id" string="Kontakt suchen" options="{'no_create': True, 'no_create_edit': True}" placeholder="Firma oder Adresse suchen …"/>
+                        <field name="service_location_name" placeholder="Firma am Einsatzort (falls abweichend vom Auftraggeber)"/>
+                        <field name="service_location_contact_name" placeholder="Name des Ansprechpartners vor Ort"/>
+                        <field name="service_location_contact_phone" placeholder="Telefonnummer für Rückfragen vor Ort"/>
+                        <field name="service_location" string="Einsatzadresse" placeholder="Leer lassen = Kundenadresse. Sonst Straße, PLZ, Ort und Land eintragen." nolabel="1" colspan="2"/>
+                    </group>
+                    <group string="Maschinendaten" col="2">
+                        <field name="machine_number" placeholder="z. B. 1317"/>
+                        <field name="machine_type_id" options="{'no_quick_create': False, 'no_create_edit': False}" placeholder="Maschinentyp suchen oder neu anlegen …"/>
+                        <field name="overnight_count"/>
+                    </group>
+                    <group string="Arbeitsauftrag">
+                        <field name="work_description" nolabel="1" colspan="2" widget="text" placeholder="Fehlerbild, gewünschte Arbeiten oder Hinweise für den Techniker …"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_nolte_service_intake_wizard" model="ir.actions.act_window">
+        <field name="name">Neuer Serviceeinsatz</field>
+        <field name="res_model">nolte.service.intake.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_nolte_service_intake_wizard_form"/>
+        <field name="target">current</field>
+    </record>
+    <menuitem id="menu_nolte_service_intake" name="Neuer Serviceeinsatz"
+              parent="project.menu_main_pm" action="action_nolte_service_intake_wizard"
+              sequence="3" groups="nolte_stundenbericht.group_stundenbericht_user"/>
+    <menuitem id="menu_nolte_service_intake_stundenbericht" name="Neuer Serviceeinsatz"
+              parent="nolte_stundenbericht.menu_nolte_stundenbericht_root"
+              action="action_nolte_service_intake_wizard" sequence="5"
+              groups="nolte_stundenbericht.group_stundenbericht_user"/>
+</odoo>
