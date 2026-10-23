@@ -49,6 +49,7 @@ class NolteServiceReport(models.Model):
         ("billed", "Abgerechnet"),
         ("returned", "Zur Korrektur"),
     ], default="draft", required=True, tracking=True, index=True)
+    is_closed = fields.Boolean(string="Abgeschlossen", compute="_compute_is_closed", store=True, index=True)
     mobile_uuid = fields.Char(default=lambda self: str(uuid4()), required=True, copy=False, readonly=True, index=True)
     mobile_revision = fields.Integer(default=0, required=True, copy=False)
     server_revision = fields.Integer(default=0, required=True, copy=False)
@@ -66,6 +67,8 @@ class NolteServiceReport(models.Model):
     employee_assignment_ids = fields.One2many("nolte.service.report.employee", "report_id", string="Einsatzmitarbeiter")
     material_ids = fields.One2many("nolte.service.report.material", "report_id", string="Material")
     checklist_ids = fields.One2many("nolte.service.report.checklist", "report_id", string="Checkliste")
+    customer_checklist_ids = fields.One2many("nolte.service.report.checklist", "report_id", string="Kundencheckliste", domain=[("visibility", "=", "customer")])
+    internal_checklist_ids = fields.One2many("nolte.service.report.checklist", "report_id", string="Interne Checkliste", domain=[("visibility", "=", "internal")])
     photo_ids = fields.Many2many("ir.attachment", string="Einsatzfotos", copy=False)
     conflict_ids = fields.One2many("nolte.service.report.conflict", "report_id", string="Konflikte", readonly=True)
     work_report_id = fields.Many2one("nolte.work.report", string="Interner Stundenbericht", readonly=True, copy=False)
@@ -125,15 +128,38 @@ class NolteServiceReport(models.Model):
                 ) or _("Neu")
         return super().create(vals_list)
 
+    @api.depends("state", "task_id.state", "task_id.stage_id.name")
+    def _compute_is_closed(self):
+        for report in self:
+            task = report.task_id
+            stage_name = (task.stage_id.with_context(lang=None).name or "").strip().casefold()
+            report.is_closed = bool(
+                report.state == "billed"
+                or task.state == "1_done"
+                or stage_name in ("abgeschlossen", "abgerechnet")
+            )
+
     def action_submit_review(self):
         self.filtered(lambda report: report.state in ("customer_confirmed", "internally_amended", "returned")).write({"state": "under_review"})
 
     def action_send_customer_pdf(self):
         self.ensure_one()
+        self.check_access("read")
         service_contact = self.task_id.nolte_service_contact_id if self.task_id else self.env["res.partner"]
         recipient = self.manual_contact_email or service_contact.email or (self.partner_id.email if self.partner_id else False)
         if not recipient:
             raise UserError(_("Für den Kunden ist keine E-Mail-Adresse hinterlegt. Bitte zuerst eine E-Mail-Adresse am Kunden oder im Bericht eintragen."))
+        company_email = self.company_id.email or self.company_id.partner_id.email
+        if not company_email:
+            raise UserError(_("Für Ihr Unternehmen ist keine Service-E-Mail-Adresse hinterlegt."))
+        if not self.customer_pdf_attachment_id and not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_approver"):
+            raise UserError(_("Der Kundenbericht kann erst nach der Kundenbestätigung versendet werden."))
+        # The standard Odoo composer uses contact tags for editable recipients.
+        # Resolve only these authorized report addresses; sending must not
+        # require granting technicians general contact-creation privileges.
+        recipients = self.env["res.partner"].sudo()
+        for address in (recipient, company_email):
+            recipients |= recipients.find_or_create(address, assert_valid_email=True)
 
         attachment = self.customer_pdf_attachment_id
         if not attachment:
@@ -156,14 +182,16 @@ class NolteServiceReport(models.Model):
             "target": "new",
             "context": {
                 "default_model": self._name,
-                "default_res_id": self.id,
                 "default_res_ids": [self.id],
                 "default_composition_mode": "comment",
-                "default_email_to": recipient,
-                "default_email_from": self.company_id.email or self.company_id.partner_id.email or False,
-                "default_reply_to": self.company_id.email or self.company_id.partner_id.email or False,
+                "default_subtype_xmlid": "mail.mt_comment",
+                "default_partner_ids": [(6, 0, recipients.ids)],
+                "default_email_from": company_email,
+                "default_reply_to": company_email,
+                "default_notify_author": True,
+                "default_notify_skip_followers": True,
                 "default_subject": _("Stundenbericht %s") % self.name,
-                "default_body": _("Guten Tag,<br/><br/>anbei erhalten Sie den Stundenbericht %s.<br/><br/>Freundliche Grüße") % self.name,
+                "default_body": Markup(_("Guten Tag,<br/><br/>anbei erhalten Sie den Stundenbericht %(report)s.<br/><br/>Freundliche Grüße<br/>%(company)s")) % {"report": self.name, "company": self.company_id.name},
                 "default_attachment_ids": [(6, 0, [attachment.id])],
             },
         }
@@ -316,7 +344,7 @@ class NolteServiceReport(models.Model):
                 "overnightCount": total_overnights,
             },
             "materials": [{"name": item.name, "quantity": item.quantity, "unit": item.unit or "", "note": item.note or ""} for item in self.material_ids],
-            "checklist": [{"name": item.name, "checked": item.checked, "note": item.note or ""} for item in self.checklist_ids],
+            "checklist": [{"name": item.name, "checked": item.checked, "note": item.note or ""} for item in self.checklist_ids.filtered(lambda item: item.visibility == "customer")],
         }
 
     def _create_sync_conflict(self, employee, conflict_type, description, conflict_date=None):
@@ -627,6 +655,59 @@ class NolteServiceReport(models.Model):
             report.message_post(body=_("Abrechnungsvorschau aus Arbeits- und Fahrtsegmenten berechnet."))
         return True
 
+    def _sale_order_service_note(self):
+        """Compact customer-facing service details, without internal work text."""
+        self.ensure_one()
+        technicians = list(dict.fromkeys(self.member_ids.mapped("employee_id.name")))
+        dates = sorted(date for date in self.member_ids.mapped("service_date") if date)
+        if not dates and self.service_date:
+            dates = [self.service_date]
+        date_text = dates[0].strftime("%d.%m.%Y") if dates else "-"
+        if dates and dates[-1] != dates[0]:
+            date_text += "–%s" % dates[-1].strftime("%d.%m.%Y")
+        return "\n".join([
+            "Service Techniker: %s" % (", ".join(technicians) or "-"),
+            "Maschinen Nr.: %s" % (self.machine_number or "-"),
+            "Maschinen Typ: %s" % (self.machine_type or "-"),
+            "Zeitraum: %s" % date_text,
+        ])
+
+    def _ensure_sale_order(self, partner=None):
+        """Return the report's quotation, creating it at most once per report."""
+        self.ensure_one()
+        self.flush_recordset(["sale_order_id"])
+        self.env.cr.execute(
+            "SELECT id FROM nolte_service_report WHERE id = %s FOR UPDATE",
+            [self.id],
+        )
+        self.invalidate_recordset(["sale_order_id"])
+        if self.sale_order_id:
+            return self.sale_order_id
+
+        partner = (partner or self.partner_id).commercial_partner_id
+        if not partner or not partner.active:
+            raise UserError(_("Für die Verkaufsübergabe muss ein aktiver Odoo-Kunde hinterlegt sein."))
+        if partner.company_id and partner.company_id != self.company_id:
+            raise UserError(_("Der gewählte Kunde gehört zu einem anderen Unternehmen."))
+        order = self.env["sale.order"].create({
+            "partner_id": partner.id,
+            "company_id": self.company_id.id,
+            "origin": self.name,
+            "client_order_ref": self.name,
+        })
+        self.env["sale.order.line"].create({
+            "order_id": order.id,
+            "display_type": "line_note",
+            "name": self._sale_order_service_note(),
+            "sequence": 1,
+        })
+        self.write({"sale_order_id": order.id})
+        self.message_post(body=_("Angebotsentwurf %(order)s für %(customer)s erstellt und verknüpft.") % {
+            "order": order.name,
+            "customer": partner.display_name,
+        })
+        return order
+
     def action_approve_billing(self, approved_quantities=None):
         """Create sale lines only after an explicit office approval.
 
@@ -656,18 +737,33 @@ class NolteServiceReport(models.Model):
         }
         for original_report in self:
             report = original_report.sudo()
-            if report.state not in ("under_review", "ready_to_bill"):
+            report.flush_recordset(["state", "sale_order_id"])
+            report.env.cr.execute(
+                "SELECT id FROM nolte_service_report WHERE id = %s FOR UPDATE",
+                [report.id],
+            )
+            report.invalidate_recordset(["state", "sale_order_id"])
+            if report.state == "ready_to_bill" or (report.member_ids and all(member.billing_state == "transferred" for member in report.member_ids)):
+                continue
+            if report.state != "under_review":
                 raise UserError(_("Die Abrechnung kann erst nach der Büroprüfung freigegeben werden."))
-            if not report.sale_order_id or report.sale_order_id.state not in ("draft", "sent"):
+            if report.sale_order_id and report.sale_order_id.state not in ("draft", "sent"):
                 raise UserError(_("Für die Abrechnung ist ein offener Auftrag erforderlich."))
+            report._ensure_sale_order()
             existing_note_lines = report.sale_order_id.order_line.filtered(
                 lambda line: line.display_type == "line_note"
             )
-            if not any(report.name in (line.name or "") for line in existing_note_lines):
+            service_note = report._sale_order_service_note()
+            legacy_note = existing_note_lines.filtered(
+                lambda line: (line.name or "").split("\n", 1)[0] == "Stundenbericht: %s" % report.name
+            )[:1]
+            if legacy_note:
+                legacy_note.write({"name": service_note})
+            if not any(line.name == service_note for line in existing_note_lines):
                 report.env["sale.order.line"].create({
                     "order_id": report.sale_order_id.id,
                     "display_type": "line_note",
-                    "name": "Stundenbericht: %s" % report.name,
+                    "name": service_note,
                     "sequence": 2,
                 })
             if any(member.billing_state != "preview" for member in report.member_ids):
@@ -752,8 +848,12 @@ class NolteServiceReport(models.Model):
 
     def action_open_billing_approval_wizard(self):
         self.ensure_one()
-        if not self.sale_order_id or self.sale_order_id.state not in ("draft", "sent"):
-            raise UserError(_("Für die Abrechnungsfreigabe muss zuerst ein offener Verkaufsauftrag am Einsatzbericht hinterlegt werden."))
+        if self.state != "under_review":
+            raise UserError(_("Die Verkaufsübergabe ist nur nach der Büroprüfung möglich."))
+        if self.sale_order_id and self.sale_order_id.state not in ("draft", "sent"):
+            raise UserError(_("Für die Abrechnung ist kein offener Verkaufsauftrag verfügbar."))
+        if any(member.billing_state == "transferred" for member in self.member_ids):
+            raise UserError(_("Die Abrechnung wurde für diesen Bericht bereits an Verkauf übergeben."))
         if any(member.billing_state != "preview" for member in self.member_ids):
             self.action_compute_billing_preview()
         return {
@@ -870,11 +970,15 @@ class NolteServiceReportChecklist(models.Model):
     _order = "sequence, id"
 
     report_id = fields.Many2one("nolte.service.report", required=True, ondelete="cascade", index=True)
-    mobile_uuid = fields.Char(required=True, copy=False, readonly=True, index=True)
+    mobile_uuid = fields.Char(default=lambda self: str(uuid4()), required=True, copy=False, readonly=True, index=True)
     sequence = fields.Integer(default=10)
     name = fields.Char(string="Prüfpunkt", required=True)
     checked = fields.Boolean(string="Erledigt")
     note = fields.Char(string="Bemerkung")
+    visibility = fields.Selection([
+        ("internal", "Intern – nur Monteure und Prüfer"),
+        ("customer", "Kundencheckliste – erscheint im PDF"),
+    ], string="Sichtbarkeit", required=True, default="customer", index=True)
 
     _checklist_uuid_unique = models.Constraint("UNIQUE(mobile_uuid)", "Die Checklistenkennung muss eindeutig sein.")
 

@@ -1,3 +1,7 @@
 from . import hr_employee
 from . import machine_type
 from . import service_report
+from . import project_task
+from . import work_template
+from . import checklist_template
+from . import online_signature

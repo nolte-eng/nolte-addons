@@ -27,7 +27,6 @@ class NolteServiceIntakeWizard(models.TransientModel):
     technician_ids = fields.Many2many(
         "hr.employee", string="Servicetechniker", required=True,
         domain="[('active', '=', True), ('user_id', '!=', False)]",
-        default=lambda self: self._default_technician_ids(),
     )
     planned_date = fields.Date(string="Geplanter Termin", default=fields.Date.context_today)
     service_location = fields.Text(
@@ -39,7 +38,6 @@ class NolteServiceIntakeWizard(models.TransientModel):
     service_location_contact_phone = fields.Char(string="Telefon am Einsatzort")
     machine_number = fields.Char(string="Maschinen-Nr.")
     machine_type_id = fields.Many2one("nolte.machine.type", string="Maschinentyp")
-    overnight_count = fields.Integer(string="Übernachtungen", default=0)
     work_description = fields.Text(string="Arbeitsauftrag / Fehlerbild")
 
     @api.model
@@ -49,14 +47,19 @@ class NolteServiceIntakeWizard(models.TransientModel):
             return context_project
         if self.env.context.get("active_model") == "project.project":
             return self.env.context.get("active_id")
-        return self.env["project.project"].search(
-            ["|", ("company_id", "=", False), ("company_id", "=", self.env.company.id)],
-            order="sequence, id", limit=1,
-        ).id
-
-    @api.model
-    def _default_technician_ids(self):
-        return self.env["hr.employee"].search([("user_id", "=", self.env.user.id), ("active", "=", True)])
+        Project = self.env["project.project"]
+        company_domain = [
+            "|", ("company_id", "=", False), ("company_id", "=", self.env.company.id)
+        ]
+        # Use the service project as the default even when another project
+        # happens to sort first. Keep a generic fallback for other databases.
+        service_project = Project.search(
+            [("name", "=", "Aussendienst"), *company_domain],
+            order="company_id, sequence, id", limit=1,
+        )
+        if service_project:
+            return service_project.id
+        return Project.search(company_domain, order="sequence, id", limit=1).id
 
     @api.model
     def default_get(self, field_list):
@@ -126,6 +129,9 @@ class NolteServiceIntakeWizard(models.TransientModel):
             "project_id": self.project_id.id,
             "company_id": self.project_id.company_id.id or self.company_id.id,
             "partner_id": self.partner_id.id,
+            # The deployed task form shows the Studio customer field for
+            # non-billable projects; the standard partner_id is hidden there.
+            "x_customer_id": self.partner_id.id,
             "nolte_service_contact_id": self.service_contact_id.id or False,
             "user_ids": [(6, 0, technicians.mapped("user_id").ids)],
             "date_deadline": self.planned_date or False,
@@ -135,7 +141,6 @@ class NolteServiceIntakeWizard(models.TransientModel):
             "nolte_service_location_contact_phone": (self.service_location_contact_phone or "").strip() or False,
             "nolte_machine_number": (self.machine_number or "").strip() or False,
             "nolte_machine_type": self.machine_type_id.name or False,
-            "nolte_overnight_count": max(0, self.overnight_count),
             "description": (self.work_description or "").strip() or False,
         }
         if planned_stage:

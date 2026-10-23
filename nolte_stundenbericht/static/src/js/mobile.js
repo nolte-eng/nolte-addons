@@ -1,5 +1,6 @@
 /** @odoo-module **/
 const DRAFT_KEY = "nolte-stundenbericht-drafts-v1";
+const SYNCED_STATE_KEY = "nolte-stundenbericht-sync-complete-v1";
 const uuid = () => window.nolteUuid();
 const drafts = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "[]"); } catch { return []; } };
 const storeDrafts = value => localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
@@ -17,23 +18,93 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = app.querySelector("[data-report-form]");
     const message = app.querySelector("[data-message]");
     const customerEmailPanel = app.querySelector("[data-customer-email-panel]");
-    const customerEmailTo = app.querySelector("[data-customer-email-to]");
     const companyServiceEmail = app.querySelector("[data-company-service-email]");
-    const sendCustomerEmailButton = app.querySelector("[data-customer-email-send]");
+    const customerEmailCompose = app.querySelector("[data-customer-email-compose]");
     const status = app.querySelector("[data-status]");
     const draftState = app.querySelector("[data-draft-state]");
     const confirmation = app.querySelector("[data-confirmation]");
     const canvas = app.querySelector("[data-signature]");
     const context = canvas.getContext("2d");
     const field = name => form.elements.namedItem(name);
+    const workDescription = field("workDescription");
+    const growWorkDescription = () => {
+        if (workDescription.clientWidth && workDescription.scrollHeight > workDescription.clientHeight) {
+            const borderHeight = workDescription.offsetHeight - workDescription.clientHeight;
+            workDescription.style.height = `${workDescription.scrollHeight + borderHeight}px`;
+        }
+    };
+    workDescription.addEventListener("input", growWorkDescription);
+    if ("ResizeObserver" in window) {
+        new ResizeObserver(() => requestAnimationFrame(growWorkDescription)).observe(workDescription);
+    }
     const customerName = app.querySelector("[data-customer-name]");
     const customerCard = app.querySelector("[data-customer-card]");
     const manualCustomer = app.querySelector("[data-manual-customer]");
+    const workTemplateSelect = app.querySelector("[data-work-template-select]");
+    const workTemplateInsert = app.querySelector("[data-work-template-insert]");
+    const workTemplateRefresh = app.querySelector("[data-work-template-refresh]");
+    const workTemplatePreview = app.querySelector("[data-work-template-preview]");
+    const workTemplateStatus = app.querySelector("[data-work-template-status]");
+    const workTemplatesById = new Map();
+    const showWorkTemplate = () => {
+        const template = workTemplatesById.get(workTemplateSelect.value);
+        workTemplateInsert.disabled = !template;
+        workTemplatePreview.textContent = template?.body || "";
+        workTemplatePreview.classList.toggle("d-none", !template);
+    };
+    const renderWorkTemplates = templates => {
+        const selected = workTemplateSelect.value;
+        workTemplatesById.clear();
+        workTemplateSelect.replaceChildren();
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "Frei schreiben – ohne Vorlage";
+        workTemplateSelect.append(empty);
+        for (const template of templates) {
+            workTemplatesById.set(String(template.id), template);
+            const option = document.createElement("option");
+            option.value = String(template.id);
+            option.textContent = template.name;
+            workTemplateSelect.append(option);
+        }
+        workTemplateSelect.value = workTemplatesById.has(selected) ? selected : "";
+        workTemplateStatus.textContent = templates.length
+            ? "Vorlage auswählen oder direkt frei schreiben. Vorhandener Text bleibt beim Einfügen erhalten."
+            : "Noch keine zentralen Vorlagen hinterlegt. Du kannst weiterhin frei schreiben.";
+        showWorkTemplate();
+    };
+    workTemplateSelect.addEventListener("change", showWorkTemplate);
+    workTemplateRefresh.addEventListener("click", async () => {
+        workTemplateRefresh.disabled = true;
+        try {
+            renderWorkTemplates(await rpc("/nolte_stundenbericht/api/v1/work-templates", {}));
+        } catch {
+            workTemplateStatus.textContent = "Vorlagen konnten nicht aktualisiert werden. Freies Schreiben bleibt möglich.";
+        } finally {
+            workTemplateRefresh.disabled = false;
+        }
+    });
+    workTemplateInsert.addEventListener("click", () => {
+        const template = workTemplatesById.get(workTemplateSelect.value);
+        if (!template) return;
+        const description = field("workDescription");
+        const existing = description.value.trimEnd();
+        description.value = existing ? `${existing}\n\n${template.body}` : template.body;
+        description.dispatchEvent(new Event("input", {bubbles: true}));
+        description.focus();
+        workTemplateStatus.textContent = `Vorlage „${template.name}“ eingefügt. Du kannst den Text frei bearbeiten.`;
+    });
     const dayDate = app.querySelector("[data-day-date]");
     const dayList = app.querySelector("[data-day-list]");
     const timeEmployee = app.querySelector("[data-time-employee]");
     let report = null;
     let currentDraft = null;
+    let syncCompleted = localStorage.getItem(SYNCED_STATE_KEY) === "1";
+    const syncButton = app.querySelector("[data-sync]");
+    if (syncCompleted) {
+        syncButton.disabled = true;
+        syncButton.textContent = "Bericht synchronisiert";
+    }
     let drawing = false;
     let lastPoint = null;
     let hasSignature = false;
@@ -51,8 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const canSend = Boolean(report?.canSendCustomerEmail);
         customerEmailPanel.classList.toggle("d-none", !canSend);
         if (canSend) {
-            if (!customerEmailTo.value) customerEmailTo.value = report.customerEmail || "";
             companyServiceEmail.textContent = report.companyServiceEmail || "E-Mail-Adresse beim Unternehmen fehlt";
+            customerEmailCompose.href = report.composeEmailUrl;
             if (report.customerPdfUrl) app.querySelector("[data-pdf-link]").href = report.customerPdfUrl;
         }
     };
@@ -148,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
         grid.append(start, end);
         if (segment.type.includes("travel")) {
             const km = document.createElement("div"); km.className = "col-12 col-md-3"; km.innerHTML = "<label class=\"form-label small mb-1\">Kilometer</label>";
-            const input = document.createElement("input"); input.className = "form-control"; input.type = "number"; input.min = "0"; input.step = "0.1"; input.value = segment.kilometers || ""; input.oninput = () => { segment.kilometers = Number(input.value || 0); scheduleAutoSave(); }; km.append(input); grid.append(km);
+            const input = document.createElement("input"); input.className = "form-control"; input.type = "number"; input.min = "0"; input.step = "0.1"; input.value = segment.kilometers || ""; input.oninput = () => { segment.kilometers = Number(input.value || 0); renderTimeTable(); scheduleAutoSave(); }; km.append(input); grid.append(km);
         }
         const total = document.createElement("div"); total.className = "col-12 col-md-3 small text-muted"; total.textContent = segment.start && segment.end ? `Dauer: ${showDuration(duration(segment))}` : "Zeit auswählen"; grid.append(total);
         row.append(grid); return row;
@@ -157,37 +228,72 @@ document.addEventListener("DOMContentLoaded", () => {
         const body = app.querySelector("[data-time-table-body]");
         if (!body) return;
         body.replaceChildren();
+        const footer = app.querySelector("[data-time-table-totals]");
+        footer.replaceChildren();
         const allSchedules = {...employeeSchedules, [String(activeEmployeeId)]: days};
-        const entries = Object.entries(allSchedules).flatMap(([employeeId, employeeDays]) => Object.keys(employeeDays || {}).sort().flatMap(date => (employeeDays[date] || []).map(segment => ({employeeId, date, segment}))));
+        const employeeName = employeeId => employeeOptions.find(item => String(item.id) === String(employeeId))?.name || "–";
+        const entries = Object.entries(allSchedules).flatMap(([employeeId, employeeDays]) => Object.keys(employeeDays || {}).map(date => ({employeeId, date, segments: employeeDays[date] || []})))
+            .sort((a, b) => a.date.localeCompare(b.date) || employeeName(a.employeeId).localeCompare(employeeName(b.employeeId), "de"));
         if (!entries.length) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
-            cell.colSpan = 7;
+            cell.colSpan = 10;
             cell.className = "text-muted";
             cell.textContent = "Noch keine Zeiten erfasst.";
             row.append(cell);
             body.append(row);
             return;
         }
-        entries.forEach(({employeeId, date, segment}) => {
+        const types = ["outbound_travel", "work", "break", "return_travel"];
+        const totals = {minutes: [0, 0, 0, 0], outboundKm: 0, returnKm: 0, overnights: 0};
+        const seenEmployees = new Set();
+        const kilometersText = value => Number(value).toLocaleString("de-DE", {maximumFractionDigits: 1});
+        const appendCell = (row, text, className = "") => {
+            const cell = document.createElement("td");
+            cell.textContent = text;
+            cell.className = className;
+            row.append(cell);
+            return cell;
+        };
+        entries.forEach(({employeeId, date, segments}) => {
             const row = document.createElement("tr");
-            const values = [
-                employeeOptions.find(item => String(item.id) === String(employeeId))?.name || "–",
-                new Date(`${date}T00:00:00`).toLocaleDateString("de-DE"),
-                segmentLabel(segment.type),
-                segment.start || "–",
-                segment.end || "–",
-                segment.start && segment.end ? showDuration(duration(segment)) : "–",
-                segment.type.includes("travel") && segment.kilometers ? String(segment.kilometers) : "–",
-            ];
-            values.forEach((value, index) => {
-                const cell = document.createElement("td");
-                cell.textContent = value;
-                if (index === values.length - 1) cell.className = "text-end";
-                row.append(cell);
+            appendCell(row, new Date(`${date}T00:00:00`).toLocaleDateString("de-DE", {day: "2-digit", month: "2-digit", year: "numeric"}));
+            appendCell(row, employeeName(employeeId));
+            const grouped = types.map(type => segments.filter(segment => segment.type === type));
+            grouped.forEach((items, index) => {
+                const minutes = items.reduce((sum, item) => sum + duration(item), 0);
+                totals.minutes[index] += minutes;
+                const cell = appendCell(row, "");
+                const ranges = items.filter(item => item.start || item.end);
+                if (!ranges.length) { cell.textContent = "–"; return; }
+                ranges.forEach(item => {
+                    const range = document.createElement("div");
+                    range.textContent = `${item.start || "–"}–${item.end || "–"}`;
+                    cell.append(range);
+                });
+                const subtotal = document.createElement("small");
+                subtotal.className = "d-block text-muted";
+                subtotal.textContent = showDuration(minutes);
+                cell.append(subtotal);
             });
+            const outboundKm = grouped[0].reduce((sum, item) => sum + Number(item.kilometers || 0), 0);
+            const returnKm = grouped[3].reduce((sum, item) => sum + Number(item.kilometers || 0), 0);
+            // Overnight counts belong to the whole assignment, so show each
+            // employee's count only on their first day, as in the PDF.
+            const overnights = seenEmployees.has(employeeId) ? 0 : Number(employeeOvernights[employeeId] || 0);
+            seenEmployees.add(employeeId);
+            totals.outboundKm += outboundKm;
+            totals.returnKm += returnKm;
+            totals.overnights += overnights;
+            [outboundKm, returnKm, outboundKm + returnKm].forEach(value => appendCell(row, value ? kilometersText(value) : "–", "text-end"));
+            appendCell(row, String(overnights), "text-end");
             body.append(row);
         });
+        const totalRow = document.createElement("tr");
+        appendCell(totalRow, "Gesamtsumme").colSpan = 2;
+        totals.minutes.forEach(value => appendCell(totalRow, showDuration(value)));
+        [totals.outboundKm, totals.returnKm, totals.outboundKm + totals.returnKm, totals.overnights].forEach(value => appendCell(totalRow, kilometersText(value), "text-end"));
+        footer.append(totalRow);
     };
     if (!field("serviceDate").value) field("serviceDate").value = new Date().toISOString().slice(0, 10);
     if (!dayDate.value) dayDate.value = field("serviceDate").value;
@@ -195,8 +301,9 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=32", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=35", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", {}).then(data => {
+        renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");
         const selectedCountry = countryField.value || "DE";
         if (data.countries?.length) {
@@ -230,7 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
             option.value = assignment.id;
             // The user needs to recognize the customer when choosing an
             // assignment. Technician instructions are shown separately below.
-            option.textContent = assignment.customerName || assignment.name;
+            option.textContent = assignment.customerName || "Einsatzauftrag";
             option.dataset.customerId = assignment.customerId || "";
             option.dataset.customerName = assignment.customerName || "";
             option.dataset.customerAddress = assignment.customerAddress || "";
@@ -245,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
             option.dataset.machineNumber = assignment.machineNumber || "";
             option.dataset.machineType = assignment.machineType || "";
             option.dataset.overnightCount = assignment.overnightCount || 0;
-            option.dataset.workOrderDescription = assignment.workOrderDescription || "";
+            option.dataset.taskWorkOrderDescription = assignment.workOrderDescription || "";
             field("taskId").append(option);
         }
         renderDays();
@@ -255,15 +362,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const taskId = String(field("taskId").value || "");
         const task = field("taskId").selectedOptions[0];
         const assignment = assignmentsById.get(taskId);
-        // Older service tasks sometimes store the technician's instruction in
-        // the task title instead of the description. Use the visible selection
-        // as a final fallback so the selected task can never leave this card blank.
+        const historyWrap = app.querySelector("[data-customer-history-wrap]");
+        const historyLink = app.querySelector("[data-customer-history-link]");
+        historyWrap.classList.toggle("d-none", !taskId);
+        historyLink.href = taskId ? `/my/stundenbericht/history/${encodeURIComponent(taskId)}` : "#";
+        // Technician instructions live only in the task description. Never
+        // display the task title as a substitute for these instructions.
         const workOrder = String(
-            assignment?.workOrderDescription || task?.dataset.workOrderDescription || assignment?.name || task?.textContent || ""
+            assignment?.workOrderDescription || task?.dataset.taskWorkOrderDescription || ""
         )
             .replace(/\u00a0/g, " ").trim();
-        app.querySelector("[data-work-order-card]").classList.toggle("d-none", !workOrder);
-        app.querySelector("[data-work-order-description]").textContent = workOrder;
+        app.querySelector("[data-work-order-card]").classList.toggle("d-none", !taskId);
+        app.querySelector("[data-work-order-card] [data-work-order-description]").textContent = workOrder;
         customerName.value = task?.dataset.customerName || "";
         customerCard.classList.toggle("d-none", !task?.value);
         manualCustomer.classList.toggle("d-none", Boolean(task?.value));
@@ -364,6 +474,54 @@ document.addEventListener("DOMContentLoaded", () => {
                     say(`Alle Zeitsegmente von ${new Date(`${date}T00:00:00`).toLocaleDateString("de-DE")} wurden auf ${new Date(`${nextDate}T00:00:00`).toLocaleDateString("de-DE")} kopiert. Bitte bei Bedarf anpassen.`);
                 };
                 buttons.append(copyDay);
+
+                // Copy this employee's complete day to another employee on the
+                // same date. Never overwrite time blocks already entered there.
+                if (employeeOptions.length > 1) {
+                    const copyToEmployee = document.createElement("select");
+                    copyToEmployee.className = "form-select form-select-sm w-auto";
+                    copyToEmployee.setAttribute("aria-label", `Mitarbeiter für Kopie des Tages ${label} auswählen`);
+                    const placeholder = document.createElement("option");
+                    placeholder.value = "";
+                    placeholder.textContent = "Mitarbeiter wählen …";
+                    copyToEmployee.append(placeholder);
+                    employeeOptions.filter(item => String(item.id) !== String(activeEmployeeId)).forEach(employee => {
+                        const option = document.createElement("option");
+                        option.value = String(employee.id);
+                        option.textContent = employee.name;
+                        copyToEmployee.append(option);
+                    });
+                    const copyToButton = document.createElement("button");
+                    copyToButton.type = "button";
+                    copyToButton.className = "btn btn-outline-secondary";
+                    copyToButton.textContent = "Tag an Mitarbeiter kopieren";
+                    copyToButton.onclick = () => {
+                        const targetEmployeeId = copyToEmployee.value;
+                        if (!targetEmployeeId) {
+                            say("Bitte zuerst den Ziel-Mitarbeiter auswählen.", true);
+                            return;
+                        }
+                        const targetSchedule = employeeSchedules[targetEmployeeId] ||= {};
+                        if ((targetSchedule[date] || []).length) {
+                            const targetName = employeeOptions.find(item => String(item.id) === targetEmployeeId)?.name || "Der Ziel-Mitarbeiter";
+                            say(`${targetName} hat am ${new Date(`${date}T00:00:00`).toLocaleDateString("de-DE")} bereits Zeiten. Es wurde nichts überschrieben.`, true);
+                            return;
+                        }
+                        targetSchedule[date] = segments.map(item => ({
+                            ...item,
+                            segmentUuid: uuid(),
+                            start: item.start || "",
+                            end: item.end || "",
+                            kilometers: Number(item.kilometers || 0),
+                            internalOnly: Boolean(item.internalOnly),
+                        }));
+                        renderDays();
+                        scheduleAutoSave();
+                        const targetName = employeeOptions.find(item => String(item.id) === targetEmployeeId)?.name || "Mitarbeiter";
+                        say(`Der komplette Tag von ${activeEmployee?.name || "Mitarbeiter"} wurde für ${targetName} am ${new Date(`${date}T00:00:00`).toLocaleDateString("de-DE")} kopiert. Bitte Ziel-Mitarbeiter und Zeiten kontrollieren.`);
+                    };
+                    buttons.append(copyToEmployee, copyToButton);
+                }
             }
             buttons.append(deleteDay); body.append(buttons); details.append(body); dayList.append(details);
         });
@@ -383,7 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const employeeName = employeeOptions.find(item => String(item.id) === String(activeEmployeeId))?.name || "Mitarbeiter";
         employeeOvernightInput.closest("[data-employee-overnights-wrap]").querySelector("[data-employee-overnights-label]").textContent = `Übernachtungen für ${employeeName} im gesamten Einsatz`;
     };
-    employeeOvernightInput.addEventListener("input", () => { employeeOvernights[activeEmployeeId] = Math.max(0, Math.floor(Number(employeeOvernightInput.value || 0))); scheduleAutoSave(); });
+    employeeOvernightInput.addEventListener("input", () => { employeeOvernights[activeEmployeeId] = Math.max(0, Math.floor(Number(employeeOvernightInput.value || 0))); renderTimeTable(); scheduleAutoSave(); });
     dayDate.addEventListener("change", () => { if (!days[dayDate.value]) days[dayDate.value] = []; renderDays(); scheduleAutoSave(); });
     app.querySelector("[data-day-add]").onclick = () => { const next = new Date(`${dayDate.value || field("serviceDate").value}T12:00:00`); if (Number.isNaN(next.valueOf())) return; do { next.setDate(next.getDate() + 1); } while (days[next.toISOString().slice(0, 10)]); dayDate.value = next.toISOString().slice(0, 10); days[dayDate.value] = []; renderDays(); scheduleAutoSave(); };
     days[dayDate.value] = days[dayDate.value] || []; renderDays();
@@ -449,6 +607,12 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const loadDraft = async draft => {
         await boot;
+        workTemplateSelect.value = "";
+        showWorkTemplate();
+        syncCompleted = false;
+        localStorage.removeItem(SYNCED_STATE_KEY);
+        syncButton.disabled = false;
+        syncButton.textContent = "Jetzt synchronisieren";
         currentDraft = draft;
         const ownId = String(draft.employeeId || activeEmployeeId);
         employeeSchedules = {};
@@ -509,7 +673,12 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const newReport = () => {
         if (!confirm("Einen neuen Bericht beginnen? Nicht gespeicherte Eingaben gehen verloren.")) return;
+        syncCompleted = false;
+        localStorage.removeItem(SYNCED_STATE_KEY);
+        syncButton.disabled = false;
+        syncButton.textContent = "Jetzt synchronisieren";
         form.reset();
+        showWorkTemplate();
         window.nolteStundenbericht?.refreshTimePickers?.();
         field("serviceDate").value = new Date().toISOString().slice(0, 10);
         if (ownEmployeeId && employeeOptions.some(item => String(item.id) === ownEmployeeId)) {
@@ -565,7 +734,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 option.value = taskId;
                 field("taskId").append(option);
             }
-            option.textContent = task.customerName || task.name || data.taskName || option.textContent || "Einsatzauftrag";
+            option.textContent = task.customerName || "Einsatzauftrag";
             const values = {
                 customerId: task.customerId ?? data.partnerId,
                 customerName: task.customerName ?? data.customerName,
@@ -581,7 +750,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 machineNumber: task.machineNumber ?? data.machineNumber,
                 machineType: task.machineType ?? data.machineType,
                 overnightCount: task.overnightCount ?? data.overnightCount,
-                workOrderDescription: task.workOrderDescription,
+                taskWorkOrderDescription: task.workOrderDescription,
             };
             for (const [key, value] of Object.entries(values)) {
                 if (value !== undefined && value !== null) option.dataset[key] = String(value);
@@ -621,10 +790,12 @@ document.addEventListener("DOMContentLoaded", () => {
     app.querySelector("[data-save]").onclick = async () => {
         try { await saveDraftLocally(); } catch (error) { say(error.message, true); }
     };
-    app.querySelector("[data-sync]").onclick = async () => {
+    syncButton.onclick = async () => {
+        if (syncCompleted || syncButton.disabled) return;
         try {
             if (!validateTimeBlocks()) return;
             if (!form.reportValidity()) { form.reportValidity(); return; }
+            syncButton.disabled = true;
             let all = drafts();
             const active = await buildDraft();
             all = [...all.filter(item => item.mobileUuid !== active.mobileUuid), active];
@@ -639,13 +810,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 previewPanel.classList.remove("d-none");
             }
             updateCustomerEmailPanel();
+            syncCompleted = true;
+            localStorage.setItem(SYNCED_STATE_KEY, "1");
+            syncButton.textContent = "Bericht synchronisiert";
             window.dispatchEvent(new Event("nolte:sync-complete"));
             window.dispatchEvent(new Event("nolte:drafts-changed"));
             say("Stundenbericht wurde synchronisiert. Bitte jetzt vom Kunden bestätigen lassen.");
             confirmation.classList.remove("d-none");
             window.dispatchEvent(new CustomEvent("nolte:show-view", {detail: "signature"}));
             confirmation.scrollIntoView({behavior: "smooth"});
-        } catch (error) { say(`Synchronisation fehlgeschlagen: ${error.message}`, true); }
+        } catch (error) {
+            syncButton.disabled = false;
+            say(`Synchronisation fehlgeschlagen: ${error.message}`, true);
+        }
     };
     const point = event => { const rect = canvas.getBoundingClientRect(); return {x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height}; };
     canvas.onpointerdown = event => { event.preventDefault(); drawing = true; canvas.setPointerCapture?.(event.pointerId); lastPoint = point(event); };
@@ -668,21 +845,4 @@ document.addEventListener("DOMContentLoaded", () => {
             confirmation.classList.add("d-none"); say("Kundenbestätigung gespeichert.");
         } catch (error) { say(`Kundenbestätigung fehlgeschlagen: ${error.message}`, true); }
     };
-    sendCustomerEmailButton?.addEventListener("click", async () => {
-        const recipient = customerEmailTo.value.trim();
-        if (!report || !recipient || !customerEmailTo.checkValidity()) {
-            customerEmailTo.reportValidity();
-            return;
-        }
-        if (!confirm(`Den unterschriebenen Stundenbericht an ${recipient} senden?`)) return;
-        sendCustomerEmailButton.disabled = true;
-        try {
-            await rpc("/nolte_stundenbericht/api/v1/reports/send-customer-email", {mobile_uuid: report.mobileUuid, email_to: recipient});
-            say(`Der Stundenbericht wurde an ${recipient} gesendet.`);
-        } catch (error) {
-            say(`E-Mail konnte nicht gesendet werden: ${error.message}`, true);
-        } finally {
-            sendCustomerEmailButton.disabled = false;
-        }
-    });
 });

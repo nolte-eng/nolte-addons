@@ -1,4 +1,44 @@
 <odoo>
+    <record id="rule_signature_request_own" model="ir.rule">
+        <field name="name">Eigene Unterschriftsanfragen lesen</field><field name="model_id" ref="model_nolte_service_signature_request"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/><field name="domain_force">[('report_id.owner_user_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_signature_request_approver" model="ir.rule">
+        <field name="name">Unterschriftsanfragen im Unternehmen prüfen</field><field name="model_id" ref="model_nolte_service_signature_request"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/><field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_signature_request_company" model="ir.rule">
+        <field name="name">Unterschriftsanfragen: erlaubte Unternehmen</field>
+        <field name="model_id" ref="model_nolte_service_signature_request"/>
+        <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_checklist_template_company" model="ir.rule">
+        <field name="name">Checklisten-Vorlagen: erlaubte Unternehmen</field>
+        <field name="model_id" ref="model_nolte_service_checklist_template"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_checklist_template_line_company" model="ir.rule">
+        <field name="name">Checklisten-Vorlagenpunkte: erlaubte Unternehmen</field>
+        <field name="model_id" ref="model_nolte_service_checklist_template_line"/>
+        <field name="domain_force">['|', ('template_id.company_id', '=', False), ('template_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_report_checklist_user_own" model="ir.rule">
+        <field name="name">Eigene Einsatzbericht-Checklisten</field>
+        <field name="model_id" ref="model_nolte_service_report_checklist"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
+        <field name="domain_force">[('report_id.owner_user_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_nolte_service_report_checklist_approver_company" model="ir.rule">
+        <field name="name">Unternehmens-Checklisten prüfen</field>
+        <field name="model_id" ref="model_nolte_service_report_checklist"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/>
+        <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_work_template_company" model="ir.rule">
+        <field name="name">Arbeitsvorlagen: erlaubte Unternehmen</field>
+        <field name="model_id" ref="model_nolte_service_work_template"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
     <!-- Service users may need Odoo's internal "Note" subtype while the
          chatter prepares a project task. Keep the exception limited to that
          single subtype; the portal/public rule still hides other internal
@@ -23,6 +63,13 @@
     <record id="rule_nolte_service_report_member_user_own" model="ir.rule">
         <field name="name">Eigene Einsatzbericht-Mitarbeiter</field>
         <field name="model_id" ref="model_nolte_service_report_member"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
+        <field name="domain_force">[('report_id.owner_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/><field name="perm_write" eval="True"/><field name="perm_create" eval="True"/><field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_nolte_service_report_employee_user_own" model="ir.rule">
+        <field name="name">Eigene Einsatzbericht-Zuordnungen</field>
+        <field name="model_id" ref="model_nolte_service_report_employee"/>
         <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
         <field name="domain_force">[('report_id.owner_user_id', '=', user.id)]</field>
         <field name="perm_read" eval="True"/><field name="perm_write" eval="True"/><field name="perm_create" eval="True"/><field name="perm_unlink" eval="False"/>
@@ -52,9 +99,21 @@
         <field name="groups" eval="[(4, ref('group_stundenbericht_manager'))]"/>
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
+    <record id="rule_nolte_service_report_employee_manager_all" model="ir.rule">
+        <field name="name">Alle Einsatzbericht-Zuordnungen verwalten</field>
+        <field name="model_id" ref="model_nolte_service_report_employee"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
     <record id="rule_nolte_service_report_member_approver_company" model="ir.rule">
         <field name="name">Unternehmens-Mitarbeiterzeilen prüfen</field>
         <field name="model_id" ref="model_nolte_service_report_member"/>
+        <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/>
+        <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_nolte_service_report_employee_approver_company" model="ir.rule">
+        <field name="name">Unternehmens-Einsatzzuordnungen prüfen</field>
+        <field name="model_id" ref="model_nolte_service_report_employee"/>
         <field name="groups" eval="[(4, ref('group_stundenbericht_approver'))]"/>
         <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
     </record>

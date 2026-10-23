@@ -47,6 +47,9 @@
                       <option value="">Ohne Zuordnung</option>
                     </select>
                   </div>
+                  <div class="col-12 d-none" data-customer-history-wrap="">
+                    <a class="btn btn-outline-primary" data-customer-history-link="" target="_blank" rel="noopener">Bisherige Stundenberichte dieses Kunden ansehen</a>
+                  </div>
                   <div class="col-12 d-none" data-customer-card="">
                     <div class="border rounded bg-light p-3">
                       <div class="fw-bold" data-customer-display="">Kunde</div>
@@ -115,23 +118,47 @@
                 <div data-day-list=""/>
               </div>
             </div>
-            <section class="card mb-3" data-report-view="times" data-live-summary="">
+            <section class="card mb-3" id="ns-section-arbeiten" data-report-view="notes">
               <div class="card-body">
-                <h2 class="h5 mb-3">Gesamtsumme aller Mitarbeiter</h2>
-                <div class="row g-2 text-center small ns-summary-grid">
-                  <div class="col-6"><div class="ns-summary-value" data-summary-work="">–</div><div class="text-muted">Arbeit</div></div>
-                  <div class="col-6"><div class="ns-summary-value" data-summary-travel="">–</div><div class="text-muted">Fahrt</div></div>
-                  <div class="col-6"><div class="ns-summary-value" data-summary-break="">–</div><div class="text-muted">Pause</div></div>
-                  <div class="col-6"><div class="ns-summary-value text-primary" data-summary-total="">–</div><div class="text-muted">Einsatzzeit</div></div>
+                <h2 class="h5">Ausgeführte Arbeiten</h2>
+                <div class="border rounded bg-light p-2 mb-3">
+                  <label for="ns-work-template">Textvorlage <span class="text-muted">(optional)</span></label>
+                  <div class="d-flex flex-wrap gap-2">
+                    <select id="ns-work-template" class="form-select flex-grow-1 w-auto" data-work-template-select=""><option value="">Frei schreiben – ohne Vorlage</option></select>
+                    <button type="button" class="btn btn-outline-primary" data-work-template-insert="" disabled="disabled">Vorlage einfügen</button>
+                    <button type="button" class="btn btn-outline-secondary" data-work-template-refresh="">Vorlagen aktualisieren</button>
+                  </div>
+                  <p class="small text-muted mb-0 mt-2" data-work-template-status="" aria-live="polite">Vorlage auswählen oder direkt frei schreiben. Vorhandener Text bleibt beim Einfügen erhalten.</p>
+                  <div class="small mt-2 d-none" data-work-template-preview="" style="white-space:pre-wrap"/>
                 </div>
-                <p class="small text-muted mb-0 mt-3">Vorläufige Übersicht. Die verbindliche interne Bewertung erfolgt nach der Synchronisation.</p>
+                <label for="ns-work-description">Arbeiten</label>
+                <textarea id="ns-work-description" class="form-control mb-2" name="workDescription" rows="12" placeholder="Welche Arbeiten wurden durchgeführt?"/>
+                <label>Fazit / weiterer Handlungsbedarf</label><textarea class="form-control" name="workResult" rows="3" placeholder="Ergebnis, Empfehlung oder weitere Arbeiten"/>
               </div>
             </section>
-            <section class="card mb-3" id="ns-section-arbeiten" data-report-view="notes">
-              <div class="card-body"><h2 class="h5">Ausgeführte Arbeiten</h2><label>Arbeiten</label><textarea class="form-control mb-2" name="workDescription" rows="4" placeholder="Welche Arbeiten wurden durchgeführt?"/><label>Fazit / weiterer Handlungsbedarf</label><textarea class="form-control" name="workResult" rows="3" placeholder="Ergebnis, Empfehlung oder weitere Arbeiten"/></div>
-            </section>
             <section class="card mb-3" data-report-view="times" data-time-table="">
-              <details class="ns-time-overview"><summary class="card-body py-2 fw-bold">Übersicht aller Zeitblöcke</summary><div class="card-body pt-0"><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Mitarbeiter</th><th>Datum</th><th>Art</th><th>Von</th><th>Bis</th><th>Dauer</th><th class="text-end">km</th></tr></thead><tbody data-time-table-body=""><tr><td colspan="7" class="text-muted">Noch keine Zeiten erfasst.</td></tr></tbody></table></div></div></details>
+              <div class="card-body">
+                <h2 class="h5">Übersicht der Zeiterfassung</h2>
+                <div class="table-responsive" role="region" aria-label="Zeiterfassung aller Mitarbeiter" tabindex="0">
+                  <table class="table table-sm mb-0 ns-report-time-table">
+                    <thead><tr><th scope="col">Datum</th><th scope="col">Mitarbeiter</th><th scope="col">Hinfahrt</th><th scope="col">Arbeitszeit</th><th scope="col">Pause</th><th scope="col">Rückfahrt</th><th scope="col" class="text-end">Hin-km</th><th scope="col" class="text-end">Rück-km</th><th scope="col" class="text-end">Gesamt-km</th><th scope="col" class="text-end">Übernachtungen</th></tr></thead>
+                    <tbody data-time-table-body=""><tr><td colspan="10" class="text-muted">Noch keine Zeiten erfasst.</td></tr></tbody>
+                    <tfoot data-time-table-totals=""/>
+                  </table>
+                </div>
+              </div>
+            </section>
+            <section class="card mb-3 ns-summary-compact" data-report-view="times" data-live-summary="">
+              <div class="card-body">
+                <h2 class="h5">Gesamtsumme aller Mitarbeiter</h2>
+                <div class="ns-summary-compact-grid">
+                  <div><span class="text-muted">Arbeit</span><strong data-summary-work="">–</strong></div>
+                  <div><span class="text-muted">Fahrt</span><strong data-summary-travel="">–</strong></div>
+                  <div><span class="text-muted">Pause</span><strong data-summary-break="">–</strong></div>
+                  <div><span class="text-muted">Einsatzzeit</span><strong data-summary-total="">–</strong></div>
+                </div>
+                <p class="small text-muted mb-0 mt-2">Vorläufige Übersicht. Die verbindliche interne Bewertung erfolgt nach der Synchronisation.</p>
+              </div>
             </section>
             <section class="card mb-3" id="ns-section-material" data-report-view="materials" data-material-entry="">
               <div class="card-body">
@@ -149,10 +176,26 @@
             </section>
             <section class="card mb-3" id="ns-section-checkliste" data-report-view="checklist" data-checklist-entry="">
               <div class="card-body">
-                <h2 class="h5">Checkliste <span class="text-muted small">optional</span></h2>
-                <label>Neuer Prüfpunkt</label>
-                <div class="input-group"><input class="form-control" data-checklist-name=""/><button class="btn btn-outline-primary" type="button" data-checklist-add="">Hinzufügen</button></div>
-                <div class="mt-3" data-checklist-list=""/>
+                <h2 class="h5">Checklisten <span class="text-muted small">optional</span></h2>
+                <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-checklist-template-refresh="">Vorlagen aktualisieren</button>
+                <section class="border rounded p-3 mb-3" data-checklist-kind="internal">
+                  <h3 class="h6">Interne Checkliste – nur Monteure und Prüfer</h3>
+                  <p class="small text-muted">Diese Punkte werden gespeichert, erscheinen aber nicht im Kunden-PDF oder in der Kundenhistorie.</p>
+                  <div class="d-flex flex-wrap gap-2 mb-2"><select class="form-select flex-grow-1 w-auto" data-checklist-template-select="" aria-label="Interne Checklisten-Vorlage"><option value="">Ohne Vorlage</option></select><button type="button" class="btn btn-outline-primary" data-checklist-template-apply="" disabled="disabled">Vorlage übernehmen</button></div>
+                  <label for="ns-internal-checklist-name">Eigener interner Prüfpunkt</label>
+                  <div class="input-group"><input id="ns-internal-checklist-name" class="form-control" data-checklist-name=""/><button class="btn btn-outline-primary" type="button" data-checklist-add="">Hinzufügen</button></div>
+                  <div class="mt-3" data-checklist-list=""/>
+                  <p class="small text-muted mb-0 mt-2" data-checklist-status="" aria-live="polite"/>
+                </section>
+                <section class="border rounded p-3" data-checklist-kind="customer">
+                  <h3 class="h6">Kundencheckliste – erscheint im Stundenbericht</h3>
+                  <p class="small text-muted">Diese Punkte samt Status und Bemerkung erscheinen im Kunden-PDF.</p>
+                  <div class="d-flex flex-wrap gap-2 mb-2"><select class="form-select flex-grow-1 w-auto" data-checklist-template-select="" aria-label="Kundenchecklisten-Vorlage"><option value="">Ohne Vorlage</option></select><button type="button" class="btn btn-outline-primary" data-checklist-template-apply="" disabled="disabled">Vorlage übernehmen</button></div>
+                  <label for="ns-customer-checklist-name">Eigener kundensichtbarer Prüfpunkt</label>
+                  <div class="input-group"><input id="ns-customer-checklist-name" class="form-control" data-checklist-name=""/><button class="btn btn-outline-primary" type="button" data-checklist-add="">Hinzufügen</button></div>
+                  <div class="mt-3" data-checklist-list=""/>
+                  <p class="small text-muted mb-0 mt-2" data-checklist-status="" aria-live="polite"/>
+                </section>
               </div>
             </section>
             <section class="card mb-3" id="ns-section-fotos" data-report-view="photos" data-photo-entry="">
@@ -175,7 +218,17 @@
             <div class="card-body">
               <h2 class="h5">Kundenbestätigung</h2>
               <p class="small mb-2">Mit der Unterschrift wird die Kundenfassung festgeschrieben. Eine vorher eingetragene Rückfahrt bleibt darin enthalten; eine fehlende Rückfahrt kann danach intern ergänzt werden.</p>
-              <div class="border rounded bg-light p-2 small mb-3" data-confirmation-preview=""/>
+              <div class="border rounded bg-light p-2 mb-3" data-confirmation-preview="">
+                <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                  <strong class="me-auto">Kundenbericht zur Prüfung</strong>
+                  <button type="button" class="btn btn-sm btn-outline-primary" data-confirmation-format="pdf" aria-pressed="false">PDF-Vorschau</button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" data-confirmation-format="html" aria-pressed="false">Ansicht wie PDF</button>
+                  <a class="btn btn-sm btn-outline-primary d-none" data-confirmation-pdf-open="" target="_blank" rel="noopener">PDF separat öffnen</a>
+                </div>
+                <p class="small text-muted mb-2" data-confirmation-preview-status="" role="status">Die Vorschau erscheint nach der Synchronisation.</p>
+                <iframe class="w-100 bg-white border rounded d-none" style="height:70vh; min-height:360px; max-height:900px;" title="Vorschau des Kunden-Stundenberichts vor der Unterschrift" data-confirmation-preview-frame=""/>
+              </div>
+              <div data-local-customer-signature="">
               <label>Name des Unterzeichners</label>
               <input class="form-control mb-2" name="signerName" data-signer-name=""/>
               <label>Unterschrift</label>
@@ -184,16 +237,23 @@
                 <button class="btn btn-outline-secondary" type="button" data-signature-clear="">L&#xF6;schen</button>
                 <button class="btn btn-success flex-grow-1" type="button" data-confirm="">Kundenbest&#xE4;tigung abschlie&#xDF;en</button>
               </div>
+              </div>
+              <div class="border-top mt-3 pt-3">
+                <h3 class="h6">Niemand mehr vor Ort?</h3>
+                <p class="small">Fordere die Kundenunterschrift per E-Mail an. Empfänger und Nachricht kannst du im nächsten Dialog bearbeiten. Die synchronisierte Fassung wird dabei gesperrt. Wenn du den Versand abbrichst, kannst du die Anfrage im Backend widerrufen.</p>
+                <a class="btn btn-outline-primary d-none" data-request-online-signature="" target="_blank" rel="noopener">Niemand vor Ort – Unterschrift anfordern</a>
+                <p class="alert alert-info d-none" data-online-signature-pending=""/>
+                <a class="btn btn-outline-secondary d-none" data-online-signature-manage="" target="_blank" rel="noopener">Unterschriftsanfrage verwalten</a>
+              </div>
             </div>
           </section>
           <section class="card mt-3 d-none" data-report-view="signature" data-pdf-preview="">
             <div class="card-body text-center"><h2 class="h5" data-pdf-title="">PDF-Vorschau</h2><p class="small text-muted" data-pdf-description="">So sieht der Bericht für den Kunden aus. Die finale Fassung enthält zusätzlich die Kundenunterschrift.</p><a class="btn btn-outline-primary w-100" target="_blank" data-pdf-link="">PDF-Vorschau öffnen</a>
               <div class="d-none border-top mt-3 pt-3 text-start" data-customer-email-panel="">
                 <h3 class="h6">Bericht per E-Mail senden</h3>
-                <label class="form-label">Kunden-E-Mail</label>
-                <input class="form-control mb-2" type="email" data-customer-email-to="" required="required"/>
-                <div class="small text-muted mb-2">Absender: <span data-company-service-email=""/></div>
-                <button class="btn btn-primary w-100" type="button" data-customer-email-send="">PDF an Kunden senden</button>
+                <p class="small text-muted mb-2">Empfänger, Betreff und Nachricht kannst du im Odoo-E-Mail-Dialog vor dem Senden bearbeiten. Der unterschriebene Bericht ist als PDF angehängt.</p>
+                <div class="small text-muted mb-2">Firmenkopie vorbelegt: <span data-company-service-email=""/></div>
+                <a class="btn btn-primary w-100" data-customer-email-compose="" target="_blank" rel="noopener">E-Mail vorbereiten</a>
               </div>
             </div>
           </section>
@@ -213,13 +273,14 @@
         </section>
       </main>
         <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=52"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=61"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/materials.js?v=6"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/checklist.js?v=3"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/checklist.js?v=5"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/photos.js?v=6"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/recent_reports.js?v=3"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/confirmation_preview.js?v=3"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/recent_reports.js?v=4"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/confirmation_preview.js?v=4"/>
+        <script src="/nolte_stundenbericht/static/src/js/request_online_signature.js?v=2" defer="defer"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/pdf_preview.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/local_drafts.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/view_navigation.js?v=1"/>

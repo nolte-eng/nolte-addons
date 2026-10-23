@@ -1,0 +1,443 @@
+# Translation of Odoo Server.
+msgid ""
+msgstr ""
+"Project-Id-Version: Nolte Odoo 19\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__allowance
+#: model:product.template,name:nolte_overtime_billing.product_template_allowance
+#: model_terms:ir.ui.view,arch_db:nolte_spesenbericht.page_spesenbericht
+#: model_terms:ir.ui.view,arch_db:nolte_spesenbericht.page_spesenbericht_print
+msgid "Allowance"
+msgstr "Pauschale"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__import_to_expense_report
+msgid "Also import times into the expense report"
+msgstr "Zeiten zusätzlich in den Spesenbericht übernehmen"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "An absence is already recorded on %s. The CSV time was not imported."
+msgstr ""
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Base Items"
+msgstr "Basispositionen"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_product_product__base_unit_count
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_product_template__base_unit_count
+msgid "Base Unit Count"
+msgstr "Anzahl Basiseinheiten"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__csv_file
+msgid "CSV File"
+msgstr "CSV-Datei"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__new_partner_city
+msgid "City"
+msgstr "Ort"
+
+#. module: nolte_overtime_billing
+#: model:ir.model,name:nolte_overtime_billing.model_res_config_settings
+msgid "Config Settings"
+msgstr "Config Einstellungen"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__new_partner_country_id
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__country
+msgid "Country"
+msgstr "Land"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+msgid "Create New Contact"
+msgstr "Neuen Partner anlegen"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+msgid "Create Sales Order"
+msgstr "Verkaufsauftrag erstellen"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__create_partner_if_missing
+msgid "Create contact automatically if not found"
+msgstr "Partner automatisch neu anlegen, wenn nicht gefunden"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__create_uid
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__create_uid
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_config__create_uid
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report__create_uid
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__create_uid
+msgid "Created by"
+msgstr ""
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__create_date
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__create_date
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_config__create_date
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report__create_date
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__partner_id
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+msgid "Customer"
+msgstr "Kunde"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Customer could not be determined (billing address is missing)."
+msgstr "Kunde could not be determined (billing address is missing)."
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_allowance_id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_allowance_id
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Daily Allowance"
+msgstr "Auslöse pro Tag"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__detected_partner_name
+msgid "Detected Customer"
+msgstr "Erkannter Kunde"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__detected_employee_name
+msgid "Detected Employee"
+msgstr "Erkannter Mitarbeiter"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__display_name
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__display_name
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_product_template__display_name
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_hr_expense__display_name
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_config__display_name
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report__display_name
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__order_id
+msgid "Existing Sales Order"
+msgstr "Bestehender Verkaufsauftrag"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__report_id
+#: model:ir.ui.menu,name:nolte_spesenbericht.menu_nolte_spesenbericht_root
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+#: model_terms:ir.ui.view,arch_db:nolte_spesenbericht.page_spesenbericht
+msgid "Expense Report"
+msgstr "Spesenbericht"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__expense_employee_id
+#: model:res.groups,name:nolte_spesenbericht.group_spesenbericht_user
+msgid "Expense Report Employee"
+msgstr "Spesenbericht Mitarbeiter"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Expense report %s is already locked and was not changed."
+msgstr "Der Spesenbericht %s ist bereits gesperrt und wurde nicht verändert."
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__csv_filename
+msgid "File Name"
+msgstr "Dateiname"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Flat Rates and Surcharges"
+msgstr "Pauschalen und Zuschläge"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_product_template__id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__id
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_hr_expense__id
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_config__id
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report__id
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__id
+msgid "ID"
+msgstr ""
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__import_target
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+msgid "Import Target"
+msgstr "Importziel"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_import_wizard_form
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_sale_order_form_nolte_overtime_import
+msgid "Import Timesheet CSV"
+msgstr "Stundenbericht CSV importieren"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields.selection,name:nolte_overtime_billing.selection__nolte_overtime_import_wizard__import_target__existing
+msgid "In bestehenden Verkaufsauftrag importieren"
+msgstr "Import into Existing Sales Order"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__write_uid
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__write_uid
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_config__write_uid
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report__write_uid
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__write_date
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__write_date
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_config__write_date
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report__write_date
+#: model:ir.model.fields,field_description:nolte_spesenbericht.field_nolte_expense_report_line__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Mileage"
+msgstr "Kilometer"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_km_id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_km_id
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Mileage Allowance"
+msgstr "Kilometerpauschale"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields.selection,name:nolte_overtime_billing.selection__nolte_overtime_import_wizard__import_target__new
+msgid "Neuen Create Sales Order"
+msgstr "Neuen Verkaufsauftrag erstellen"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__new_partner_name
+msgid "New Contact Name"
+msgstr "Neuer Partnername"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "No 'taetigkeitN.*' entries were found in the CSV."
+msgstr "Keine 'taetigkeitN.*'-Einträge in der CSV gefunden."
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "No valid days for the expense report were found in the CSV."
+msgstr "In der CSV wurden keine gültigen Tage für den Spesenbericht gefunden."
+
+#. module: nolte_overtime_billing
+#: model:ir.ui.menu,name:nolte_overtime_billing.menu_nolte_overtime_root
+msgid "Nolte Overtime"
+msgstr "Nolte Überstunden"
+
+#. module: nolte_overtime_billing
+#: model:ir.model,name:nolte_overtime_billing.model_nolte_overtime_import_wizard
+msgid "Nolte Overtime – CSV Import"
+msgstr "Nolte Überstunden – CSV Import"
+
+#. module: nolte_overtime_billing
+#: model:ir.model,name:nolte_overtime_billing.model_nolte_overtime_settings
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Nolte Overtime – Settings"
+msgstr "Nolte Überstunden – Einstellungen"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_overnight_id
+#: model:product.template,name:nolte_overtime_billing.product_template_overnight
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Overnight Allowance"
+msgstr "Übernachtungspauschale"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_overnight_id
+msgid "Overnight Allowance "
+msgstr "Übernachtungspauschale "
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Overtime Import"
+msgstr "Überstunden-Import"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Overtime Items"
+msgstr "Überstundenpositionen"
+
+#. module: nolte_overtime_billing
+#: model:ir.model,name:nolte_overtime_billing.model_product_template
+msgid "Product"
+msgstr ""
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Save"
+msgstr "Speichern"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Select an existing sales order."
+msgstr "Bitte einen bestehenden Verkaufsauftrag auswählen."
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Select the employee whose expense report should be updated."
+msgstr "Bitte den Mitarbeiter auswählen, dessen Spesenbericht aktualisiert werden soll."
+
+#. module: nolte_overtime_billing
+#: model:ir.actions.act_window,name:nolte_overtime_billing.action_nolte_overtime_settings
+#: model:ir.ui.menu,name:nolte_overtime_billing.menu_nolte_overtime_settings
+msgid "Settings"
+msgstr "Einstellungen"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Start or end time is missing on %s for the expense report import."
+msgstr "Für den %s fehlt die Start- oder Endzeit für die Spesenübernahme."
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__new_partner_street
+msgid "Street"
+msgstr "Straße"
+
+#. module: nolte_overtime_billing
+#: model:ir.actions.act_window,name:nolte_overtime_billing.action_nolte_overtime_import_wizard
+#: model:ir.ui.menu,name:nolte_overtime_billing.menu_nolte_overtime_import
+msgid "Timesheet CSV Import"
+msgstr "Stundenbericht CSV Import"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+msgid "Travel Time"
+msgstr "Fahrzeit"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_travel_id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_travel_id
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Travel Time (Regular)"
+msgstr "Fahrzeit (normal)"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Travel Time 30%"
+msgstr "Fahrzeit 30 %"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Travel Time 50%"
+msgstr "Fahrzeit 50 %"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_travel_ot30_id
+msgid "Travel Time Overtime 30 %"
+msgstr "Fahrzeit Überstunden 30 %"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_travel_ot30_id
+msgid "Travel Time Overtime 30%"
+msgstr "Fahrzeit Überstunden 30%"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_travel_ot50_id
+msgid "Travel Time Overtime 50 %"
+msgstr "Fahrzeit Überstunden 50 %"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_travel_ot50_id
+msgid "Travel Time Overtime 50%"
+msgstr "Fahrzeit Überstunden 50%"
+
+#. modules: nolte_overtime_billing, nolte_spesenbericht
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+#: model_terms:ir.ui.view,arch_db:nolte_spesenbericht.page_spesenbericht
+msgid "Work Time"
+msgstr "Arbeitszeit"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_work_id
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_work_id
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Work Time (Regular)"
+msgstr "Arbeitszeit (normal)"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Work Time 30%"
+msgstr "Arbeitszeit 30 %"
+
+#. module: nolte_overtime_billing
+#: model_terms:ir.ui.view,arch_db:nolte_overtime_billing.view_nolte_overtime_settings_form
+msgid "Work Time 50%"
+msgstr "Arbeitszeit 50 %"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_work_ot30_id
+msgid "Work Time Overtime 30 %"
+msgstr "Arbeitszeit Überstunden 30 %"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_work_ot30_id
+msgid "Work Time Overtime 30%"
+msgstr "Arbeitszeit Überstunden 30%"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_settings__product_work_ot50_id
+msgid "Work Time Overtime 50 %"
+msgstr "Arbeitszeit Überstunden 50 %"
+
+#. module: nolte_overtime_billing
+#. odoo-python
+#: code:addons/nolte_overtime_billing/wizard/overtime_import_wizard.py:0
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_res_config_settings__nolte_product_work_ot50_id
+msgid "Work Time Overtime 50%"
+msgstr "Arbeitszeit Überstunden 50%"
+
+#. module: nolte_overtime_billing
+#: model:ir.model.fields,field_description:nolte_overtime_billing.field_nolte_overtime_import_wizard__new_partner_zip
+msgid "ZIP"
+msgstr "PLZ"

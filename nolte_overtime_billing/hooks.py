@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import SUPERUSER_ID, api
 
-
 def _ensure_product_template_base_unit_count_default_cr(cr):
     """Some local schemas add a NOT NULL column `product_template.base_unit_count`
     without an ORM field/default. XML product.template creation would then insert NULL and crash.
@@ -23,13 +22,13 @@ def _ensure_product_template_base_unit_count_default_cr(cr):
 
 
 def pre_init_hook(cr):
-    """Pre-init hook: accepts an environment or cursor on Odoo 19."""
+    """Pre-init hook: accepts env (Odoo 18) or cr (older signatures)."""
     cr = getattr(cr, "cr", cr)
     _ensure_product_template_base_unit_count_default_cr(cr)
 
 
 def post_init_hook(cr, registry=None):
-    """Post-init hook: accepts an environment or cursor/registry on Odoo 19."""
+    """Post-init hook: accepts env (Odoo 18) or (cr, registry)."""
     env = cr if hasattr(cr, "cr") else api.Environment(cr, SUPERUSER_ID, {})
     cr = env.cr
     _ensure_product_template_base_unit_count_default_cr(cr)
@@ -38,7 +37,7 @@ def post_init_hook(cr, registry=None):
     key_overnight = "nolte_overtime_billing.product_overnight_id"
     key_allowance = "nolte_overtime_billing.product_allowance_id"
 
-    # Default Übernachtungspauschale
+    # Default Overnight Allowance
     if not ICP.get_param(key_overnight):
         tmpl = env.ref("nolte_overtime_billing.product_template_overnight", raise_if_not_found=False)
         if tmpl:
@@ -46,7 +45,7 @@ def post_init_hook(cr, registry=None):
             if product:
                 ICP.set_param(key_overnight, str(product.id))
 
-    # Default Auslöse
+    # Default Allowance
     if not ICP.get_param(key_allowance):
         tmpl_a = env.ref("nolte_overtime_billing.product_template_allowance", raise_if_not_found=False)
         if tmpl_a:

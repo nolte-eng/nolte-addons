@@ -11,22 +11,22 @@ class NolteOvertimeSettings(models.TransientModel):
     """
 
     _name = "nolte.overtime.settings"
-    _description = "Nolte Überstunden – Einstellungen"
+    _description = "Nolte Overtime – Settings"
 
     # Normal
-    product_work_id = fields.Many2one("product.product", string="Arbeitszeit (normal)")
-    product_travel_id = fields.Many2one("product.product", string="Fahrzeit (normal)")
+    product_work_id = fields.Many2one("product.product", string="Work Time (Regular)")
+    product_travel_id = fields.Many2one("product.product", string="Travel Time (Regular)")
 
     # Overtime
-    product_work_ot30_id = fields.Many2one("product.product", string="Arbeitszeit Überstunden 30 %")
-    product_work_ot50_id = fields.Many2one("product.product", string="Arbeitszeit Überstunden 50 %")
-    product_travel_ot30_id = fields.Many2one("product.product", string="Fahrzeit Überstunden 30 %")
-    product_travel_ot50_id = fields.Many2one("product.product", string="Fahrzeit Überstunden 50 %")
+    product_work_ot30_id = fields.Many2one("product.product", string="Work Time Overtime 30 %")
+    product_work_ot50_id = fields.Many2one("product.product", string="Work Time Overtime 50 %")
+    product_travel_ot30_id = fields.Many2one("product.product", string="Travel Time Overtime 30 %")
+    product_travel_ot50_id = fields.Many2one("product.product", string="Travel Time Overtime 50 %")
 
     # Extras
-    product_km_id = fields.Many2one("product.product", string="Kilometerpauschale")
-    product_overnight_id = fields.Many2one("product.product", string="Übernachtungspauschale")
-    product_allowance_id = fields.Many2one("product.product", string="Auslöse / pro Tag")
+    product_km_id = fields.Many2one("product.product", string="Mileage Allowance")
+    product_overnight_id = fields.Many2one("product.product", string="Overnight Allowance")
+    product_allowance_id = fields.Many2one("product.product", string="Daily Allowance")
 
     @api.model
     def default_get(self, fields_list):

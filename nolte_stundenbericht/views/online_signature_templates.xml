@@ -1,0 +1,73 @@
+<odoo>
+    <record id="view_signature_mail_composer" model="ir.ui.view">
+        <field name="name">mail.compose.signature.request</field>
+        <field name="model">mail.compose.message</field>
+        <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
+        <field name="arch" type="xml"><xpath expr="//form" position="inside"><field name="nolte_signature_request_id" invisible="1"/></xpath></field>
+    </record>
+    <record id="view_signature_settings" model="ir.ui.view">
+        <field name="name">nolte.signature.settings</field>
+        <field name="model">nolte.service.signature.settings</field>
+        <field name="arch" type="xml">
+            <form string="Online-Unterschrift">
+                <sheet><group><field name="stundenbericht_signature_base_url" placeholder="https://nolte-eng.de"/></group>
+                    <p>Kundenlinks sind 14 Tage gültig. In Produktion muss die HTTPS-Adresse öffentlich erreichbar sein. Leer = Odoo-Systembasisadresse. In Staging darf ausschließlich die Staging-Adresse verwendet werden.</p>
+                </sheet>
+                <footer><button name="action_save" type="object" string="Speichern" class="btn-primary"/><button string="Abbrechen" special="cancel"/></footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_signature_settings" model="ir.actions.act_window">
+        <field name="name">Online-Unterschrift</field><field name="res_model">nolte.service.signature.settings</field>
+        <field name="view_mode">form</field><field name="view_id" ref="view_signature_settings"/><field name="target">new</field>
+    </record>
+    <menuitem id="menu_signature_settings" name="Online-Unterschrift" parent="menu_nolte_stundenbericht_configuration" action="action_signature_settings" groups="base.group_system" sequence="80"/>
+    <template id="online_signature_page" name="Stundenbericht online bestätigen">
+        <html lang="de">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="robots" content="noindex,nofollow"/>
+                <title>Stundenbericht bestätigen</title>
+                <style>
+                    *{box-sizing:border-box}body{margin:0;padding:20px;background:#edf5fb;color:#173b63;font:16px Arial,sans-serif}main{max-width:1100px;margin:auto;background:white;border:1px solid #c8dfef;border-radius:12px;padding:24px}h1{font-size:26px;margin-top:0}p{line-height:1.5}.hint{background:#eef7ff;border-radius:8px;padding:14px}.error{background:#ffe9e9;color:#8b1d1d;padding:14px;border-radius:8px}iframe{width:100%;height:65vh;min-height:360px;border:1px solid #c8dfef;border-radius:8px}label{display:block;margin:18px 0 8px;font-weight:bold}input[type=text]{width:100%;font:inherit;padding:12px;border:1px solid #9fc3de;border-radius:6px}canvas{display:block;width:100%;height:180px;touch-action:none;background:white;border:1px solid #9fc3de;border-radius:6px}button,.button{display:inline-block;font:inherit;padding:12px 16px;border:1px solid #147cd1;border-radius:6px;background:#147cd1;color:white;text-decoration:none;cursor:pointer;margin:8px 8px 8px 0}.secondary{background:white;color:#147cd1}.consent{font-weight:normal;display:flex;gap:10px;align-items:flex-start}.consent input{margin-top:4px}.small{font-size:14px;color:#526e86}@media(max-width:600px){body{padding:8px}main{padding:16px}h1{font-size:22px}}
+                </style>
+            </head>
+            <body>
+                <main>
+                    <t t-if="not signature_request">
+                        <h1>Dieser Link ist nicht mehr gültig</h1>
+                        <p>Der Link ist abgelaufen, wurde widerrufen oder ist nicht korrekt. Bitte wenden Sie sich an Ihren Servicekontakt und fordern Sie einen neuen Link an.</p>
+                    </t>
+                    <t t-elif="signature_request.state == 'signed'">
+                        <h1>Vielen Dank für Ihre Bestätigung</h1>
+                        <p>Der Stundenbericht wurde von <strong t-out="signature_request.signer_name"/> bestätigt. Die unterschriebene PDF wird an die Kunden- und Serviceadresse versendet.</p>
+                        <a class="button" t-att-href="'/nolte_stundenbericht/sign/%s/document/pdf' % token" target="_blank" rel="noopener">Unterschriebenen Bericht öffnen</a>
+                    </t>
+                    <t t-else="">
+                        <h1>Stundenbericht prüfen und unterschreiben</h1>
+                        <p><strong t-out="signature_request.report_id.company_id.name"/> · Bericht <strong t-out="signature_request.report_id.name"/></p>
+                        <p class="hint">Bitte prüfen Sie den gesamten Bericht. Ihre Bestätigung bezieht sich auf genau diese festgeschriebene Fassung. Der Link ist gültig bis <strong t-out="signature_request.expires_at.strftime('%d.%m.%Y')"/>.</p>
+                        <p class="error" t-if="error" role="alert" t-out="error"/>
+                        <iframe title="Festgeschriebener Stundenbericht" t-att-src="'/nolte_stundenbericht/sign/%s/document/html' % token"/>
+                        <a class="button secondary" t-att-href="'/nolte_stundenbericht/sign/%s/document/pdf' % token" target="_blank" rel="noopener">PDF separat öffnen</a>
+                        <form method="post" data-online-signature="">
+                            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                            <input type="hidden" name="signature" data-signature-value=""/>
+                            <label for="signer_name">Ihr vollständiger Name</label>
+                            <input type="text" id="signer_name" name="signer_name" required="required" maxlength="200" autocomplete="name"/>
+                            <label for="customer-signature">Ihre Unterschrift</label>
+                            <canvas id="customer-signature" width="900" height="240" data-online-signature-canvas="" aria-label="Unterschrift zeichnen"/>
+                            <button class="secondary" type="button" data-online-signature-clear="">Unterschrift löschen</button>
+                            <label class="consent"><input type="checkbox" name="confirm_read" value="yes" required="required"/><span>Ich habe den dargestellten Stundenbericht geprüft und bestätige die darin aufgeführten Angaben mit meiner Unterschrift.</span></label>
+                            <p class="small" data-signature-status="" role="status"/>
+                            <button type="submit" data-online-signature-submit="">Stundenbericht verbindlich bestätigen</button>
+                        </form>
+                        <p class="small">Falls Sie nicht online unterschreiben möchten, können Sie die PDF unterschrieben an Ihren Servicekontakt zurücksenden. Bewahren Sie diesen persönlichen Link vertraulich auf.</p>
+                        <script src="/nolte_stundenbericht/static/src/js/online_signature.js?v=1" defer="defer"/>
+                    </t>
+                </main>
+            </body>
+        </html>
+    </template>
+</odoo>

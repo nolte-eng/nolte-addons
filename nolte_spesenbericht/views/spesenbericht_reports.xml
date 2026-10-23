@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="paperformat_spesenbericht_landscape" model="report.paperformat">
+    <field name="name">Nolte Spesenbericht A4 Querformat</field>
+    <field name="default" eval="False"/>
+    <field name="format">A4</field>
+    <field name="orientation">Landscape</field>
+    <field name="margin_top">5</field>
+    <field name="margin_bottom">5</field>
+    <field name="margin_left">6</field>
+    <field name="margin_right">6</field>
+    <field name="header_line" eval="False"/>
+    <field name="header_spacing">0</field>
+    <field name="dpi">96</field>
+  </record>
+
+  <template id="report_spesenbericht_pdf">
+    <t t-call="web.html_container">
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+      <t t-foreach="docs" t-as="o">
+        <div class="page" style="font-family:Arial,sans-serif;color:#0f2d52;font-size:9pt;">
+          <table style="width:100%;height:17mm;border-collapse:collapse;border-bottom:2px solid #093e85;"><tr>
+            <td style="vertical-align:top;">
+              <div style="font-size:8pt;font-weight:700;letter-spacing:1px;color:#64768c;">NOLTE - SPESENBERICHT</div>
+              <div style="font-size:20pt;font-weight:700;line-height:1.1;margin:1mm 0;" t-esc="o.month.strftime('%m/%Y')"/>
+              <div style="font-size:8pt;">Mitarbeiter: <strong t-esc="o._print_ascii(o.employee_id.name)"/> - Status: <strong t-esc="o._print_state()"/></div>
+            </td>
+            <td style="width:48mm;text-align:right;vertical-align:top;"><img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)" style="max-width:44mm;max-height:13mm;"/></td>
+          </tr></table>
+
+          <table style="width:100%;height:14mm;border-collapse:separate;border-spacing:1.2mm;padding:1mm 0;table-layout:fixed;"><tr>
+            <t t-set="grand_total" t-value="o.total_allowance + o.total_hotel + o.total_expenses"/>
+            <t t-foreach="[('Arbeitszeit', (o._print_time_nonzero(o.total_work_hours) + ' Std.') if o._print_time_nonzero(o.total_work_hours) else ''), ('Ueberstunden (Soll ' + o._print_time(o._get_target_month_hours()) + ')', (o._print_time_nonzero(o.total_overtime_hours) + ' Std.') if o._print_time_nonzero(o.total_overtime_hours) else ''), ('Verpflegung (EUR)', o._print_money_nonzero(o.total_allowance)), ('Hotel (EUR)', o._print_money_nonzero(o.total_hotel)), ('Auslagen (EUR)', o._print_money_nonzero(o.total_expenses)), ('Gesamt (EUR)', o._print_money_nonzero(grand_total))]" t-as="total_item">
+              <td t-attf-style="padding:1.2mm 2mm;background:{{ '#093e85' if total_item[0] == 'Gesamt' else '#f2f5f8' }};color:{{ '#fff' if total_item[0] == 'Gesamt' else '#0f2d52' }};vertical-align:middle;">
+                <div style="font-size:7.5pt;" t-esc="total_item[0]"/><strong style="display:block;margin-top:.5mm;font-size:10pt;" t-esc="total_item[1]"/>
+              </td>
+            </t>
+          </tr></table>
+
+          <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt;">
+            <thead><tr style="height:7mm;background:#0f2d52;color:#fff;">
+              <th style="width:14mm;padding:1mm;text-align:left;">Datum</th><th style="width:8mm;padding:1mm;text-align:left;">Tag</th><th style="width:49mm;padding:1mm;text-align:left;">Kunde / Projekt</th><th style="width:13mm;padding:1mm;text-align:left;">Start</th><th style="width:13mm;padding:1mm;text-align:left;">Ende</th><th style="width:11mm;padding:1mm;text-align:left;">Pause</th><th style="width:13mm;padding:1mm;text-align:left;">Arbeit</th><th style="width:71mm;padding:1mm;text-align:left;">Spesen</th><th style="width:18mm;padding:1mm;text-align:left;">Pauschale<br/><small>(EUR)</small></th><th style="width:18mm;padding:1mm;text-align:left;">Hotel<br/><small>(EUR)</small></th><th style="width:18mm;padding:1mm;text-align:left;">Auslagen<br/><small>(EUR)</small></th><th style="width:18mm;padding:1mm;text-align:left;">Summe<br/><small>(EUR)</small></th>
+            </tr></thead>
+            <tbody>
+              <t t-foreach="o._print_rows()" t-as="row">
+                <tr t-att-style="'height:5.4mm;background:%s;' % ('#f5f7f9' if row['day'] % 2 == 0 else '#fff')">
+                  <td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;" t-esc="row['date']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;" t-esc="row['weekday']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;white-space:nowrap;overflow:hidden;" t-esc="row['customer']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;" t-esc="row['start']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;" t-esc="row['end']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;" t-esc="row['break']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;" t-esc="row['work']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;white-space:nowrap;overflow:hidden;" t-esc="row['travel']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;text-align:right;" t-esc="row['allowance']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;text-align:right;" t-esc="row['hotel']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;text-align:right;" t-esc="row['expenses']"/><td style="border:.2mm solid #bcc8d3;padding:.5mm 1mm;text-align:right;font-weight:700;" t-esc="row['sum']"/>
+                </tr>
+              </t>
+            </tbody>
+          </table>
+          <table style="width:100%;margin-top:3mm;border-collapse:collapse;font-size:8pt;"><tr><td style="width:48%;padding-top:2.5mm;border-top:.3mm solid #64768c;">Datum / Unterschrift Mitarbeiter</td><td style="width:4%;"></td><td style="width:48%;padding-top:2.5mm;border-top:.3mm solid #64768c;">Datum / Freigabe</td></tr></table>
+        </div>
+      </t>
+    </t>
+  </template>
+
+  <record id="action_report_spesenbericht_pdf" model="ir.actions.report">
+    <field name="name">Spesenbericht PDF</field>
+    <field name="model">nolte.expense.report</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">nolte_spesenbericht.report_spesenbericht_pdf</field>
+    <field name="report_file">nolte_spesenbericht.report_spesenbericht_pdf</field>
+    <field name="paperformat_id" ref="paperformat_spesenbericht_landscape"/>
+    <field name="print_report_name">'Spesenbericht_%s_%s' % (object.employee_id.name, object.month.strftime('%Y-%m'))</field>
+  </record>
+</odoo>

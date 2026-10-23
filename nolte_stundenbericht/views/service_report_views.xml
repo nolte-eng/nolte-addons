@@ -3,7 +3,7 @@
         <field name="name">nolte.service.report.list</field>
         <field name="model">nolte.service.report</field>
         <field name="arch" type="xml">
-            <list>
+            <list js_class="nolte_service_report_list">
                 <field name="name"/>
                 <field name="service_date"/>
                 <field name="partner_id"/>
@@ -18,15 +18,18 @@
         <field name="name">nolte.service.report.form</field>
         <field name="model">nolte.service.report</field>
         <field name="arch" type="xml">
-            <form string="Einsatzbericht">
+            <form string="Einsatzbericht" js_class="nolte_service_report_form">
                 <header>
+                    <button name="action_request_online_signature" type="object" string="Kundenunterschrift anfordern" invisible="state not in ('draft', 'returned')"/>
+                    <button name="action_revoke_online_signature" type="object" string="Unterschriftsanfrage widerrufen" invisible="state != 'awaiting_signature'" confirm="Den Kundenlink ungültig machen und den Bericht wieder zur Bearbeitung freigeben?"/>
                     <button name="action_submit_review" type="object" string="Zur Prüfung" invisible="state not in ('customer_confirmed', 'internally_amended', 'returned')"/>
-                    <button name="action_open_sale_order_wizard" type="object" string="Auftrag aus Bericht erstellen" class="btn-primary" invisible="sale_order_id or state not in ('customer_confirmed', 'internally_amended', 'under_review', 'ready_to_bill')" groups="nolte_stundenbericht.group_stundenbericht_manager"/>
-                    <button name="action_open_billing_approval_wizard" type="object" string="Abrechnung prüfen und freigeben" invisible="state not in ('under_review', 'ready_to_bill')" groups="nolte_stundenbericht.group_stundenbericht_manager"/>
+                    <button name="action_open_billing_approval_wizard" type="object" string="Abrechnung prüfen und an Verkauf übergeben" class="btn-primary" invisible="state != 'under_review'" groups="nolte_stundenbericht.group_stundenbericht_manager"/>
                     <button name="action_send_customer_pdf" type="object" string="PDF an Kunden senden" invisible="not partner_id and not manual_contact_email" groups="nolte_stundenbericht.group_stundenbericht_approver"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,customer_confirmed,internally_amended,under_review,ready_to_bill,billed"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,awaiting_signature,customer_confirmed,internally_amended,under_review,ready_to_bill,billed"/>
                 </header>
                 <sheet>
+                    <widget name="web_ribbon" title="Im Archiv" bg_color="text-bg-success" invisible="not is_closed"/>
+                    <field name="is_closed" invisible="1"/>
                     <div class="oe_title"><h1><field name="name"/></h1></div>
                     <group>
                         <group>
@@ -77,13 +80,29 @@
                                 <list editable="bottom"><field name="product_id"/><field name="name"/><field name="quantity"/><field name="unit"/><field name="note"/></list>
                             </field>
                         </page>
-                        <page string="Checkliste">
-                            <field name="checklist_ids">
+                        <page string="Kundencheckliste">
+                            <p class="text-muted">Diese Prüfpunkte erscheinen im Kunden-Stundenbericht.</p>
+                            <field name="customer_checklist_ids" context="{'default_visibility': 'customer'}">
+                                <list editable="bottom"><field name="checked"/><field name="name"/><field name="note"/></list>
+                            </field>
+                        </page>
+                        <page string="Interne Checkliste">
+                            <p class="text-muted">Nur für Monteure und Prüfer. Nicht Bestandteil des Kunden-PDFs oder der Kundenhistorie.</p>
+                            <field name="internal_checklist_ids" context="{'default_visibility': 'internal'}">
                                 <list editable="bottom"><field name="checked"/><field name="name"/><field name="note"/></list>
                             </field>
                         </page>
                         <page string="Fotos">
                             <field name="photo_ids" widget="many2many_binary" readonly="state not in ('draft', 'returned')"/>
+                        </page>
+                        <page string="Unterschrift / PDF-Rücklauf" groups="nolte_stundenbericht.group_stundenbericht_approver">
+                            <p>Eine per E-Mail zurückgesandte, unterschriebene PDF kann hier nach Prüfung der richtigen Berichtsfassung hinterlegt werden. Die offene Online-Anfrage wird dadurch abgeschlossen.</p>
+                            <group>
+                                <field name="returned_pdf_signer" readonly="state != 'awaiting_signature'"/>
+                                <field name="returned_pdf_filename" invisible="1"/>
+                                <field name="returned_signed_pdf" filename="returned_pdf_filename" readonly="state != 'awaiting_signature'"/>
+                            </group>
+                            <button name="action_accept_returned_pdf" type="object" string="Geprüften PDF-Rücklauf übernehmen" invisible="state != 'awaiting_signature'" confirm="Haben Sie die Unterschrift und die Übereinstimmung mit der angefragten Berichtsfassung geprüft?"/>
                         </page>
                         <page string="Abrechnung">
                             <group string="Automatische Übergabe nach Kundenunterschrift">
@@ -119,16 +138,56 @@
         </field>
     </record>
 
+    <record id="view_nolte_service_report_archive_search" model="ir.ui.view">
+        <field name="name">nolte.service.report.archive.search</field>
+        <field name="model">nolte.service.report</field>
+        <field name="arch" type="xml">
+            <search string="Stundenbericht-Archiv">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="service_date"/>
+                <field name="machine_number"/>
+                <filter name="group_customer" string="Kunde" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_month" string="Monat" context="{'group_by': 'service_date:month'}"/>
+                <filter name="group_machine" string="Maschinennummer" context="{'group_by': 'machine_number'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="action_nolte_service_report" model="ir.actions.act_window">
         <field name="name">Einsatzberichte</field>
         <field name="res_model">nolte.service.report</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('is_closed', '=', False)]</field>
+    </record>
+
+    <record id="action_nolte_service_report_archive" model="ir.actions.act_window">
+        <field name="name">Stundenbericht-Archiv</field>
+        <field name="res_model">nolte.service.report</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_nolte_service_report_archive_search"/>
+        <field name="domain">[('is_closed', '=', True)]</field>
+        <field name="context">{'search_default_group_customer': 1, 'search_default_group_month': 1}</field>
     </record>
 
     <record id="action_nolte_stundenbericht_mobile" model="ir.actions.act_url">
         <field name="name">Stundenbericht eingeben</field>
         <field name="url">/nolte_stundenbericht/backend-entry</field>
         <field name="target">self</field>
+    </record>
+
+    <record id="action_nolte_service_report_compose" model="ir.actions.server">
+        <field name="name">Stundenbericht per E-Mail senden</field>
+        <field name="model_id" ref="model_nolte_service_report"/>
+        <field name="state">code</field>
+        <field name="code">action = env['nolte.service.report'].browse(env.context.get('active_id')).action_send_customer_pdf()</field>
+    </record>
+
+    <record id="action_nolte_service_request_signature" model="ir.actions.server">
+        <field name="name">Kundenunterschrift anfordern</field>
+        <field name="model_id" ref="model_nolte_service_report"/>
+        <field name="state">code</field>
+        <field name="code">action = env['nolte.service.report'].browse(env.context.get('active_id')).action_request_online_signature()</field>
     </record>
 
     <record id="action_nolte_stundenbericht_create_mobile" model="ir.actions.act_url">
@@ -144,8 +203,14 @@
     <menuitem id="menu_nolte_service_report" name="Einsatzberichte"
               parent="menu_nolte_stundenbericht_root" action="action_nolte_service_report"
               groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="10"/>
+    <menuitem id="menu_nolte_service_report_archive" name="Archiv"
+              parent="menu_nolte_stundenbericht_root" action="action_nolte_service_report_archive"
+              groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="20"/>
     <menuitem id="menu_nolte_stundenbericht_create" name="Stundenbericht erstellen"
               parent="menu_nolte_stundenbericht_root"
               action="action_nolte_stundenbericht_create_mobile"
               groups="nolte_stundenbericht.group_stundenbericht_user" sequence="7"/>
+    <menuitem id="menu_nolte_stundenbericht_configuration" name="Konfiguration"
+              parent="menu_nolte_stundenbericht_root"
+              groups="group_stundenbericht_manager" sequence="90"/>
 </odoo>
