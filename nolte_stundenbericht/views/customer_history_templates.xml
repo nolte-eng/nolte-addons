@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="customer_history_page" name="Kundenhistorie Stundenberichte">
+        <t t-call="website.layout">
+            <main id="wrap" class="container py-4">
+                <div class="mb-4">
+                    <h1 class="h3">Bisherige Stundenberichte</h1>
+                    <p class="text-muted mb-1"><strong>Einsatz:</strong> <t t-esc="task.name"/></p>
+                    <p class="text-muted mb-0"><strong>Kunde:</strong> <t t-esc="task.partner_id.commercial_partner_id.display_name or '–'"/></p>
+                    <p class="small text-muted mt-2 mb-0">Angezeigt werden nur kundenbestätigte Berichte dieses Kunden. Interne Notizen und Abrechnungsdaten sind nicht enthalten.</p>
+                </div>
+                <t t-if="history">
+                    <article t-foreach="history" t-as="item" class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+                                <div>
+                                    <h2 class="h5 mb-1"><t t-esc="item['number']"/></h2>
+                                    <div class="text-muted"><t t-esc="item['date']"/></div>
+                                </div>
+                                <a class="btn btn-outline-primary" t-att-href="'/my/stundenbericht/history/%s/%s.pdf' % (task.id, item['id'])" target="_blank" rel="noopener">PDF ansehen</a>
+                            </div>
+                            <div t-if="item['machine_number'] or item['machine_type'] or item['location']" class="small mt-3">
+                                <span t-if="item['machine_number']"><strong>Maschine:</strong> <t t-esc="item['machine_number']"/> </span>
+                                <span t-if="item['machine_type']"><t t-esc="item['machine_type']"/> </span>
+                                <span t-if="item['location']"><strong>Einsatzort:</strong> <t t-esc="item['location']"/></span>
+                            </div>
+                            <div t-if="item['work_description']" class="mt-3">
+                                <strong>Ausgeführte Arbeiten</strong>
+                                <p class="mb-0" style="white-space: pre-line"><t t-esc="item['work_description']"/></p>
+                            </div>
+                            <div t-if="item['work_result']" class="mt-2">
+                                <strong>Ergebnis / Handlungsbedarf</strong>
+                                <p class="mb-0" style="white-space: pre-line"><t t-esc="item['work_result']"/></p>
+                            </div>
+                        </div>
+                    </article>
+                </t>
+                <div t-else="" class="alert alert-info">Für diesen Kunden liegen noch keine bestätigten Stundenberichte vor.</div>
+            </main>
+        </t>
+    </template>
+</odoo>

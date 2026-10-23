@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_hr_expense_list_nolte_month" model="ir.ui.view">
+    <field name="name">hr.expense.list.nolte.month</field>
+    <field name="model">hr.expense</field>
+    <field name="inherit_id" ref="hr_expense.hr_expense_view_expenses_analysis_tree"/>
+    <field name="arch" type="xml">
+      <field name="name" position="after">
+        <field name="nolte_month_reference" optional="show" readonly="1"/>
+      </field>
+    </field>
+  </record>
+
+  <record id="view_hr_expense_form_nolte_month" model="ir.ui.view">
+    <field name="name">hr.expense.form.nolte.month</field>
+    <field name="model">hr.expense</field>
+    <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+    <field name="arch" type="xml">
+      <field name="employee_id" position="after">
+        <field name="nolte_month_reference" invisible="not nolte_report_id" readonly="1"/>
+        <field name="nolte_report_id" invisible="1"/>
+      </field>
+    </field>
+  </record>
+
+  <record id="view_hr_expense_search_nolte_month" model="ir.ui.view">
+    <field name="name">hr.expense.search.nolte.month</field>
+    <field name="model">hr.expense</field>
+    <field name="inherit_id" ref="hr_expense.hr_expense_view_search"/>
+    <field name="arch" type="xml">
+      <field name="employee_id" position="after">
+        <field name="nolte_month_reference"/>
+      </field>
+      <filter name="expensesmonth" position="after">
+        <filter name="group_nolte_month" string="Monatsbericht" context="{'group_by': 'nolte_month_reference'}"/>
+      </filter>
+    </field>
+  </record>
+
+  <record id="view_nolte_receipt_attachment_list" model="ir.ui.view">
+    <field name="name">nolte.receipt.attachment.list</field>
+    <field name="model">ir.attachment</field>
+    <field name="arch" type="xml">
+      <list create="0" edit="0" delete="0">
+        <field name="name" string="Dateiname"/>
+        <field name="mimetype" string="Dateityp"/>
+        <field name="create_date" string="Hochgeladen am"/>
+        <field name="create_uid" string="Hochgeladen von"/>
+        <button name="action_open_nolte_receipt" type="object" string="Beleg öffnen" icon="fa-eye" class="btn-primary"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_nolte_expense_report_list" model="ir.ui.view">
+    <field name="name">nolte.expense.report.list</field>
+    <field name="model">nolte.expense.report</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="name"/>
+        <field name="employee_id"/>
+        <field name="month"/>
+        <field name="state"/>
+        <field name="attachment_count"/>
+        <field name="total_work_hours"/>
+        <field name="total_overtime_hours"/>
+        <field name="total_allowance"/>
+        <field name="total_hotel"/>
+        <field name="total_expenses"/>
+        <field name="total_amount"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_nolte_expense_report_form" model="ir.ui.view">
+    <field name="name">nolte.expense.report.form</field>
+    <field name="model">nolte.expense.report</field>
+    <field name="arch" type="xml">
+      <form>
+        <header>
+          <button name="action_approve" type="object" string="Freigeben" class="btn-primary" invisible="state != 'submitted'" groups="nolte_spesenbericht.group_spesenbericht_approver"/>
+          <button name="action_reject" type="object" string="Zur Korrektur" invisible="state != 'submitted'" groups="nolte_spesenbericht.group_spesenbericht_approver"/>
+          <button name="action_create_expenses" type="object" string="Odoo-Spesen erzeugen" class="btn-primary" invisible="state != 'approved'" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+          <field name="state" widget="statusbar"/>
+        </header>
+        <sheet>
+          <div class="oe_button_box" name="button_box">
+            <button name="action_view_attachments" type="object" class="oe_stat_button" icon="fa-paperclip" invisible="attachment_count == 0">
+              <field name="attachment_count" widget="statinfo" string="Belege"/>
+            </button>
+          </div>
+          <group>
+            <field name="name"/>
+            <field name="employee_id"/>
+            <field name="month"/>
+          </group>
+          <group>
+            <field name="total_work_hours"/>
+            <field name="total_overtime_hours"/>
+            <field name="total_allowance"/>
+            <field name="total_hotel"/>
+            <field name="total_expenses"/>
+            <field name="total_amount"/>
+          </group>
+          <field name="expense_ids" readonly="1">
+            <list>
+              <field name="date"/>
+              <field name="name"/>
+              <field name="employee_id"/>
+              <field name="product_id"/>
+              <field name="total_amount_currency"/>
+              <field name="state"/>
+            </list>
+          </field>
+          <field name="line_ids">
+            <list editable="bottom">
+              <field name="date"/>
+              <field name="customer"/>
+              <field name="start_time"/>
+              <field name="end_time"/>
+              <field name="break_minutes"/>
+              <field name="work_hours"/>
+              <field name="country"/>
+              <field name="travel_type"/>
+              <field name="travel_type_automatic" optional="hide"/>
+              <field name="allowance"/>
+              <field name="hotel_amount"/>
+              <field name="expense_amount"/>
+              <field name="attachment_ids" widget="many2many_binary" string="Belege" optional="show"/>
+              <field name="absence_name"/>
+            </list>
+          </field>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="view_nolte_expense_config_list" model="ir.ui.view">
+    <field name="name">nolte.expense.config.list</field>
+    <field name="model">nolte.expense.config</field>
+    <field name="arch" type="xml">
+      <list editable="bottom">
+        <field name="company_id"/>
+        <field name="travel_product_id"/>
+        <field name="hotel_product_id"/>
+        <field name="other_product_id"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_nolte_bmf_rate_list" model="ir.ui.view">
+    <field name="name">nolte.bmf.rate.list</field>
+    <field name="model">nolte.bmf.rate</field>
+    <field name="arch" type="xml">
+      <list editable="bottom">
+        <field name="show_in_report"/>
+        <field name="year"/>
+        <field name="country_name"/>
+        <field name="location_name"/>
+        <field name="rate_key" optional="hide"/>
+        <field name="full_day"/>
+        <field name="partial_day"/>
+        <field name="overnight"/>
+        <field name="source_url" widget="url" optional="hide"/>
+        <field name="active"/>
+        <button name="action_recompute_reports" type="object" string="Neu berechnen" icon="fa-refresh"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_nolte_bmf_rate_search" model="ir.ui.view">
+    <field name="name">nolte.bmf.rate.search</field>
+    <field name="model">nolte.bmf.rate</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="country_name"/>
+        <field name="location_name"/>
+        <field name="year"/>
+        <filter name="shown" string="Im Spesenbericht" domain="[('show_in_report','=',True)]"/>
+        <filter name="group_year" string="Jahr" context="{'group_by':'year'}"/>
+        <filter name="inactive" string="Archiviert" domain="[('active','=',False)]"/>
+      </search>
+    </field>
+  </record>
+  <record id="view_nolte_work_report_list" model="ir.ui.view">
+    <field name="name">nolte.work.report.list</field>
+    <field name="model">nolte.work.report</field>
+    <field name="arch" type="xml">
+      <list decoration-success="state == 'distributed'">
+        <field name="report_date"/>
+        <field name="name"/>
+        <field name="customer"/>
+        <field name="employee_count"/>
+        <field name="company_id" groups="base.group_multi_company"/>
+        <field name="state"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_nolte_work_report_form" model="ir.ui.view">
+    <field name="name">nolte.work.report.form</field>
+    <field name="model">nolte.work.report</field>
+    <field name="arch" type="xml">
+      <form>
+        <header>
+          <button name="action_distribute" type="object" string="Auf Mitarbeiter verteilen" class="btn-primary" invisible="state != 'draft'"/>
+          <button name="action_set_draft" type="object" string="Erneut bearbeiten" invisible="state != 'distributed'"/>
+          <field name="state" widget="statusbar"/>
+        </header>
+        <sheet>
+          <div class="oe_title">
+            <label for="name"/>
+            <h1>
+              <field name="name"/>
+            </h1>
+          </div>
+          <group>
+            <group>
+              <field name="report_date"/>
+              <field name="customer"/>
+              <field name="company_id" groups="base.group_multi_company"/>
+            </group>
+            <group>
+              <field name="original_file" filename="original_filename"/>
+              <field name="original_filename" invisible="1"/>
+              <field name="distributed_at" invisible="state != 'distributed'"/>
+              <field name="distributed_by_id" invisible="state != 'distributed'"/>
+            </group>
+          </group>
+          <separator string="Mitarbeiter im Stundenbericht"/>
+          <field name="line_ids" readonly="state == 'distributed'">
+            <list editable="bottom">
+              <field name="company_id" column_invisible="True"/>
+              <field name="employee_id"/>
+              <field name="description"/>
+              <field name="start_time"/>
+              <field name="end_time"/>
+              <field name="break_minutes"/>
+              <field name="work_hours" readonly="1"/>
+            </list>
+          </field>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="view_nolte_expense_report_search" model="ir.ui.view">
+    <field name="name">nolte.expense.report.search</field>
+    <field name="model">nolte.expense.report</field>
+    <field name="arch" type="xml">
+      <search string="Spesenberichte durchsuchen">
+        <field name="name"/>
+        <field name="employee_id"/>
+        <field name="month"/>
+        <field name="state"/>
+        <separator/>
+        <filter name="filter_draft" string="In Bearbeitung" domain="[('state', '=', 'draft')]"/>
+        <filter name="filter_submitted" string="Eingereicht" domain="[('state', '=', 'submitted')]"/>
+        <filter name="filter_approved" string="Freigegeben" domain="[('state', 'in', ('approved', 'exported'))]"/>
+        <group>
+          <filter name="group_employee" string="Mitarbeiter" context="{'group_by': 'employee_id'}"/>
+          <filter name="group_month" string="Monat" context="{'group_by': 'month:month'}"/>
+          <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="view_nolte_expense_report_pivot" model="ir.ui.view">
+    <field name="name">nolte.expense.report.pivot</field>
+    <field name="model">nolte.expense.report</field>
+    <field name="arch" type="xml">
+      <pivot string="Spesenberichte">
+        <field name="employee_id" type="row"/>
+        <field name="month" interval="month" type="col"/>
+        <field name="total_work_hours" type="measure"/>
+        <field name="total_overtime_hours" type="measure"/>
+        <field name="total_amount" type="measure"/>
+      </pivot>
+    </field>
+  </record>
+  <record id="view_nolte_expense_report_graph" model="ir.ui.view">
+    <field name="name">nolte.expense.report.graph</field>
+    <field name="model">nolte.expense.report</field>
+    <field name="arch" type="xml">
+      <graph string="Spesenberichte" type="bar">
+        <field name="month" interval="month"/>
+        <field name="total_amount" type="measure"/>
+      </graph>
+    </field>
+  </record>
+  <record id="action_nolte_expense_reports" model="ir.actions.act_window">
+    <field name="name">Spesenberichte</field>
+    <field name="res_model">nolte.expense.report</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <record id="action_nolte_generated_expenses" model="ir.actions.act_window">
+    <field name="name">Odoo-Spesen nach Monat</field>
+    <field name="res_model">hr.expense</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="hr_expense.hr_expense_view_search"/>
+    <field name="domain">[('nolte_report_id', '!=', False)]</field>
+    <field name="context">{'search_default_group_nolte_month': 1}</field>
+  </record>
+  <record id="action_nolte_work_reports" model="ir.actions.act_window">
+    <field name="name">Stundenberichte</field>
+    <field name="res_model">nolte.work.report</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <record id="action_nolte_expense_overview" model="ir.actions.act_window">
+    <field name="name">Mitarbeiterübersicht</field>
+    <field name="res_model">nolte.expense.report</field>
+    <field name="view_mode">list,pivot,graph,form</field>
+    <field name="search_view_id" ref="view_nolte_expense_report_search"/>
+    <field name="context">{'search_default_group_employee': 1}</field>
+  </record>
+  <record id="action_nolte_expense_employee_view" model="ir.actions.act_url">
+    <field name="name">Mitarbeiteransicht</field>
+    <field name="url">/my/spesenbericht</field>
+    <field name="target">self</field>
+  </record>
+  <record id="action_nolte_expense_config" model="ir.actions.act_window">
+    <field name="name">Konfiguration</field>
+    <field name="res_model">nolte.expense.config</field>
+    <field name="view_mode">list</field>
+  </record>
+  <record id="action_nolte_bmf_rates" model="ir.actions.act_window">
+    <field name="name">BMF-Pauschalen</field>
+    <field name="res_model">nolte.bmf.rate</field>
+    <field name="view_mode">list</field>
+    <field name="search_view_id" ref="view_nolte_bmf_rate_search"/>
+  </record>
+  <record id="action_nolte_expense_website" model="ir.actions.act_url">
+    <field name="name">Meine Erfassung</field>
+    <field name="url">/my/spesenbericht</field>
+    <field name="target">self</field>
+  </record>
+  <record id="view_nolte_overtime_export_wizard_form" model="ir.ui.view">
+    <field name="name">nolte.overtime.export.wizard.form</field>
+    <field name="model">nolte.overtime.export.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Überstundenübersicht erstellen">
+        <div class="alert alert-info" role="alert">
+          Die Mitarbeiterauswahl wird gespeichert und beim nächsten Export wieder vorgeschlagen.
+        </div>
+        <group>
+          <field name="year"/>
+          <field name="company_id" groups="base.group_multi_company"/>
+          <field name="include_drafts"/>
+          <field name="employee_ids" widget="many2many_tags" options="{'no_create': True, 'no_create_edit': True}"/>
+        </group>
+        <footer>
+          <button name="action_export_pdf" type="object" string="PDF erstellen" class="btn-primary"/>
+          <button string="Abbrechen" special="cancel" class="btn-secondary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_nolte_overtime_export" model="ir.actions.act_window">
+    <field name="name">Überstundenexport</field>
+    <field name="res_model">nolte.overtime.export.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+  <menuitem id="menu_nolte_spesenbericht_root" name="Spesenbericht" sequence="55" web_icon="nolte_spesenbericht,static/description/icon.svg" groups="nolte_spesenbericht.group_spesenbericht_user"/>
+  <menuitem id="menu_nolte_expense_overview" name="Übersicht" parent="menu_nolte_spesenbericht_root" action="action_nolte_expense_overview" sequence="5" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <record id="menu_nolte_expense_overview" model="ir.ui.menu"><field name="name">Übersicht</field></record>
+  <menuitem id="menu_nolte_expense_reports" name="Monatsberichte" parent="menu_nolte_spesenbericht_root" action="action_nolte_expense_reports" sequence="10" groups="nolte_spesenbericht.group_spesenbericht_approver"/>
+  <menuitem id="menu_nolte_overtime_export" name="Überstundenexport" parent="menu_nolte_spesenbericht_root" action="action_nolte_overtime_export" sequence="12" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <menuitem id="menu_nolte_generated_expenses" name="Odoo-Spesen" parent="menu_nolte_spesenbericht_root" action="action_nolte_generated_expenses" sequence="13" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <menuitem id="menu_nolte_expense_employee_view" name="Mitarbeiteransicht" parent="menu_nolte_spesenbericht_root" action="action_nolte_expense_employee_view" sequence="15" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <record id="menu_nolte_expense_employee_view" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <menuitem id="menu_nolte_work_reports" name="Stundenberichte" parent="menu_nolte_spesenbericht_root" action="action_nolte_work_reports" sequence="17" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <record id="menu_nolte_work_reports" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <menuitem id="menu_nolte_settings" name="Einstellungen" parent="menu_nolte_spesenbericht_root" sequence="20" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <menuitem id="menu_nolte_expense_config" name="Spesenprodukte" parent="menu_nolte_settings" action="action_nolte_expense_config" sequence="5" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <record id="menu_nolte_expense_config" model="ir.ui.menu"><field name="name">Spesenprodukte</field></record>
+  <menuitem id="menu_nolte_bmf_rates" name="BMF-Pauschalen" parent="menu_nolte_settings" action="action_nolte_bmf_rates" sequence="10" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+  <menuitem id="menu_nolte_expense_website" name="Erfassung" parent="menu_nolte_spesenbericht_root" action="action_nolte_expense_website" sequence="15" groups="nolte_spesenbericht.group_spesenbericht_user"/>
+  <record id="menu_nolte_expense_website" model="ir.ui.menu"><field name="name">Erfassung</field></record>
+</odoo>

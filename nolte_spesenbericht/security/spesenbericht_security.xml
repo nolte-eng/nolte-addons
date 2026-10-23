@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="group_spesenbericht_user" model="res.groups">
+    <field name="name">Spesenbericht Mitarbeiter</field>
+    <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+  <record id="group_spesenbericht_approver" model="res.groups">
+    <field name="name">Spesenbericht Prüfer</field>
+    <field name="implied_ids" eval="[(4, ref('nolte_spesenbericht.group_spesenbericht_user'))]"/>
+  </record>
+  <record id="group_spesenbericht_manager" model="res.groups">
+    <field name="name">Spesenbericht Administrator</field>
+    <field name="implied_ids" eval="[(4, ref('nolte_spesenbericht.group_spesenbericht_approver'))]"/>
+  </record>
+
+  <record id="rule_report_employee" model="ir.rule">
+    <field name="name">Eigene Spesenberichte</field>
+    <field name="model_id" ref="model_nolte_expense_report"/>
+    <field name="groups" eval="[(4, ref('group_spesenbericht_user'))]"/>
+    <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+  </record>
+  <record id="rule_report_approver" model="ir.rule">
+    <field name="name">Prüfer sehen Unternehmensberichte</field>
+    <field name="model_id" ref="model_nolte_expense_report"/>
+    <field name="groups" eval="[(4, ref('group_spesenbericht_approver'))]"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="rule_line_employee" model="ir.rule">
+    <field name="name">Eigene Spesenberichtzeilen</field>
+    <field name="model_id" ref="model_nolte_expense_report_line"/>
+    <field name="groups" eval="[(4, ref('group_spesenbericht_user'))]"/>
+    <field name="domain_force">[('report_id.employee_id.user_id', '=', user.id)]</field>
+  </record>
+  <record id="rule_line_approver" model="ir.rule">
+    <field name="name">Prüfer sehen Unternehmenszeilen</field>
+    <field name="model_id" ref="model_nolte_expense_report_line"/>
+    <field name="groups" eval="[(4, ref('group_spesenbericht_approver'))]"/>
+    <field name="domain_force">[('report_id.company_id', 'in', company_ids)]</field>
+  </record>
+</odoo>

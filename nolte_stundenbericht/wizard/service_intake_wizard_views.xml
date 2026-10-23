@@ -34,7 +34,6 @@
                     <group string="Maschinendaten" col="2">
                         <field name="machine_number" placeholder="z. B. 1317"/>
                         <field name="machine_type_id" options="{'no_quick_create': False, 'no_create_edit': False}" placeholder="Maschinentyp suchen oder neu anlegen …"/>
-                        <field name="overnight_count"/>
                     </group>
                     <group string="Arbeitsauftrag">
                         <field name="work_description" nolabel="1" colspan="2" widget="text" placeholder="Fehlerbild, gewünschte Arbeiten oder Hinweise für den Techniker …"/>
@@ -57,4 +56,7 @@
               parent="nolte_stundenbericht.menu_nolte_stundenbericht_root"
               action="action_nolte_service_intake_wizard" sequence="5"
               groups="nolte_stundenbericht.group_stundenbericht_user"/>
+    <record id="menu_nolte_service_intake_stundenbericht" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
 </odoo>

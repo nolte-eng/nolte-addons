@@ -15,7 +15,7 @@ class NolteBillingApprovalWizard(models.TransientModel):
         report = self.env["nolte.service.report"].browse(self.env.context.get("active_id")).exists()
         if not report:
             return values
-        if report.state not in ("under_review", "ready_to_bill") or any(member.billing_state != "preview" for member in report.member_ids):
+        if report.state != "under_review" or any(member.billing_state != "preview" for member in report.member_ids):
             raise UserError(_("Der Bericht benötigt zuerst eine vollständige Abrechnungsvorschau und Büroprüfung."))
         lines = []
         for member in report.member_ids:

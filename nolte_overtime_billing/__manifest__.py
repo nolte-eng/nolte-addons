@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nolte Overtime Billing (CSV → Sales Order)",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.5.6",
     "category": "Sales",
-    "summary": "Import Stundenbericht-CSV, berechne Überstunden, erstelle Verkaufsauftrag (und daraus Rechnung).",
+    "summary": "Import timesheet CSV, calculate overtime, and create a sales order (and invoice).",
     "author": "Nolte Engineering / Nolte Sales",
     "license": "LGPL-3",
-    "depends": ["base", "sale_management", "product", "uom"],
+    "depends": ["base", "sale_management", "product", "uom", "nolte_spesenbericht"],
     "pre_init_hook": "pre_init_hook",
     "post_init_hook": "post_init_hook",
     "data": [
@@ -18,6 +18,6 @@
         "views/menu.xml",
         "views/sale_order_views.xml",
     ],
-    "application": False,
+    "application": True,
     "installable": True,
 }

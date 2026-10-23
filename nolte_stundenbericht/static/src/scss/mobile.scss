@@ -6,6 +6,26 @@
 @media (min-width:768px) and (max-width:1366px){.ns-main{padding:14px 18px 28px}.ns-app-header{margin:-14px -18px 12px;padding:12px 18px}.ns-mobile-app .card{margin-bottom:10px!important}.ns-mobile-app .card-body{padding:11px 14px}.ns-mobile-app .card h2{margin-bottom:8px}.ns-ipad-help{display:none}.ns-day-summary{align-items:center;display:flex;gap:10px;padding:8px!important}.ns-day-metrics{font-size:.76rem;line-height:1.25}.ns-day-body{padding:8px!important}.ns-day-card{margin-bottom:7px!important}.ns-day-card .ns-segment-row{margin-bottom:6px!important;padding:7px!important}.ns-day-actions{margin-top:6px!important}.ns-day-actions .btn{min-height:42px;padding:.35rem .65rem}.ns-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;row-gap:0!important}.ns-summary-grid>div{border-bottom:0!important;border-right:1px solid #e1edf5!important;padding:2px 6px!important;width:auto}.ns-summary-grid>div:last-child{border-right:0!important}.ns-summary-value{font-size:1.1rem}.ns-mobile-app [data-live-summary] .card-body{padding:9px 14px}.ns-mobile-app [data-live-summary] h2{margin-bottom:7px!important}.ns-mobile-app [data-live-summary] p{margin-top:7px!important}.ns-time-overview>summary{cursor:pointer}.ns-time-overview[open]>summary{border-bottom:1px solid #e1edf5}.ns-mobile-app [data-time-table] .card-body{padding:8px 12px}}
 
 /* Use one clear active state for the section tabs, matching the report mockup. */
+.ns-mobile-app #ns-work-description {
+    min-height: 20rem;
+    max-height: none;
+    resize: vertical;
+    overflow-y: auto;
+}
+.ns-mobile-app .ns-report-time-table { min-width: 920px; }
+.ns-mobile-app .ns-report-time-table thead th { background: #eaf5fd; color: #0b4a80; padding: 9px 8px; white-space: nowrap; }
+.ns-mobile-app .ns-report-time-table td { padding: 8px; vertical-align: top; white-space: nowrap; }
+.ns-mobile-app .ns-report-time-table tbody tr:nth-child(even) td { background: #f8fcff; }
+.ns-mobile-app .ns-report-time-table tfoot td { background: #f1f8fd; border-top: 2px solid #b7d8ed; color: #064785; font-weight: 700; }
+.ns-mobile-app .ns-summary-compact .card-body { padding: 10px 14px; }
+.ns-mobile-app .ns-summary-compact h2 { margin-bottom: 8px !important; font-size: .9rem; }
+.ns-mobile-app .ns-summary-compact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 16px; font-size: .8rem; }
+.ns-mobile-app .ns-summary-compact-grid > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.ns-mobile-app .ns-summary-compact-grid strong { color: #0873ce; font-size: 1rem; white-space: nowrap; }
+.ns-mobile-app .ns-summary-compact p { font-size: .68rem; }
+@media (max-width: 767px) {
+    .ns-mobile-app .ns-summary-compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .ns-mobile-app .ns-section-nav a:first-child{border-bottom-color:transparent;color:#486983}
 .ns-mobile-app .ns-section-nav a.ns-nav-active{background:#f5faff;border-bottom-color:#0879dc;color:#0870ca}
 @media (min-width:768px) and (max-width:1366px){.ns-mobile-app .ns-section-nav{border-radius:7px;margin-bottom:10px!important}.ns-mobile-app .ns-section-nav a{font-size:.72rem;padding:9px 12px}.ns-mobile-app .ns-app-header{min-height:74px}.ns-mobile-app .card{border-radius:8px}.ns-mobile-app .form-control,.ns-mobile-app .form-select{min-height:35px}}

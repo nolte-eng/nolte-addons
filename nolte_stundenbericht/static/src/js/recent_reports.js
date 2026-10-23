@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             const left = document.createElement("span"); left.textContent = `${report.date} · ${report.customer}`;
             const actions = document.createElement("div"); actions.className = "d-flex align-items-center gap-2";
             const details = document.createElement("span"); details.className = "text-muted text-end"; details.textContent = `${report.number} · ${report.state}`;
+            if (report.signatureManageUrl) {
+                const manage = document.createElement("a"); manage.className = "btn btn-sm btn-outline-primary";
+                manage.href = report.signatureManageUrl; manage.target = "_blank"; manage.rel = "noopener"; manage.textContent = "Unterschriftsanfrage";
+                actions.append(manage);
+            }
             if (report.canLoadData) {
                 const load = document.createElement("button"); load.type = "button"; load.className = "btn btn-sm btn-outline-primary"; load.textContent = "Daten laden";
                 load.onclick = async () => {

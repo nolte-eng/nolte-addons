@@ -1,5 +1,3 @@
-import hashlib
-import json
 import re
 from uuid import uuid4
 
@@ -58,10 +56,13 @@ class NolteStundenberichtApiV1(http.Controller):
             "mobileRevision": report.mobile_revision,
             "serverRevision": report.server_revision,
             "state": report.state,
+            "requestSignatureUrl": "/odoo/action-%s?active_id=%s" % (request.env.ref("nolte_stundenbericht.action_nolte_service_request_signature").id, report.id),
+            "signatureManageUrl": "/odoo/action-%s/%s" % (request.env.ref("nolte_stundenbericht.action_nolte_service_report").id, report.id),
             "serviceDate": fields.Date.to_string(report.service_date),
             "taskName": report.task_id.display_name or "",
             "customerName": report.partner_id.display_name or report.manual_customer_name or "",
-            "previewPdfUrl": "/report/pdf/nolte_stundenbericht.action_report_customer_service_report/%s" % report.id,
+            "previewPdfUrl": "/nolte_stundenbericht/reports/preview/%s/pdf?v=%s" % (report.mobile_uuid, report.server_revision),
+            "previewHtmlUrl": "/nolte_stundenbericht/reports/preview/%s/html?v=%s" % (report.mobile_uuid, report.server_revision),
             "countryRateKey": report.country_rate_key,
             "serviceLocation": report.service_location or "",
             "serviceLocationName": report.service_location_name or "",
@@ -84,6 +85,7 @@ class NolteStundenberichtApiV1(http.Controller):
             "customerPdfUrl": "/web/content/%s?download=false" % report.customer_pdf_attachment_id.id if report.customer_pdf_attachment_id else False,
             "customerEmail": customer_email,
             "companyServiceEmail": company_email,
+            "composeEmailUrl": "/odoo/action-%s?active_id=%s" % (request.env.ref("nolte_stundenbericht.action_nolte_service_report_compose").id, report.id),
             "canSendCustomerEmail": bool(report.customer_pdf_attachment_id and report.state in ("customer_confirmed", "internally_amended", "under_review", "ready_to_bill", "billed")),
             "materials": [{
                 "materialUuid": material.mobile_uuid,
@@ -98,6 +100,7 @@ class NolteStundenberichtApiV1(http.Controller):
                 "name": item.name,
                 "checked": item.checked,
                 "note": item.note or "",
+                "visibility": item.visibility,
             } for item in report.checklist_ids],
             "photos": [{"id": photo.id, "name": photo.name} for photo in report.photo_ids],
             "members": [
@@ -152,6 +155,29 @@ class NolteStundenberichtApiV1(http.Controller):
     def _customer_snapshot(self, report):
         return report.preview_customer_snapshot()
 
+    def _work_templates(self):
+        if not request.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
+            raise AccessError(_("Sie sind nicht für den Stundenbericht freigeschaltet."))
+        templates = request.env["nolte.service.work.template"].search([
+            ("company_id", "in", [False, request.env.company.id]),
+        ])
+        return [{"id": template.id, "name": template.name, "body": template.body} for template in templates]
+
+    @http.route("/nolte_stundenbericht/api/v1/work-templates", type="jsonrpc", auth="user", methods=["POST"])
+    def work_templates(self):
+        return self._work_templates()
+
+    @http.route("/nolte_stundenbericht/api/v1/checklist-templates", type="jsonrpc", auth="user", methods=["POST"])
+    def checklist_templates(self):
+        if not request.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
+            raise AccessError(_("Sie sind nicht für den Stundenbericht freigeschaltet."))
+        templates = request.env["nolte.service.checklist.template"].search([
+            ("company_id", "in", [False, request.env.company.id]),
+        ])
+        return [{"id": template.id, "name": template.name, "visibility": template.visibility,
+                 "items": [{"name": line.name, "note": line.note or ""} for line in template.line_ids]}
+                for template in templates]
+
     @http.route("/nolte_stundenbericht/api/v1/bootstrap", type="jsonrpc", auth="user", methods=["POST"])
     def bootstrap(self):
         employee = self._employee_for_request()
@@ -196,10 +222,9 @@ class NolteStundenberichtApiV1(http.Controller):
                 "machineNumber": task.nolte_machine_number or "",
                 "machineType": task.nolte_machine_type or "",
                 "overnightCount": task.nolte_overnight_count,
-                # Some older service tasks were created with the technician's
-                # instruction as their title. Keep that visible in the work
-                # order card when no description was saved separately.
-                "workOrderDescription": html2plaintext(task.description or "").strip() or task.name or "",
+                # Technician instructions are stored in the task description;
+                # never substitute the task title here.
+                "workOrderDescription": html2plaintext(task.description or "").strip(),
             }
         technician_group = request.env.ref("nolte_stundenbericht.group_stundenbericht_user")
         employees = request.env["hr.employee"].sudo().search([
@@ -225,6 +250,7 @@ class NolteStundenberichtApiV1(http.Controller):
             "countries": [{"code": country.code, "name": country.name} for country in countries if country.code],
             "serverTime": fields.Datetime.to_string(fields.Datetime.now()),
             "assignments": [task_values(task) for task in tasks],
+            "workTemplates": self._work_templates(),
         }
 
     @http.route("/nolte_stundenbericht/api/v1/reports/recent", type="jsonrpc", auth="user", methods=["POST"])
@@ -240,6 +266,7 @@ class NolteStundenberichtApiV1(http.Controller):
             "customer": report.partner_id.display_name or report.manual_customer_name or report.task_id.display_name or "–",
             "state": dict(report._fields["state"].selection).get(report.state, report.state),
             "canLoadData": report.state in ("draft", "returned"),
+            "signatureManageUrl": "/odoo/action-%s/%s" % (request.env.ref("nolte_stundenbericht.action_nolte_service_report").id, report.id) if report.state == "awaiting_signature" else False,
             "url": "/report/pdf/nolte_stundenbericht.action_report_customer_service_report/%s" % report.id,
         } for report in reports]
 
@@ -280,7 +307,7 @@ class NolteStundenberichtApiV1(http.Controller):
                 "machineNumber": task.nolte_machine_number or report.machine_number or "",
                 "machineType": task.nolte_machine_type or report.machine_type or "",
                 "overnightCount": task.nolte_overnight_count if task else report.overnight_count,
-                "workOrderDescription": html2plaintext(task.description or "").strip() or task.name or "",
+                "workOrderDescription": html2plaintext(task.description or "").strip(),
             } if task else {},
             "days": [{
                 "date": item["serviceDate"],
@@ -394,8 +421,18 @@ class NolteStundenberichtApiV1(http.Controller):
         if set(allowed_employees.ids) != requested_employee_ids:
             raise AccessError(_("Mindestens ein ausgewählter Mitarbeiter gehört nicht zur Gruppe Stundenbericht Monteur oder ist für dieses Unternehmen nicht verfügbar."))
         report_model = request.env["nolte.service.report"]
-        report = report_model.search([("mobile_uuid", "=", mobile_uuid)], limit=1)
         client_revision = int(payload.get("mobileRevision") or 0)
+        # Serialize concurrent taps/retries for the same offline report UUID.
+        # The UNIQUE constraint remains the final integrity safeguard.
+        request.env.cr.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s), hashtext(%s))",
+            ["nolte.service.report.upsert", mobile_uuid],
+        )
+        report = report_model.search([("mobile_uuid", "=", mobile_uuid)], limit=1)
+        if report and report.state not in ("draft", "returned"):
+            if client_revision <= report.mobile_revision:
+                return self._serialize(report)
+            raise UserError(_("Dieser Bericht ist nicht mehr über den Entwurfsabgleich änderbar."))
         expected_server_revision = payload.get("serverRevision")
         if report and expected_server_revision is not None and int(expected_server_revision) != report.server_revision:
             raise UserError(_("Der Bericht wurde auf dem Server geändert. Bitte zuerst die aktuelle Fassung laden."))
@@ -589,17 +626,24 @@ class NolteStundenberichtApiV1(http.Controller):
             if not checklist_uuid:
                 raise UserError(_("Die Checklistenkennung fehlt."))
             received_checklist_uuids.add(checklist_uuid)
+            existing_item = existing_checklist.get(checklist_uuid)
+            visibility = item.get("visibility") or (existing_item.visibility if existing_item else "customer")
+            if visibility not in ("internal", "customer"):
+                raise UserError(_("Die Sichtbarkeit des Checklistenpunkts ist ungültig."))
             values = {
                 "name": str(item["name"]).strip(),
                 "checked": bool(item.get("checked")),
                 "note": str(item.get("note") or "").strip() or False,
                 "sequence": sequence,
+                "visibility": visibility,
             }
             if checklist_uuid in existing_checklist:
                 existing_checklist[checklist_uuid].write(values)
             else:
                 request.env["nolte.service.report.checklist"].create({"report_id": report.id, "mobile_uuid": checklist_uuid, **values})
-        report.checklist_ids.filtered(lambda item: item.mobile_uuid not in received_checklist_uuids).unlink()
+        # Only remove children of the report already authorized above. Mobile
+        # technicians need no unrestricted delete permission on this model.
+        report.checklist_ids.filtered(lambda item: item.mobile_uuid not in received_checklist_uuids).sudo().unlink()
         # A synced draft means the technician has started the field work.
         self._move_task_to_stage(report.task_id, "In Durchführung")
         return self._serialize(report)
@@ -617,34 +661,7 @@ class NolteStundenberichtApiV1(http.Controller):
         # Odoo Binary fields expect only the base64 payload.
         if isinstance(signature, str) and signature.startswith("data:"):
             signature = signature.split(",", 1)[-1]
-        snapshot = self._customer_snapshot(report)
-        snapshot_payload = json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        snapshot_hash = hashlib.sha256(snapshot_payload.encode("utf-8")).hexdigest()
-        report.write({
-            "state": "customer_confirmed",
-            "customer_signer_name": str(signer_name).strip(),
-            "customer_signed_at": fields.Datetime.now(),
-            "customer_signature": signature,
-            "customer_snapshot_payload": snapshot_payload,
-            "customer_snapshot_hash": snapshot_hash,
-            "server_revision": report.server_revision + 1,
-        })
-        pdf, report_format = request.env["ir.actions.report"].sudo()._render_qweb_pdf(
-            "nolte_stundenbericht.action_report_customer_service_report", report.ids
-        )
-        attachment = request.env["ir.attachment"].create({
-            "name": "Kunden-Stundenbericht_%s.pdf" % report.name.replace("/", "-"),
-            "datas": __import__("base64").b64encode(pdf),
-            "mimetype": "application/pdf",
-            "res_model": report._name,
-            "res_id": report.id,
-        })
-        report.write({"customer_pdf_attachment_id": attachment.id})
-        report.message_post(body=_("Kundenfassung bestätigt von %s.") % report.customer_signer_name)
-        self._move_task_to_stage(report.task_id, "Servicebericht prüfen")
-        # Once the customer's signed snapshot is safely stored, pass its hours
-        # to the expense and attendance integrations automatically.
-        report.action_sync_after_customer_confirmation()
+        report._finalize_customer_confirmation(str(signer_name).strip(), signature)
         return self._serialize(report)
 
     @http.route("/nolte_stundenbericht/api/v1/reports/send-customer-email", type="jsonrpc", auth="user", methods=["POST"])
@@ -665,6 +682,7 @@ class NolteStundenberichtApiV1(http.Controller):
         company_email = (report.company_id.email or report.company_id.partner_id.email or "").strip()
         if not company_email:
             raise UserError(_("Für Ihr Unternehmen ist keine Service-E-Mail-Adresse hinterlegt."))
+        copy_recipient = company_email if company_email.casefold() != recipient.casefold() else False
 
         mail = request.env["mail.mail"].sudo().create({
             "subject": _("Stundenbericht %s") % report.name,
@@ -675,13 +693,20 @@ class NolteStundenberichtApiV1(http.Controller):
             "email_from": company_email,
             "reply_to": company_email,
             "email_to": recipient,
+            "email_cc": copy_recipient,
             "attachment_ids": [(4, report.customer_pdf_attachment_id.id)],
             "model": report._name,
             "res_id": report.id,
             "auto_delete": False,
         })
         mail.send()
-        return {"sent": True, "recipient": recipient}
+        return {
+            "sent": mail.state == "sent",
+            "queued": mail.state == "outgoing",
+            "recipient": recipient,
+            "copyRecipient": copy_recipient or "",
+            "error": _("Der Mailserver hat die Nachricht nicht angenommen. Bitte den Prüfer oder Administrator informieren.") if mail.state not in ("sent", "outgoing") else "",
+        }
 
     @http.route("/nolte_stundenbericht/api/v1/reports/internal-amendment", type="jsonrpc", auth="user", methods=["POST"])
     def internal_amendment(self, mobile_uuid, payload, expected_server_revision=None):
@@ -757,6 +782,36 @@ class NolteStundenberichtApiV1(http.Controller):
         report = self._report_for_update(mobile_uuid, expected_server_revision)
         report.action_approve_billing(approved_quantities)
         return self._serialize(report)
+
+    @http.route("/nolte_stundenbericht/reports/preview/<string:mobile_uuid>/<string:preview_format>", type="http", auth="user", methods=["GET"])
+    def customer_preview(self, mobile_uuid, preview_format, **kwargs):
+        if preview_format not in ("pdf", "html"):
+            return request.not_found()
+        # Apply the caller's record rules before rendering with elevated rights.
+        report = request.env["nolte.service.report"].search([("mobile_uuid", "=", mobile_uuid)], limit=1)
+        if not report:
+            return request.not_found()
+        report.check_access("read")
+        renderer = request.env["ir.actions.report"].sudo()
+        report_ref = "nolte_stundenbericht.action_report_customer_service_report"
+        if preview_format == "pdf":
+            if report.customer_pdf_attachment_id:
+                content = report.customer_pdf_attachment_id.raw
+            else:
+                content, _format = renderer._render_qweb_pdf(report_ref, report.ids)
+            content_type = "application/pdf"
+        else:
+            # Reuse the customer template: internal checklist items stay private.
+            content, _format = renderer._render_qweb_html(report_ref, report.ids)
+            preview_style = b"<style>html,body,#wrapwrap{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:#fff}body{overflow-x:auto!important}main{min-width:740px}.ns-footer{position:static!important;margin-top:20px}.ns-service-report{overflow:visible}</style>"
+            content = content.replace(b"</head>", preview_style + b"</head>", 1)
+            content_type = "text/html; charset=utf-8"
+        return request.make_response(content, headers=[
+            ("Content-Type", content_type),
+            ("Content-Disposition", content_disposition("Stundenbericht.%s" % preview_format, disposition_type="inline")),
+            ("Cache-Control", "private, no-store"),
+            ("X-Content-Type-Options", "nosniff"),
+        ])
 
     @http.route("/nolte_stundenbericht/reports/customer-pdf/<string:mobile_uuid>", type="http", auth="user", methods=["GET"])
     def customer_pdf(self, mobile_uuid):

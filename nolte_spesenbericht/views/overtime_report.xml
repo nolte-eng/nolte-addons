@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="paperformat_overtime_year" model="report.paperformat">
+    <field name="name">Überstunden Jahresübersicht A4 quer</field>
+    <field name="format">A4</field>
+    <field name="orientation">Landscape</field>
+    <field name="margin_top">7</field>
+    <field name="margin_bottom">7</field>
+    <field name="margin_left">7</field>
+    <field name="margin_right">7</field>
+    <field name="header_line" eval="False"/>
+    <field name="dpi">96</field>
+  </record>
+
+  <record id="action_report_overtime_year" model="ir.actions.report">
+    <field name="name">Überstunden Jahresübersicht</field>
+    <field name="model">nolte.overtime.export.wizard</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">nolte_spesenbericht.report_overtime_year</field>
+    <field name="report_file">nolte_spesenbericht.report_overtime_year</field>
+    <field name="paperformat_id" ref="paperformat_overtime_year"/>
+    <field name="print_report_name">'Überstunden_%s_%s' % (object.company_id.name.replace(' ', '_'), object.year)</field>
+  </record>
+
+  <template id="report_overtime_year">
+    <t t-call="web.html_container">
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+      <style>.page:last-child { page-break-after: avoid !important; }</style>
+      <t t-foreach="docs" t-as="o">
+        <t t-set="data" t-value="o._overtime_report_data()"/>
+        <div class="page" style="font-family:Arial,sans-serif;color:#0f2d52;padding:3mm 2mm;">
+          <table style="width:100%;border-collapse:collapse;border-bottom:3px solid #0b4a91;margin-bottom:4mm;"><tr>
+            <td style="vertical-align:top;padding-bottom:3mm;">
+              <div style="font-size:9px;font-weight:bold;letter-spacing:1.4px;color:#64768c;">NOLTE - PERSONALUEBERSICHT</div>
+              <h1 style="font-size:23px;line-height:1.1;margin:2mm 0 1mm;">Ueberstunden <t t-esc="o.year"/></h1>
+              <div style="font-size:10px;">Unternehmen: <strong t-esc="o._ascii(o.company_id.name)"/> - Stand: <t t-esc="time.strftime('%d.%m.%Y')"/></div>
+            </td>
+            <td style="width:45mm;text-align:right;vertical-align:top;padding-bottom:3mm;"><img t-att-src="image_data_uri(o.company_id.logo)" style="max-width:42mm;max-height:14mm;"/></td>
+          </tr></table>
+
+          <t t-if="not data['rows']">
+            <div style="padding:15mm;text-align:center;background:#f2f5f8;border-radius:4mm;">Für dieses Jahr sind noch keine Spesenberichte vorhanden.</div>
+          </t>
+          <t t-foreach="[('Geleistete Stunden', 'worked'), ('Sollstunden', 'target'), ('Ueberstunden / Monatssaldo', 'balance')]" t-as="section">
+            <t t-if="data['rows']">
+              <h2 style="font-size:13px;margin:4mm 0 1.5mm;color:#0f2d52;" t-esc="section[0]"/>
+              <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px;">
+                <thead>
+                  <tr style="background:#0f2d52;color:white;">
+                    <th style="width:34mm;text-align:left;padding:1.5mm;">Mitarbeiter</th>
+                    <t t-foreach="data['months']" t-as="month"><th style="padding:1.5mm .5mm;text-align:center;" t-esc="month"/></t>
+                    <th style="width:17mm;padding:1.5mm .5mm;text-align:center;background:#0b4a91;">Gesamt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <t t-foreach="data['rows']" t-as="row">
+                    <tr t-att-style="'background:#f2f5f8;' if row_index % 2 else 'background:#ffffff;'">
+                      <td style="padding:1.25mm 1.5mm;border:1px solid #cbd5df;font-weight:bold;" t-esc="o._ascii(row['employee'])"/>
+                      <t t-foreach="row[section[1]]" t-as="value">
+                        <td t-att-style="'padding:1.25mm .5mm;border:1px solid #cbd5df;text-align:center;color:#b42318;font-weight:bold;' if section[1] == 'balance' and value is not None and value &lt; 0 else ('padding:1.25mm .5mm;border:1px solid #cbd5df;text-align:center;color:#177245;font-weight:bold;' if section[1] == 'balance' and value is not None and value &gt; 0 else 'padding:1.25mm .5mm;border:1px solid #cbd5df;text-align:center;')" t-esc="o._format_hours(value)"/>
+                      </t>
+                      <t t-set="total_value" t-value="row[section[1] + '_total']"/>
+                      <td t-att-style="'padding:1.25mm .5mm;border:1px solid #8fa6bd;text-align:center;background:#e6eef7;color:#b42318;font-weight:bold;' if section[1] == 'balance' and total_value &lt; 0 else ('padding:1.25mm .5mm;border:1px solid #8fa6bd;text-align:center;background:#e6eef7;color:#177245;font-weight:bold;' if section[1] == 'balance' and total_value &gt; 0 else 'padding:1.25mm .5mm;border:1px solid #8fa6bd;text-align:center;background:#e6eef7;font-weight:bold;')" t-esc="o._format_hours(total_value)"/>
+                    </tr>
+                  </t>
+                </tbody>
+              </table>
+            </t>
+          </t>
+          <div style="margin-top:4mm;padding-top:2mm;border-top:1px solid #8fa6bd;font-size:7.5px;color:#64768c;">
+            Grundlage: <t t-if="data['include_drafts']">alle vorhandenen Monatsberichte einschliesslich Entwuerfen</t><t t-else="">eingereichte, freigegebene oder an Odoo uebergebene Monatsberichte</t>. Leere Felder bedeuten, dass kein beruecksichtigter Monatsbericht vorhanden ist. Zeitformat: Stunden:Minuten.
+          </div>
+        </div>
+      </t>
+    </t>
+  </template>
+</odoo>

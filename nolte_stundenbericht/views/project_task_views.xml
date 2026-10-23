@@ -4,6 +4,11 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_open_nolte_customer_history" type="object"
+                        string="Kundenhistorie" class="oe_highlight"
+                        groups="nolte_stundenbericht.group_stundenbericht_user"/>
+            </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Einsatz-Stammdaten" name="nolte_service_defaults">
                     <group>

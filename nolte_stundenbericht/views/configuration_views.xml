@@ -1,0 +1,52 @@
+<odoo>
+    <record id="view_nolte_machine_type_list" model="ir.ui.view">
+        <field name="name">nolte.machine.type.list</field>
+        <field name="model">nolte.machine.type</field>
+        <field name="arch" type="xml"><list editable="bottom"><field name="name"/></list></field>
+    </record>
+    <record id="action_nolte_machine_type" model="ir.actions.act_window">
+        <field name="name">Maschinentypen</field>
+        <field name="res_model">nolte.machine.type</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_nolte_machine_type_list"/>
+    </record>
+    <record id="view_nolte_employee_source_list" model="ir.ui.view">
+        <field name="name">hr.employee.stundenbericht.source.list</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0">
+                <field name="name" readonly="1"/>
+                <field name="user_id" readonly="1"/>
+                <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                <field name="stundenbericht_source" groups="hr.group_hr_user"/>
+                <field name="stundenbericht_app_active_from" groups="hr.group_hr_user" readonly="stundenbericht_source == 'csv'"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_nolte_employee_source" model="ir.actions.act_window">
+        <field name="name">Mitarbeiter / Erfassungsquelle</field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_nolte_employee_source_list"/>
+        <field name="domain" eval="[('user_id.group_ids', 'in', [ref('group_stundenbericht_user')])]"/>
+    </record>
+    <record id="action_nolte_service_company" model="ir.actions.server">
+        <field name="name">Unternehmen / Serviceadresse</field>
+        <field name="model_id" ref="base.model_res_company"/>
+        <field name="state">code</field>
+        <field name="code">action = {'type': 'ir.actions.act_window', 'name': 'Unternehmen / Serviceadresse', 'res_model': 'res.company', 'res_id': env.company.id, 'view_mode': 'form', 'target': 'current'}</field>
+    </record>
+    <record id="action_nolte_service_sequence" model="ir.actions.act_window">
+        <field name="name">Berichtsnummerierung</field>
+        <field name="res_model">ir.sequence</field>
+        <field name="view_mode">form</field>
+        <field name="res_id" ref="seq_nolte_service_report"/>
+    </record>
+    <menuitem id="menu_nolte_machine_type" name="Maschinentypen" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_machine_type" sequence="40" groups="group_stundenbericht_manager"/>
+    <menuitem id="menu_nolte_service_billing_settings" name="Artikelzuordnung / Abrechnung" parent="menu_nolte_stundenbericht_configuration" action="nolte_overtime_billing.action_nolte_overtime_settings" sequence="50" groups="group_stundenbericht_manager"/>
+    <menuitem id="menu_nolte_service_expense_settings" name="Spesenprodukte" parent="menu_nolte_stundenbericht_configuration" action="nolte_spesenbericht.action_nolte_expense_config" sequence="60" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+    <menuitem id="menu_nolte_service_bmf_settings" name="BMF-Pauschalen" parent="menu_nolte_stundenbericht_configuration" action="nolte_spesenbericht.action_nolte_bmf_rates" sequence="70" groups="nolte_spesenbericht.group_spesenbericht_manager"/>
+    <menuitem id="menu_nolte_employee_source" name="Mitarbeiter / Erfassungsquelle" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_employee_source" sequence="80" groups="hr.group_hr_user"/>
+    <menuitem id="menu_nolte_service_company" name="Unternehmen / Serviceadresse" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_service_company" sequence="90" groups="base.group_system"/>
+    <menuitem id="menu_nolte_service_sequence" name="Berichtsnummerierung" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_service_sequence" sequence="100" groups="base.group_system"/>
+</odoo>

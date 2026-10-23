@@ -1,0 +1,53 @@
+<odoo>
+    <record id="view_nolte_service_work_template_list" model="ir.ui.view">
+        <field name="name">nolte.service.work.template.list</field>
+        <field name="model">nolte.service.work.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_nolte_service_work_template_form" model="ir.ui.view">
+        <field name="name">nolte.service.work.template.form</field>
+        <field name="model">nolte.service.work.template</field>
+        <field name="arch" type="xml">
+            <form string="Arbeitsvorlage">
+                <sheet>
+                    <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-warning" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title"><label for="name"/><h1><field name="name" placeholder="z. B. Wartung oder Störungsbehebung"/></h1></div>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="sequence"/>
+                    </group>
+                    <p class="text-muted">Diese Vorlage steht den Monteuren optional bei „Ausgeführte Arbeiten“ zur Verfügung. Der eingefügte Text kann im Bericht frei angepasst werden. Änderungen an der Vorlage verändern keine bestehenden Berichte.</p>
+                    <field name="body" nolabel="1" placeholder="Einheitlicher Text oder Gliederung mit Platzhaltern für den jeweiligen Einsatz …"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_nolte_service_work_template_search" model="ir.ui.view">
+        <field name="name">nolte.service.work.template.search</field>
+        <field name="model">nolte.service.work.template</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="body"/>
+                <filter name="archived" string="Archiviert" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_nolte_service_work_template" model="ir.actions.act_window">
+        <field name="name">Arbeitsvorlagen</field>
+        <field name="res_model">nolte.service.work.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_nolte_service_work_template_search"/>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Zentrale Vorlage für ausgeführte Arbeiten anlegen</p><p>Monteure können Vorlagen freiwillig übernehmen und den Text anschließend anpassen.</p></field>
+    </record>
+    <menuitem id="menu_nolte_service_work_template" name="Arbeitsvorlagen"
+              parent="menu_nolte_stundenbericht_configuration" action="action_nolte_service_work_template"
+              groups="group_stundenbericht_manager" sequence="30"/>
+</odoo>

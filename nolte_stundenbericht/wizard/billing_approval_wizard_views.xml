@@ -3,7 +3,7 @@
         <field name="name">nolte.service.report.billing.wizard.form</field>
         <field name="model">nolte.service.report.billing.wizard</field>
         <field name="arch" type="xml">
-            <form string="Abrechnung freigeben">
+            <form string="Abrechnung prüfen und an Verkauf übergeben">
                 <group><field name="report_id"/></group>
                 <div class="alert alert-info" role="alert"><strong>Prüfen vor Freigabe:</strong> Links stehen die berechneten Mengen. Die Felder „Freigabe“ dürfen reduziert oder auf null gesetzt werden; die Originalzeiten bleiben unverändert.</div>
                 <field name="line_ids">
@@ -23,7 +23,7 @@
                     </list>
                 </field>
                 <footer>
-                    <button name="action_approve" type="object" string="Auftragspositionen erzeugen" class="btn-primary"/>
+                    <button name="action_approve" type="object" string="Freigeben und an Verkauf übergeben" class="btn-primary"/>
                     <button string="Abbrechen" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
