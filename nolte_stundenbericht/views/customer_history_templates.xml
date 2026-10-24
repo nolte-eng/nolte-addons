@@ -17,7 +17,7 @@
                                     <h2 class="h5 mb-1"><t t-esc="item['number']"/></h2>
                                     <div class="text-muted"><t t-esc="item['date']"/></div>
                                 </div>
-                                <a class="btn btn-outline-primary" t-att-href="'/my/stundenbericht/history/%s/%s.pdf' % (task.id, item['id'])" target="_blank" rel="noopener">PDF ansehen</a>
+                                <a class="btn btn-outline-primary" t-att-href="('/my/stundenbericht/history/%s/legacy/%s.pdf' % (task.id, item['id'])) if item['kind'] == 'legacy' else ('/my/stundenbericht/history/%s/%s.pdf' % (task.id, item['id']))" target="_blank" rel="noopener">PDF ansehen</a>
                             </div>
                             <div t-if="item['machine_number'] or item['machine_type'] or item['location']" class="small mt-3">
                                 <span t-if="item['machine_number']"><strong>Maschine:</strong> <t t-esc="item['machine_number']"/> </span>

@@ -1,0 +1,120 @@
+<odoo>
+    <record id="view_nolte_service_legacy_archive_list" model="ir.ui.view">
+        <field name="name">nolte.service.report.legacy.archive.list</field>
+        <field name="model">nolte.service.report.legacy.archive</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="service_date"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="technician_name"/>
+                <field name="machine_number"/>
+                <field name="invoice_id"/>
+                <button name="action_open_pdf" type="object" string="PDF ansehen" icon="fa-file-pdf-o"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_nolte_service_legacy_archive_form" model="ir.ui.view">
+        <field name="name">nolte.service.report.legacy.archive.form</field>
+        <field name="model">nolte.service.report.legacy.archive</field>
+        <field name="arch" type="xml">
+            <form string="Historischer Stundenbericht">
+                <header><button name="action_open_pdf" type="object" string="PDF ansehen" class="btn-primary" icon="fa-file-pdf-o"/></header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                            <field name="service_date"/>
+                            <field name="period_text"/>
+                        </group>
+                        <group>
+                            <field name="technician_name"/>
+                            <field name="machine_number"/>
+                            <field name="machine_type"/>
+                            <field name="invoice_id"/>
+                            <field name="attachment_id" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_nolte_service_legacy_archive_search" model="ir.ui.view">
+        <field name="name">nolte.service.report.legacy.archive.search</field>
+        <field name="model">nolte.service.report.legacy.archive</field>
+        <field name="arch" type="xml">
+            <search string="Alte Stundenberichte">
+                <field name="name"/><field name="partner_id"/><field name="technician_name"/>
+                <field name="machine_number"/><field name="machine_type"/><field name="service_date"/>
+                <filter name="group_customer" string="Kunde" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_month" string="Monat" context="{'group_by': 'service_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_nolte_service_legacy_archive" model="ir.actions.act_window">
+        <field name="name">Alte Stundenberichte (PDF)</field>
+        <field name="res_model">nolte.service.report.legacy.archive</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_nolte_service_legacy_archive_search"/>
+        <field name="context">{'search_default_group_customer': 1, 'search_default_group_month': 1}</field>
+    </record>
+
+    <record id="view_nolte_service_legacy_import_form" model="ir.ui.view">
+        <field name="name">nolte.service.report.legacy.import.form</field>
+        <field name="model">nolte.service.report.legacy.import</field>
+        <field name="arch" type="xml">
+            <form string="Alte Stundenberichte aus PDF-Anhängen übernehmen" create="0" delete="0">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Das Original-PDF bleibt an der Rechnung bzw. Nachricht. Im Archiv wird nur ein Verweis mit Suchdaten angelegt; dadurch wird kein Speicherplatz doppelt belegt.
+                    </div>
+                    <group>
+                        <field name="company_id"/>
+                        <field name="date_from"/><field name="date_to"/>
+                        <field name="keywords"/>
+                        <field name="include_all_invoice_pdfs"/>
+                        <field name="max_candidates"/>
+                    </group>
+                    <button name="action_scan" type="object" string="PDF-Anhänge durchsuchen" class="btn-primary"/>
+                    <field name="scanned_at" invisible="not scanned_at" readonly="1"/>
+                    <separator string="Vorschau" invisible="not line_ids"/>
+                    <field name="line_ids" nolabel="1" invisible="not line_ids">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="selected" readonly="status in ('already_linked', 'imported')"/>
+                            <field name="status" readonly="1"/>
+                            <field name="attachment_id"/>
+                            <field name="invoice_id"/>
+                            <field name="partner_id"/>
+                            <field name="service_date"/>
+                            <field name="period_text"/>
+                            <field name="technician_name"/>
+                            <field name="machine_number"/>
+                            <field name="machine_type"/>
+                        </list>
+                    </field>
+                    <div class="alert alert-warning" role="alert" invisible="not line_ids">
+                        „Bitte prüfen“ bedeutet: Die Datei heißt nicht eindeutig Stunden- oder Servicebericht. Sie wird erst übernommen, wenn Sie sie auswählen.
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_import_selected" type="object" string="Ausgewählte ohne Dateikopie ins Archiv übernehmen" class="btn-primary" invisible="not line_ids"/>
+                    <button string="Schließen" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_nolte_service_legacy_import" model="ir.actions.act_window">
+        <field name="name">Alte PDF-Berichte übernehmen</field>
+        <field name="res_model">nolte.service.report.legacy.import</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_nolte_service_legacy_archive" name="Alte PDF-Berichte" parent="menu_nolte_service_report_archive" action="action_nolte_service_legacy_archive" groups="group_stundenbericht_approver" sequence="20"/>
+    <menuitem id="menu_nolte_service_legacy_import" name="Alte PDF-Berichte übernehmen" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_service_legacy_import" groups="group_stundenbericht_manager" sequence="110"/>
+</odoo>

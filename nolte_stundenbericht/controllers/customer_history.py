@@ -38,6 +38,16 @@ class NolteCustomerHistory(http.Controller):
             ("partner_id", "child_of", commercial_partner.id),
         ], order="service_date desc, id desc", limit=100)
 
+    def _history_legacy_documents(self, task):
+        partner = task.partner_id
+        if not partner:
+            return request.env["nolte.service.report.legacy.archive"].sudo().browse()
+        commercial_partner = partner.commercial_partner_id
+        return request.env["nolte.service.report.legacy.archive"].sudo().search([
+            ("company_id", "in", request.env.user.company_ids.ids),
+            ("partner_id", "child_of", commercial_partner.id),
+        ], order="service_date desc, id desc", limit=100)
+
     @http.route("/my/stundenbericht/history/<int:task_id>", type="http", auth="user", website=True, sitemap=False)
     def customer_history(self, task_id, **kwargs):
         task = self._authorized_task(task_id)
@@ -55,6 +65,7 @@ class NolteCustomerHistory(http.Controller):
             except (TypeError, ValueError):
                 pass
             rows.append({
+                "kind": "report",
                 "id": report.id,
                 "number": data.get("number") or report.name,
                 "date": service_date,
@@ -64,12 +75,41 @@ class NolteCustomerHistory(http.Controller):
                 "work_description": data.get("workDescription") or "",
                 "work_result": data.get("workResult") or "",
             })
+        for document in self._history_legacy_documents(task):
+            service_date = document.service_date.strftime("%d.%m.%Y") if document.service_date else ""
+            rows.append({
+                "kind": "legacy",
+                "id": document.id,
+                "number": document.name,
+                "date": document.period_text or service_date,
+                "machine_number": document.machine_number or "",
+                "machine_type": document.machine_type or "",
+                "location": "",
+                "work_description": "",
+                "work_result": "",
+            })
+        rows.sort(key=lambda item: item["date"] or "", reverse=True)
         response = request.render("nolte_stundenbericht.customer_history_page", {
             "task": task,
             "history": rows,
         })
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         return response
+
+    @http.route("/my/stundenbericht/history/<int:task_id>/legacy/<int:document_id>.pdf", type="http", auth="user", methods=["GET"], sitemap=False)
+    def customer_history_legacy_pdf(self, task_id, document_id, **kwargs):
+        task = self._authorized_task(task_id)
+        document = self._history_legacy_documents(task).filtered(lambda item: item.id == document_id)[:1]
+        if not document:
+            raise AccessError(_("Dieser archivierte Stundenbericht ist nicht verfügbar."))
+        attachment = document.attachment_id.sudo().exists()
+        if not attachment:
+            raise AccessError(_("Das verknüpfte PDF wurde nicht gefunden."))
+        return request.make_response(attachment.raw or b"", headers=[
+            ("Content-Type", attachment.mimetype or "application/pdf"),
+            ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name)),
+            ("Cache-Control", "private, no-store"),
+        ])
 
     @http.route("/my/stundenbericht/history/<int:task_id>/<int:report_id>.pdf", type="http", auth="user", methods=["GET"], sitemap=False)
     def customer_history_pdf(self, task_id, report_id, **kwargs):

@@ -5,3 +5,4 @@ from . import project_task
 from . import work_template
 from . import checklist_template
 from . import online_signature
+from . import legacy_archive

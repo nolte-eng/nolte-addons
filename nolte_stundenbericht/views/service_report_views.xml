@@ -204,8 +204,14 @@
               parent="menu_nolte_stundenbericht_root" action="action_nolte_service_report"
               groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="10"/>
     <menuitem id="menu_nolte_service_report_archive" name="Archiv"
-              parent="menu_nolte_stundenbericht_root" action="action_nolte_service_report_archive"
+              parent="menu_nolte_stundenbericht_root"
               groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="20"/>
+    <record id="menu_nolte_service_report_archive" model="ir.ui.menu">
+        <field name="action" eval="False"/>
+    </record>
+    <menuitem id="menu_nolte_service_report_archive_current" name="Einsatzberichte"
+              parent="menu_nolte_service_report_archive" action="action_nolte_service_report_archive"
+              groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="10"/>
     <menuitem id="menu_nolte_stundenbericht_create" name="Stundenbericht erstellen"
               parent="menu_nolte_stundenbericht_root"
               action="action_nolte_stundenbericht_create_mobile"
