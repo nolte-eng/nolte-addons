@@ -3,11 +3,14 @@
     <template id="customer_history_page" name="Kundenhistorie Stundenberichte">
         <t t-call="website.layout">
             <main id="wrap" class="container py-4">
-                <div class="mb-4">
-                    <h1 class="h3">Bisherige Stundenberichte</h1>
-                    <p class="text-muted mb-1"><strong>Einsatz:</strong> <t t-esc="task.name"/></p>
-                    <p class="text-muted mb-0"><strong>Kunde:</strong> <t t-esc="task.partner_id.commercial_partner_id.display_name or '–'"/></p>
-                    <p class="small text-muted mt-2 mb-0">Angezeigt werden nur kundenbestätigte Berichte dieses Kunden. Interne Notizen und Abrechnungsdaten sind nicht enthalten.</p>
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <h1 class="h3">Bisherige Stundenberichte</h1>
+                        <p class="text-muted mb-1"><strong>Einsatz:</strong> <t t-esc="task.name"/></p>
+                        <p class="text-muted mb-0"><strong>Kunde:</strong> <t t-esc="task.partner_id.commercial_partner_id.display_name or '–'"/></p>
+                        <p class="small text-muted mt-2 mb-0">Angezeigt werden nur kundenbestätigte Berichte dieses Kunden. Interne Notizen und Abrechnungsdaten sind nicht enthalten.</p>
+                    </div>
+                    <a href="/my/stundenbericht" class="btn btn-outline-secondary">← Zurück zum Stundenbericht</a>
                 </div>
                 <t t-if="history">
                     <article t-foreach="history" t-as="item" class="card mb-3">
