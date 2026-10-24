@@ -105,9 +105,12 @@ class NolteCustomerHistory(http.Controller):
         attachment = document.attachment_id.sudo().exists()
         if not attachment:
             raise AccessError(_("Das verknüpfte PDF wurde nicht gefunden."))
-        return request.make_response(attachment.raw or b"", headers=[
+        pdf = attachment.raw
+        if not pdf:
+            raise AccessError(_("Die Originaldatei dieses archivierten Berichts ist nicht verfügbar."))
+        return request.make_response(pdf, headers=[
             ("Content-Type", attachment.mimetype or "application/pdf"),
-            ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name)),
+            ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name).replace("attachment;", "inline;", 1)),
             ("Cache-Control", "private, no-store"),
         ])
 
@@ -122,9 +125,12 @@ class NolteCustomerHistory(http.Controller):
         attachment = document.attachment_id.sudo().exists()
         if not attachment:
             raise AccessError(_("Das verknüpfte PDF wurde nicht gefunden."))
-        return request.make_response(attachment.raw or b"", headers=[
+        pdf = attachment.raw
+        if not pdf:
+            raise AccessError(_("Die Originaldatei dieses archivierten Berichts ist nicht verfügbar."))
+        return request.make_response(pdf, headers=[
             ("Content-Type", attachment.mimetype or "application/pdf"),
-            ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name)),
+            ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name).replace("attachment;", "inline;", 1)),
             ("Cache-Control", "private, no-store"),
         ])
 
