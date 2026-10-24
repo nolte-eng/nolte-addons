@@ -64,7 +64,7 @@ class NolteServiceLegacyArchive(models.Model):
     @api.model
     def _invoice_note_text(self, invoice):
         """Return all invoice display lines, where legacy exports keep metadata."""
-        return "\n".join(invoice.invoice_line_ids.filtered("display_type").mapped("name"))
+        return "\n".join(filter(None, invoice.invoice_line_ids.filtered("display_type").mapped("name")))
 
     @api.model
     def _metadata_from_invoice(self, invoice, attachment):
