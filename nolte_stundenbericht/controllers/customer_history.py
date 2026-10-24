@@ -111,6 +111,23 @@ class NolteCustomerHistory(http.Controller):
             ("Cache-Control", "private, no-store"),
         ])
 
+    @http.route("/nolte_stundenbericht/legacy-archive/<int:document_id>/pdf", type="http", auth="user", methods=["GET"], sitemap=False)
+    def legacy_archive_pdf(self, document_id, **kwargs):
+        """Open an indexed invoice attachment from the backend archive."""
+        document = request.env["nolte.service.report.legacy.archive"].browse(document_id).exists()
+        if not document:
+            raise AccessError(_("Dieser archivierte Stundenbericht ist nicht verfügbar."))
+        document.check_access("read")
+        document.check_access_rule("read")
+        attachment = document.attachment_id.sudo().exists()
+        if not attachment:
+            raise AccessError(_("Das verknüpfte PDF wurde nicht gefunden."))
+        return request.make_response(attachment.raw or b"", headers=[
+            ("Content-Type", attachment.mimetype or "application/pdf"),
+            ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name)),
+            ("Cache-Control", "private, no-store"),
+        ])
+
     @http.route("/my/stundenbericht/history/<int:task_id>/<int:report_id>.pdf", type="http", auth="user", methods=["GET"], sitemap=False)
     def customer_history_pdf(self, task_id, report_id, **kwargs):
         task = self._authorized_task(task_id)
