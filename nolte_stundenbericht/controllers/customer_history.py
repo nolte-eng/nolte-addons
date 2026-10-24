@@ -84,7 +84,7 @@ class NolteCustomerHistory(http.Controller):
                 "date": document.period_text or service_date,
                 "machine_number": document.machine_number or "",
                 "machine_type": document.machine_type or "",
-                "location": "",
+                "location": document.service_location or "",
                 "work_description": "",
                 "work_result": "",
             })
@@ -133,6 +133,18 @@ class NolteCustomerHistory(http.Controller):
             ("Content-Disposition", content_disposition(attachment.name or "%s.pdf" % document.name).replace("attachment;", "inline;", 1)),
             ("Cache-Control", "private, no-store"),
         ])
+
+    @http.route("/nolte_stundenbericht/legacy-archive/<int:document_id>/preview", type="http", auth="user", methods=["GET"], sitemap=False)
+    def legacy_archive_preview(self, document_id, **kwargs):
+        document = request.env["nolte.service.report.legacy.archive"].browse(document_id).exists()
+        if not document:
+            raise AccessError(_("Dieser archivierte Stundenbericht ist nicht verfügbar."))
+        document.check_access("read")
+        document.check_access_rule("read")
+        return request.render("nolte_stundenbericht.legacy_archive_preview", {
+            "document": document,
+            "archive_action_id": request.env.ref("nolte_stundenbericht.action_nolte_service_legacy_archive").id,
+        })
 
     @http.route("/my/stundenbericht/history/<int:task_id>/<int:report_id>.pdf", type="http", auth="user", methods=["GET"], sitemap=False)
     def customer_history_pdf(self, task_id, report_id, **kwargs):

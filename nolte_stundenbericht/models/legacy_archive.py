@@ -11,7 +11,7 @@ class NolteServiceLegacyArchive(models.Model):
     """
 
     _name = "nolte.service.report.legacy.archive"
-    _description = "Archivierter Stundenbericht (bestehendes PDF)"
+    _description = "Archivierter PDF-Bericht (bestehendes PDF)"
     _order = "service_date desc, id desc"
 
     name = fields.Char(required=True, index=True)
@@ -23,6 +23,7 @@ class NolteServiceLegacyArchive(models.Model):
     service_date = fields.Date(string="Einsatzdatum", index=True)
     period_text = fields.Char(string="Zeitraum")
     technician_name = fields.Char(string="Servicetechniker")
+    service_location = fields.Char(string="Einsatzort", index=True)
     machine_number = fields.Char(string="Maschinen-Nr.")
     machine_type = fields.Char(string="Maschinentyp")
     import_source = fields.Selection([
@@ -40,9 +41,19 @@ class NolteServiceLegacyArchive(models.Model):
         self.ensure_one()
         return {
             "type": "ir.actions.act_url",
-            "url": "/nolte_stundenbericht/legacy-archive/%s/pdf" % self.id,
+            "url": "/nolte_stundenbericht/legacy-archive/%s/preview" % self.id,
             "target": "new",
         }
+
+    def action_refresh_metadata(self):
+        """Refresh searchable fields from the linked invoice without copying a PDF."""
+        for record in self:
+            values = self._metadata_from_invoice(record.invoice_id, record.attachment_id)
+            record.write({key: values[key] for key in (
+                "name", "service_date", "period_text", "technician_name",
+                "service_location", "machine_number", "machine_type",
+            )})
+        return True
 
     @api.model
     def _is_candidate_filename(self, filename, keywords=None):
@@ -66,7 +77,7 @@ class NolteServiceLegacyArchive(models.Model):
 
         period = find((r"einsatzzeitraum", r"zeitraum", r"period"))
         return {
-            "name": _("Historischer Stundenbericht – %s") % (attachment.name or invoice.name),
+            "name": attachment.name or invoice.name,
             "company_id": invoice.company_id.id,
             "partner_id": invoice.partner_id.commercial_partner_id.id,
             "invoice_id": invoice.id,
@@ -74,6 +85,7 @@ class NolteServiceLegacyArchive(models.Model):
             "service_date": invoice.invoice_date,
             "period_text": period,
             "technician_name": find((r"servicetechniker", r"service technician")),
+            "service_location": find((r"einsatzort", r"ausf(?:ü|u)hrungsort", r"work site", r"service location")) or invoice.partner_shipping_id.display_name or False,
             "machine_number": find((r"maschinen(?:[- ]?nr\\.?| no\\.?)", r"machine(?:[- ]?no\\.?| number)?")),
             "machine_type": find((r"maschinentyp", r"machine type")),
         }

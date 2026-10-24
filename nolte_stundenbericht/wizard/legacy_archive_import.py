@@ -47,6 +47,7 @@ class NolteServiceLegacyArchiveImport(models.TransientModel):
                 "service_date": metadata["service_date"],
                 "period_text": metadata["period_text"],
                 "technician_name": metadata["technician_name"],
+                "service_location": metadata["service_location"],
                 "machine_number": metadata["machine_number"],
                 "machine_type": metadata["machine_type"],
             })
@@ -68,6 +69,7 @@ class NolteServiceLegacyArchiveImport(models.TransientModel):
                 "service_date": line.service_date or values["service_date"],
                 "period_text": line.period_text,
                 "technician_name": line.technician_name,
+                "service_location": line.service_location,
                 "machine_number": line.machine_number,
                 "machine_type": line.machine_type,
             })
@@ -96,5 +98,6 @@ class NolteServiceLegacyArchiveImportLine(models.TransientModel):
     service_date = fields.Date(string="Einsatzdatum")
     period_text = fields.Char(string="Zeitraum")
     technician_name = fields.Char(string="Servicetechniker")
+    service_location = fields.Char(string="Einsatzort")
     machine_number = fields.Char(string="Maschinen-Nr.")
     machine_type = fields.Char(string="Maschinentyp")

@@ -7,6 +7,7 @@
                 <field name="service_date"/>
                 <field name="name"/>
                 <field name="partner_id"/>
+                <field name="service_location"/>
                 <field name="technician_name"/>
                 <field name="machine_number"/>
                 <field name="invoice_id"/>
@@ -19,8 +20,11 @@
         <field name="name">nolte.service.report.legacy.archive.form</field>
         <field name="model">nolte.service.report.legacy.archive</field>
         <field name="arch" type="xml">
-            <form string="Historischer Stundenbericht">
-                <header><button name="action_open_pdf" type="object" string="PDF ansehen" class="btn-primary" icon="fa-file-pdf-o"/></header>
+            <form string="Archivierter PDF-Bericht">
+                <header>
+                    <button name="action_open_pdf" type="object" string="PDF ansehen" class="btn-primary" icon="fa-file-pdf-o"/>
+                    <button name="action_refresh_metadata" type="object" string="Daten aus Rechnung aktualisieren" groups="group_stundenbericht_manager"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
@@ -31,6 +35,7 @@
                         </group>
                         <group>
                             <field name="technician_name"/>
+                            <field name="service_location"/>
                             <field name="machine_number"/>
                             <field name="machine_type"/>
                             <field name="invoice_id"/>
@@ -48,9 +53,10 @@
         <field name="arch" type="xml">
             <search string="Alte Stundenberichte">
                 <field name="name"/><field name="partner_id"/><field name="technician_name"/>
-                <field name="machine_number"/><field name="machine_type"/><field name="service_date"/>
+                <field name="machine_number"/><field name="machine_type"/><field name="service_location"/><field name="service_date"/>
                 <filter name="group_customer" string="Kunde" context="{'group_by': 'partner_id'}"/>
                 <filter name="group_month" string="Monat" context="{'group_by': 'service_date:month'}"/>
+                <filter name="group_location" string="Einsatzort" context="{'group_by': 'service_location'}"/>
             </search>
         </field>
     </record>
@@ -92,6 +98,7 @@
                             <field name="service_date"/>
                             <field name="period_text"/>
                             <field name="technician_name"/>
+                            <field name="service_location"/>
                             <field name="machine_number"/>
                             <field name="machine_type"/>
                         </list>
@@ -117,4 +124,19 @@
 
     <menuitem id="menu_nolte_service_legacy_archive" name="Alte PDF-Berichte" parent="menu_nolte_service_report_archive" action="action_nolte_service_legacy_archive" groups="group_stundenbericht_approver" sequence="20"/>
     <menuitem id="menu_nolte_service_legacy_import" name="Alte PDF-Berichte übernehmen" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_service_legacy_import" groups="group_stundenbericht_manager" sequence="110"/>
+
+    <template id="legacy_archive_preview" name="Vorschau historischer Stundenbericht">
+        <t t-call="website.layout">
+            <main id="wrap" class="container py-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h1 class="h4 mb-0"><t t-esc="document.name"/></h1>
+                        <span class="text-muted" t-if="document.service_location"><t t-esc="document.service_location"/></span>
+                    </div>
+                    <a t-att-href="'/odoo/action-%s' % archive_action_id" class="btn btn-outline-secondary">← Zurück zum Archiv</a>
+                </div>
+                <iframe t-att-src="'/nolte_stundenbericht/legacy-archive/%s/pdf' % document.id" title="PDF-Vorschau" style="width: 100%; height: calc(100vh - 190px); min-height: 680px; border: 1px solid #dee2e6; border-radius: .25rem;"/>
+            </main>
+        </t>
+    </template>
 </odoo>
