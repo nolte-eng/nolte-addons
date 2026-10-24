@@ -134,7 +134,7 @@ class NolteCustomerHistory(http.Controller):
             ("Cache-Control", "private, no-store"),
         ])
 
-    @http.route("/nolte_stundenbericht/legacy-archive/<int:document_id>/preview", type="http", auth="user", methods=["GET"], sitemap=False)
+    @http.route("/nolte_stundenbericht/legacy-archive/<int:document_id>/preview", type="http", auth="user", website=True, methods=["GET"], sitemap=False)
     def legacy_archive_preview(self, document_id, **kwargs):
         document = request.env["nolte.service.report.legacy.archive"].browse(document_id).exists()
         if not document:
