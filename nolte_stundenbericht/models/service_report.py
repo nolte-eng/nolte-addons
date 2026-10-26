@@ -980,7 +980,7 @@ class NolteServiceReportChecklist(models.Model):
         ("customer", "Kundencheckliste – erscheint im PDF"),
     ], string="Sichtbarkeit", required=True, default="customer", index=True)
 
-    _checklist_uuid_unique = models.Constraint("UNIQUE(mobile_uuid)", "Die Checklistenkennung muss eindeutig sein.")
+    _checklist_uuid_unique = models.Constraint("UNIQUE(report_id, mobile_uuid)", "Die Checklistenkennung muss innerhalb des Berichts eindeutig sein.")
 
 
 class NolteServiceReportSegment(models.Model):
