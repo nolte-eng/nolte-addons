@@ -614,7 +614,13 @@ class NolteStundenberichtApiV1(http.Controller):
             else:
                 request.env["nolte.service.report.material"].create({"report_id": report.id, "mobile_uuid": material_uuid, **values})
         report.material_ids.filtered(lambda material: material.mobile_uuid not in received_material_uuids).unlink()
-        checklist = payload.get("checklist") or []
+        self._sync_checklist(report, payload.get("checklist") or [])
+        # A synced draft means the technician has started the field work.
+        self._move_task_to_stage(report.task_id, "In Durchführung")
+        return self._serialize(report)
+
+    def _sync_checklist(self, report, checklist):
+        """Synchronize checklist IDs within the already authorized report."""
         if not isinstance(checklist, list):
             raise UserError(_("Die Checkliste ist ungültig."))
         existing_checklist = {item.mobile_uuid: item for item in report.checklist_ids}
@@ -640,13 +646,10 @@ class NolteStundenberichtApiV1(http.Controller):
             if checklist_uuid in existing_checklist:
                 existing_checklist[checklist_uuid].write(values)
             else:
-                request.env["nolte.service.report.checklist"].create({"report_id": report.id, "mobile_uuid": checklist_uuid, **values})
+                existing_checklist[checklist_uuid] = report.env["nolte.service.report.checklist"].create({"report_id": report.id, "mobile_uuid": checklist_uuid, **values})
         # Only remove children of the report already authorized above. Mobile
         # technicians need no unrestricted delete permission on this model.
         report.checklist_ids.filtered(lambda item: item.mobile_uuid not in received_checklist_uuids).sudo().unlink()
-        # A synced draft means the technician has started the field work.
-        self._move_task_to_stage(report.task_id, "In Durchführung")
-        return self._serialize(report)
 
     @http.route("/nolte_stundenbericht/api/v1/reports/customer-confirm", type="jsonrpc", auth="user", methods=["POST"])
     def customer_confirm(self, mobile_uuid, signer_name, signature, expected_server_revision=None):
