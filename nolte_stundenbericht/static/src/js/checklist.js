@@ -6,7 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const load = () => { try { return normalize(JSON.parse(localStorage.getItem(storageKey) || "[]")); } catch { return []; } };
     let checklist = load();
     const sections = [...app.querySelectorAll("[data-checklist-kind]")];
-    const templatesById = new Map();
+    let defaultTemplate = null;
+    let importedReport = checklist.length > 0;
+    let reportStarted = false;
+    let defaultApplied = false;
     const save = () => {
         localStorage.setItem(storageKey, JSON.stringify(checklist));
         window.dispatchEvent(new Event("nolte:report-content-changed"));
@@ -35,26 +38,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         }
     };
+    const applyDefault = () => {
+        if (!reportStarted || importedReport || defaultApplied || !defaultTemplate) return;
+        defaultApplied = true;
+        const previousCount = checklist.length;
+        const names = new Set(checklist.filter(item => item.visibility === "customer").map(item => item.name.trim().toLocaleLowerCase("de")));
+        for (const item of defaultTemplate.items) {
+            const key = item.name.trim().toLocaleLowerCase("de");
+            if (names.has(key)) continue;
+            names.add(key);
+            checklist.push({checklistUuid: window.nolteUuid(), name: item.name, checked: false, note: item.note || "", visibility: "customer"});
+        }
+        if (checklist.length !== previousCount) save();
+        render();
+    };
     for (const section of sections) {
-        const select = section.querySelector("[data-checklist-template-select]");
-        const apply = section.querySelector("[data-checklist-template-apply]");
-        select.addEventListener("change", () => { apply.disabled = !select.value; });
-        apply.onclick = () => {
-            const template = templatesById.get(select.value);
-            const visibility = section.dataset.checklistKind;
-            if (!template || template.visibility !== visibility) return;
-            const names = new Set(checklist.filter(item => item.visibility === visibility).map(item => item.name.trim().toLocaleLowerCase("de")));
-            let added = 0;
-            for (const item of template.items) {
-                const key = item.name.trim().toLocaleLowerCase("de");
-                if (names.has(key)) continue;
-                names.add(key);
-                checklist.push({checklistUuid: window.nolteUuid(), name: item.name, checked: false, note: item.note || "", visibility});
-                added += 1;
-            }
-            save(); render();
-            section.querySelector("[data-checklist-status]").textContent = added ? `${added} Prüfpunkte übernommen. Du kannst sie frei bearbeiten.` : "Die Prüfpunkte dieser Vorlage sind bereits enthalten.";
-        };
         section.querySelector("[data-checklist-add]").onclick = () => {
         const input = section.querySelector("[data-checklist-name]");
         const name = input.value.trim(); if (!name) return;
@@ -62,33 +60,23 @@ document.addEventListener("DOMContentLoaded", () => {
         input.value = ""; save(); render();
         };
     }
-    const refreshButton = app.querySelector("[data-checklist-template-refresh]");
-    const refreshTemplates = async () => {
-        refreshButton.disabled = true;
+    const loadDefault = async () => {
         try {
             const response = await fetch("/nolte_stundenbericht/api/v1/checklist-templates", {method: "POST", credentials: "same-origin", headers: {"Content-Type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", method: "call", params: {}, id: Date.now()})});
             const data = await response.json();
             if (data.error) throw Error(data.error.message);
-            templatesById.clear();
-            for (const template of data.result || []) templatesById.set(String(template.id), template);
+            defaultTemplate = (data.result || []).find(template => template.visibility === "customer") || null;
+            applyDefault();
             for (const section of sections) {
-                const select = section.querySelector("[data-checklist-template-select]");
-                const selected = select.value;
-                select.replaceChildren();
-                const empty = document.createElement("option"); empty.value = ""; empty.textContent = "Ohne Vorlage"; select.append(empty);
-                for (const template of templatesById.values()) {
-                    if (template.visibility !== section.dataset.checklistKind) continue;
-                    const option = document.createElement("option"); option.value = String(template.id); option.textContent = template.name; select.append(option);
-                }
-                select.value = [...select.options].some(option => option.value === selected) ? selected : "";
-                section.querySelector("[data-checklist-template-apply]").disabled = !select.value;
-                section.querySelector("[data-checklist-status]").textContent = select.options.length > 1 ? "Optional eine zentrale Vorlage übernehmen oder eigene Prüfpunkte hinzufügen." : "Noch keine zentrale Vorlage für diesen Bereich vorhanden. Eigene Prüfpunkte sind möglich.";
+                section.querySelector("[data-checklist-status]").textContent = defaultTemplate
+                    ? "Neue Berichte erhalten die zentrale Vorgabe automatisch. Eigene Prüfpunkte kannst du ergänzen."
+                    : "Noch keine zentrale Vorgabe hinterlegt. Eigene Prüfpunkte kannst du ergänzen.";
             }
         } catch {
-            for (const section of sections) section.querySelector("[data-checklist-status]").textContent = "Vorlagen konnten nicht geladen werden. Eigene Prüfpunkte bleiben möglich.";
-        } finally { refreshButton.disabled = false; }
+            for (const section of sections) section.querySelector("[data-checklist-status]").textContent = "Die zentrale Vorgabe konnte nicht geladen werden. Vorhandene und eigene Prüfpunkte bleiben erhalten.";
+        }
     };
-    refreshButton.onclick = refreshTemplates;
+    let defaultReady = loadDefault();
     const previousFetch = window.fetch;
     window.fetch = async (...args) => {
         if (String(args[0]).includes("/reports/upsert") && args[1]?.body) {
@@ -100,22 +88,31 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const clear = () => {
         checklist = []; localStorage.removeItem(storageKey);
+        importedReport = false; reportStarted = true; defaultApplied = false;
         sections.forEach(section => {
-            section.querySelector("[data-checklist-template-select]").value = "";
-            section.querySelector("[data-checklist-template-apply]").disabled = true;
             section.querySelector("[data-checklist-name]").value = "";
         });
         render();
+        // Re-fetch for each new report so centrally changed defaults apply.
+        defaultTemplate = null;
+        defaultReady = loadDefault();
     };
     window.addEventListener("nolte:new-report", clear);
+    window.addEventListener("nolte:view-selected", event => {
+        if (event.detail === "home" || importedReport) return;
+        reportStarted = true;
+        applyDefault();
+    });
     // Keep the current report visible after synchronization, but do not carry
     // its checklist into a new form after a page reload.
-    window.addEventListener("nolte:sync-complete", () => localStorage.removeItem(storageKey));
+    window.addEventListener("nolte:sync-complete", () => { importedReport = true; localStorage.removeItem(storageKey); });
     window.nolteStundenbericht = window.nolteStundenbericht || {};
     window.nolteStundenbericht.checklist = {
+        // Retain legacy internal entries on round-trip, without displaying or
+        // reclassifying them as customer-visible checklist points.
         export: () => checklist.map(item => ({...item})),
-        import: items => { checklist = normalize(items); save(); render(); },
+        import: items => { importedReport = true; checklist = normalize(items); save(); render(); },
+        ready: async () => { await defaultReady; applyDefault(); },
     };
     render();
-    refreshTemplates();
 });

@@ -3,20 +3,20 @@
         <field name="name">nolte.service.checklist.template.list</field>
         <field name="model">nolte.service.checklist.template</field>
         <field name="arch" type="xml">
-            <list><field name="sequence" widget="handle"/><field name="name"/><field name="visibility"/><field name="company_id" groups="base.group_multi_company"/></list>
+            <list><field name="sequence" widget="handle"/><field name="name"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_nolte_service_checklist_template_form" model="ir.ui.view">
         <field name="name">nolte.service.checklist.template.form</field>
         <field name="model">nolte.service.checklist.template</field>
         <field name="arch" type="xml">
-            <form string="Checklisten-Vorlage">
+            <form string="Einsatzabschluss" create="0" delete="0" duplicate="0">
                 <sheet>
                     <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-warning" invisible="active"/>
                     <field name="active" invisible="1"/>
-                    <div class="oe_title"><label for="name"/><h1><field name="name" placeholder="z. B. Einsatzvorbereitung oder Funktionsprüfung"/></h1></div>
-                    <group><field name="visibility" widget="radio"/><field name="company_id" groups="base.group_multi_company"/><field name="sequence"/></group>
-                    <p class="text-muted">Monteure übernehmen die Prüfpunkte optional in den jeweiligen Bereich. Bestehende Prüfpunkte und Berichte bleiben bei Vorlagenänderungen unverändert.</p>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group><field name="visibility" invisible="1"/><field name="company_id" readonly="1" groups="base.group_multi_company"/></group>
+                    <p class="text-muted">Diese zentrale Vorgabe wird automatisch in neue Stundenberichte übernommen. Monteure können eigene Prüfpunkte ergänzen. Bereits erfasste Berichte bleiben bei Änderungen unverändert.</p>
                     <field name="line_ids"><list editable="bottom"><field name="sequence" widget="handle"/><field name="name"/><field name="note"/></list></field>
                 </sheet>
             </form>
@@ -25,14 +25,22 @@
     <record id="view_nolte_service_checklist_template_search" model="ir.ui.view">
         <field name="name">nolte.service.checklist.template.search</field>
         <field name="model">nolte.service.checklist.template</field>
-        <field name="arch" type="xml"><search><field name="name"/><field name="visibility"/><filter name="internal" string="Intern" domain="[('visibility', '=', 'internal')]"/><filter name="customer" string="Kundencheckliste" domain="[('visibility', '=', 'customer')]"/><separator/><filter name="archived" string="Archiviert" domain="[('active', '=', False)]"/></search></field>
+        <field name="arch" type="xml"><search><field name="name"/><filter name="archived" string="Archiviert" domain="[('active', '=', False)]"/></search></field>
     </record>
     <record id="action_nolte_service_checklist_template" model="ir.actions.act_window">
-        <field name="name">Checklisten-Vorlagen</field>
+        <field name="name">Einsatzabschluss</field>
         <field name="res_model">nolte.service.checklist.template</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('visibility', '=', 'customer')]</field>
+        <field name="context">{'default_visibility': 'customer'}</field>
         <field name="search_view_id" ref="view_nolte_service_checklist_template_search"/>
-        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Zentrale Checklisten-Vorlage anlegen</p><p>Interne und kundensichtbare Checklisten werden getrennt verwaltet.</p></field>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Vorgabe für den Einsatzabschluss anlegen</p><p>Der Einsatzabschluss erscheint im Kunden-Stundenbericht.</p></field>
     </record>
-    <menuitem id="menu_nolte_service_checklist_template" name="Checklisten-Vorlagen" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_service_checklist_template" groups="group_stundenbericht_manager" sequence="31"/>
+    <record id="action_nolte_checklist_configuration" model="ir.actions.server">
+        <field name="name">Einsatzabschluss</field>
+        <field name="model_id" ref="model_nolte_service_checklist_template"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_configuration()</field>
+    </record>
+    <menuitem id="menu_nolte_service_checklist_template" name="Einsatzabschluss" parent="menu_nolte_stundenbericht_configuration" action="action_nolte_checklist_configuration" groups="group_stundenbericht_manager" sequence="31"/>
 </odoo>

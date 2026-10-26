@@ -1,4 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_flat_rate_user,Pauschalen lesen,model_nolte_service_flat_rate,group_stundenbericht_user,1,0,0,0
+access_flat_rate_manager,Pauschalen konfigurieren,model_nolte_service_flat_rate,group_stundenbericht_manager,1,1,1,1
+access_report_flat_rate_user,Auswahlpauschalen lesen,model_nolte_service_report_flat_rate,group_stundenbericht_user,1,0,0,0
 access_signature_settings_admin,Online signature settings admin,model_nolte_service_signature_settings,base.group_system,1,1,1,1
 access_signature_request_manager,Signature requests manager,model_nolte_service_signature_request,group_stundenbericht_manager,1,0,0,0
 access_signature_request_user,Own signature requests read,model_nolte_service_signature_request,group_stundenbericht_user,1,0,0,0
