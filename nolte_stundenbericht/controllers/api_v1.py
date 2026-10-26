@@ -87,6 +87,7 @@ class NolteStundenberichtApiV1(http.Controller):
             "companyServiceEmail": company_email,
             "composeEmailUrl": "/odoo/action-%s?active_id=%s" % (request.env.ref("nolte_stundenbericht.action_nolte_service_report_compose").id, report.id),
             "canSendCustomerEmail": bool(report.customer_pdf_attachment_id and report.state in ("customer_confirmed", "internally_amended", "under_review", "ready_to_bill", "billed")),
+            "flatRates": [{"id": line.flat_rate_id.id, "name": line.name} for line in report.flat_rate_line_ids],
             "materials": [{
                 "materialUuid": material.mobile_uuid,
                 "productId": material.product_id.id or False,
@@ -163,6 +164,13 @@ class NolteStundenberichtApiV1(http.Controller):
         ])
         return [{"id": template.id, "name": template.name, "body": template.body} for template in templates]
 
+    @http.route("/nolte_stundenbericht/api/v1/flat-rates", type="jsonrpc", auth="user", methods=["POST"])
+    def flat_rates(self):
+        if not request.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
+            raise AccessError(_("Kein Zugriff auf Einsatzpauschalen."))
+        rates = request.env["nolte.service.flat.rate"].search([("company_id", "=", request.env.company.id)])
+        return [{"id": rate.id, "name": rate.name} for rate in rates if rate.sudo().product_id.active and rate.sudo().product_id.sale_ok]
+
     @http.route("/nolte_stundenbericht/api/v1/work-templates", type="jsonrpc", auth="user", methods=["POST"])
     def work_templates(self):
         return self._work_templates()
@@ -171,9 +179,7 @@ class NolteStundenberichtApiV1(http.Controller):
     def checklist_templates(self):
         if not request.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
             raise AccessError(_("Sie sind nicht für den Stundenbericht freigeschaltet."))
-        templates = request.env["nolte.service.checklist.template"].search([
-            ("company_id", "in", [False, request.env.company.id]),
-        ])
+        templates = request.env["nolte.service.checklist.template"]._default_for_current_company()
         return [{"id": template.id, "name": template.name, "visibility": template.visibility,
                  "items": [{"name": line.name, "note": line.note or ""} for line in template.line_ids]}
                 for template in templates]
@@ -615,6 +621,8 @@ class NolteStundenberichtApiV1(http.Controller):
                 request.env["nolte.service.report.material"].create({"report_id": report.id, "mobile_uuid": material_uuid, **values})
         report.material_ids.filtered(lambda material: material.mobile_uuid not in received_material_uuids).unlink()
         self._sync_checklist(report, payload.get("checklist") or [])
+        if "flatRateIds" in payload:
+            report._sync_flat_rates(payload["flatRateIds"])
         # A synced draft means the technician has started the field work.
         self._move_task_to_stage(report.task_id, "In Durchführung")
         return self._serialize(report)

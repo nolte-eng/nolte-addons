@@ -842,6 +842,7 @@ class NolteServiceReport(models.Model):
                     "billing_sale_line_ids": [(6, 0, created_lines.ids)],
                     "billing_state": "transferred",
                 })
+            report._transfer_flat_rates()
             report.write({"state": "ready_to_bill", "server_revision": report.server_revision + 1})
             report.message_post(body=_("Abrechnung freigegeben und Auftragspositionen erstellt."))
         return True

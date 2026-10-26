@@ -1,6 +1,6 @@
 {
     "name": "Nolte Stundenbericht",
-    "version": "19.0.1.0.8",
+    "version": "19.0.1.1.8",
     "category": "Services/Project",
     "summary": "Offlinefähige Einsatz- und Stundenberichte",
     "author": "Nolte Engineering",
@@ -17,6 +17,7 @@
         "views/work_template_views.xml",
         "views/checklist_template_views.xml",
         "views/configuration_views.xml",
+        "views/flat_rate_views.xml",
         "views/project_task_views.xml",
         "views/mobile_templates.xml",
         "views/customer_history_templates.xml",

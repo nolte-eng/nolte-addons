@@ -3,10 +3,13 @@
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.0.2
+## Version 19.0.1.1.8
 
 - Zentral verwaltete, optional einfügbare und anschließend editierbare Arbeitsvorlagen.
-- Getrennte interne und kundenbezogene Checklisten. Interne Punkte erscheinen nicht im Kunden-PDF.
+- Ein zentraler **Einsatzabschluss** je Unternehmen unter Konfiguration. Neue Berichte übernehmen die Vorgabe automatisch; Monteure können eigene Prüfpunkte ergänzen. Bestehende interne Einträge bleiben gespeichert und privat.
+- Ankreuzbare **Pauschalen** mit zentral hinterlegten Artikeln. Jede Auswahl wird einmal je Bericht ins Angebot übertragen und regulär abgerechnet. Im Kunden-PDF erscheinen nur Namen mit angekreuztem Kästchen.
+- Automatische lokale Sicherung. Beim Öffnen von **Unterschrift** wird der aktuelle Bericht automatisch übertragen; bei Fehlern bleibt der lokale Entwurf erhalten. Keine separaten Speicher-/Synchronisationsbuttons mehr.
+- Aufgeräumte Tagesaktionen in zwei Zeilen und Kopierdialog für Folgetag oder mehrere Mitarbeiter. Vorhandene Zeiten werden nicht überschrieben; Übernachtungen werden nicht kopiert.
 - Kundenhistorie, Archiv und Konfigurationsmenü.
 - PDF-Vorschau vor der Kundenbestätigung; Versand mit editierbarem Odoo-E-Mail-Dialog.
 - Online-Unterschrift ohne Enterprise-Modul `sign`: befristeter Kundenlink,
@@ -42,6 +45,23 @@ Empfänger bleiben bearbeitbar. Bereits beim Öffnen wird die Kundenfassung
 festgeschrieben; wird der Dialog verworfen, muss die Anfrage vor Änderungen
 zurückgenommen werden. Links gelten 14 Tage und können widerrufen werden.
 Eine unterschriebene Fassung kann nicht erneut unterschrieben werden.
+
+## Zentrale Vorgaben nach dem Update
+
+Unter **Konfiguration → Einsatzabschluss** die gemeinsamen Prüfpunkte pflegen.
+Eine eindeutig vorhandene Kundencheckliste desselben Unternehmens wird beim
+Update als Vorgabe erhalten. Interne Vorlagen werden niemals automatisch
+kundensichtbar. Bei mehreren bisherigen Kundenvorlagen wird keine Auswahl
+erraten; die zentrale Vorgabe ist dann vom Administrator einzurichten.
+
+Unter **Konfiguration → Pauschalen** Bezeichnung und verkaufbaren Artikel
+zuordnen. Preise, Steuern und Rechnungsstellung folgen der normalen
+Odoo-Artikelkonfiguration. Staging-Berichte, Pauschalen und Preise werden beim
+Code-Update nicht in Produktionsdatenbanken kopiert.
+
+Die lokale Sicherung ersetzt kein Serverbackup. Beim Löschen von Browserdaten
+können noch nicht übertragene Entwürfe verloren gehen. Für Übertragung und
+Unterschrift ist eine Verbindung zum Server nötig.
 
 Alternativ kann ein Prüfer das zurückgesendete unterschriebene PDF nach Prüfung
 der passenden Berichtsfassung übernehmen. Nach Abschluss wird eine Kopie für

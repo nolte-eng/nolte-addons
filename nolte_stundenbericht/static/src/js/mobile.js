@@ -99,12 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const timeEmployee = app.querySelector("[data-time-employee]");
     let report = null;
     let currentDraft = null;
-    let syncCompleted = localStorage.getItem(SYNCED_STATE_KEY) === "1";
-    const syncButton = app.querySelector("[data-sync]");
-    if (syncCompleted) {
-        syncButton.disabled = true;
-        syncButton.textContent = "Bericht synchronisiert";
-    }
+    let syncCompleted = false;
+    let syncInProgress = false;
+    let contentRevision = 0;
+    let activeView = "home";
+    const transferStatus = app.querySelector("[data-transfer-status]");
+    const transferRetry = app.querySelector("[data-transfer-retry]");
     let drawing = false;
     let lastPoint = null;
     let hasSignature = false;
@@ -301,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=35", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=44", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");
@@ -405,13 +405,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const employeeHeading = document.createElement("p"); employeeHeading.className = "small text-muted mb-2";
         employeeHeading.textContent = `Zeiterfassung für: ${activeEmployee?.name || "Mitarbeiter"}. Über die Auswahl kannst du weitere Mitarbeiter mit jeweils eigenen Zeiten erfassen.`;
         dayList.append(employeeHeading);
-        let totalWork = 0, totalTravel = 0, totalBreak = 0;
         Object.keys(days).sort().forEach(date => {
             const segments = days[date] || [];
             const work = segments.filter(item => item.type === "work").reduce((sum, item) => sum + duration(item), 0);
             const travel = segments.filter(item => item.type.includes("travel")).reduce((sum, item) => sum + duration(item), 0);
             const breaks = segments.filter(item => item.type === "break").reduce((sum, item) => sum + duration(item), 0);
-            totalWork += work; totalTravel += travel; totalBreak += breaks;
             const details = document.createElement("details");
             details.className = "ns-day-card border rounded bg-white mb-2";
             details.open = date === dayDate.value;
@@ -447,18 +445,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const deleteDay = document.createElement("button"); deleteDay.type = "button";
             deleteDay.className = "btn btn-outline-danger ms-auto"; deleteDay.textContent = "Einsatztag löschen";
             deleteDay.onclick = () => { delete days[date]; const remaining = Object.keys(days).sort(); dayDate.value = remaining[0] || field("serviceDate").value; renderDays(); scheduleAutoSave(); };
+            const management = document.createElement("div"); management.className = "ns-day-management d-flex flex-wrap gap-2 border-top pt-2 mt-2";
             if (segments.length) {
                 const copyDay = document.createElement("button"); copyDay.type = "button";
-                copyDay.className = "btn btn-outline-secondary"; copyDay.textContent = "Tag auf Folgetag kopieren";
-                copyDay.onclick = () => {
+                copyDay.className = "btn btn-outline-secondary"; copyDay.textContent = "Tag kopieren …";
+                copyDay.onclick = () => window.nolteDayCopy.open({
+                    date, employeeName: activeEmployee?.name || "Mitarbeiter",
+                    employees: employeeOptions.filter(item => String(item.id) !== String(activeEmployeeId)),
+                    onNext: () => {
                     const next = new Date(`${date}T00:00:00Z`);
                     next.setUTCDate(next.getUTCDate() + 1);
                     const nextDate = next.toISOString().slice(0, 10);
                     if ((days[nextDate] || []).length) {
-                        say(`Am ${new Date(`${nextDate}T00:00:00`).toLocaleDateString("de-DE")} sind bereits Zeiten erfasst. Es wurde nichts überschrieben.`, true);
-                        dayDate.value = nextDate;
-                        renderDays();
-                        return;
+                        return {success: false, message: `Am ${new Date(`${nextDate}T00:00:00`).toLocaleDateString("de-DE")} sind bereits Zeiten erfasst. Es wurde nichts überschrieben.`};
                     }
                     days[nextDate] = segments.map(item => ({
                         ...item,
@@ -472,40 +471,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderDays();
                     scheduleAutoSave();
                     say(`Alle Zeitsegmente von ${new Date(`${date}T00:00:00`).toLocaleDateString("de-DE")} wurden auf ${new Date(`${nextDate}T00:00:00`).toLocaleDateString("de-DE")} kopiert. Bitte bei Bedarf anpassen.`);
-                };
-                buttons.append(copyDay);
-
-                // Copy this employee's complete day to another employee on the
-                // same date. Never overwrite time blocks already entered there.
-                if (employeeOptions.length > 1) {
-                    const copyToEmployee = document.createElement("select");
-                    copyToEmployee.className = "form-select form-select-sm w-auto";
-                    copyToEmployee.setAttribute("aria-label", `Mitarbeiter für Kopie des Tages ${label} auswählen`);
-                    const placeholder = document.createElement("option");
-                    placeholder.value = "";
-                    placeholder.textContent = "Mitarbeiter wählen …";
-                    copyToEmployee.append(placeholder);
-                    employeeOptions.filter(item => String(item.id) !== String(activeEmployeeId)).forEach(employee => {
-                        const option = document.createElement("option");
-                        option.value = String(employee.id);
-                        option.textContent = employee.name;
-                        copyToEmployee.append(option);
-                    });
-                    const copyToButton = document.createElement("button");
-                    copyToButton.type = "button";
-                    copyToButton.className = "btn btn-outline-secondary";
-                    copyToButton.textContent = "Tag an Mitarbeiter kopieren";
-                    copyToButton.onclick = () => {
-                        const targetEmployeeId = copyToEmployee.value;
-                        if (!targetEmployeeId) {
-                            say("Bitte zuerst den Ziel-Mitarbeiter auswählen.", true);
-                            return;
-                        }
+                    return {success: true};
+                    },
+                    onEmployees: targetIds => {
+                        const copied = [], skipped = [];
+                        for (const targetEmployeeId of targetIds) {
+                        const targetName = employeeOptions.find(item => String(item.id) === targetEmployeeId)?.name;
+                        if (!targetName || targetEmployeeId === String(activeEmployeeId)) continue;
                         const targetSchedule = employeeSchedules[targetEmployeeId] ||= {};
                         if ((targetSchedule[date] || []).length) {
-                            const targetName = employeeOptions.find(item => String(item.id) === targetEmployeeId)?.name || "Der Ziel-Mitarbeiter";
-                            say(`${targetName} hat am ${new Date(`${date}T00:00:00`).toLocaleDateString("de-DE")} bereits Zeiten. Es wurde nichts überschrieben.`, true);
-                            return;
+                            skipped.push(targetName);
+                            continue;
                         }
                         targetSchedule[date] = segments.map(item => ({
                             ...item,
@@ -515,24 +491,18 @@ document.addEventListener("DOMContentLoaded", () => {
                             kilometers: Number(item.kilometers || 0),
                             internalOnly: Boolean(item.internalOnly),
                         }));
-                        renderDays();
-                        scheduleAutoSave();
-                        const targetName = employeeOptions.find(item => String(item.id) === targetEmployeeId)?.name || "Mitarbeiter";
-                        say(`Der komplette Tag von ${activeEmployee?.name || "Mitarbeiter"} wurde für ${targetName} am ${new Date(`${date}T00:00:00`).toLocaleDateString("de-DE")} kopiert. Bitte Ziel-Mitarbeiter und Zeiten kontrollieren.`);
-                    };
-                    buttons.append(copyToEmployee, copyToButton);
-                }
+                        copied.push(targetName);
+                        }
+                        if (copied.length) { renderDays(); scheduleAutoSave(); }
+                        const message = [copied.length ? `Tag kopiert für: ${copied.join(", ")}. Bitte Zeiten kontrollieren.` : "Keine Zeiten kopiert.", skipped.length ? `Bereits vorhandene Zeiten bei ${skipped.join(", ")} wurden nicht überschrieben.` : ""].filter(Boolean).join(" ");
+                        say(message, !copied.length);
+                        return {success: copied.length > 0, message};
+                    },
+                });
+                management.append(copyDay);
             }
-            buttons.append(deleteDay); body.append(buttons); details.append(body); dayList.append(details);
+            management.append(deleteDay); body.append(buttons, management); details.append(body); dayList.append(details);
         });
-        const summarySegments = Object.values({...employeeSchedules, [String(activeEmployeeId)]: days}).flatMap(employeeDays => Object.values(employeeDays || {}).flat());
-        totalWork = summarySegments.filter(item => item.type === "work").reduce((sum, item) => sum + duration(item), 0);
-        totalTravel = summarySegments.filter(item => item.type.includes("travel")).reduce((sum, item) => sum + duration(item), 0);
-        totalBreak = summarySegments.filter(item => item.type === "break").reduce((sum, item) => sum + duration(item), 0);
-        app.querySelector("[data-summary-work]").textContent = showDuration(totalWork);
-        app.querySelector("[data-summary-travel]").textContent = showDuration(totalTravel);
-        app.querySelector("[data-summary-break]").textContent = showDuration(totalBreak);
-        app.querySelector("[data-summary-total]").textContent = showDuration(Math.max(0, totalWork + totalTravel - totalBreak));
         renderTimeTable();
     };
     const employeeOvernightInput = app.querySelector("[data-employee-overnights]");
@@ -582,6 +552,8 @@ document.addEventListener("DOMContentLoaded", () => {
             publicNote: field("publicNote").value,
             workDescription: field("workDescription").value,
             workResult: field("workResult").value,
+            flatRates: window.nolteStundenbericht?.flatRates?.export?.() || [],
+            flatRateIds: (window.nolteStundenbericht?.flatRates?.export?.() || []).map(item => item.id),
             materials: window.nolteStundenbericht?.materials?.export?.() || [],
             checklist: window.nolteStundenbericht?.checklist?.export?.() || [],
             days: serviceDays,
@@ -598,6 +570,12 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     let autoSaveTimer;
     const scheduleAutoSave = () => {
+        contentRevision += 1;
+        syncCompleted = false;
+        localStorage.removeItem(SYNCED_STATE_KEY);
+        confirmation.classList.add("d-none");
+        hasSignature = false;
+        context.clearRect(0, 0, canvas.width, canvas.height);
         clearTimeout(autoSaveTimer);
         autoSaveTimer = setTimeout(() => {
             saveDraftLocally(true).catch(() => {
@@ -606,14 +584,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 800);
     };
     const loadDraft = async draft => {
+        if (syncInProgress) return say("Bitte die laufende Übertragung abwarten.");
         await boot;
         workTemplateSelect.value = "";
         showWorkTemplate();
         syncCompleted = false;
         localStorage.removeItem(SYNCED_STATE_KEY);
-        syncButton.disabled = false;
-        syncButton.textContent = "Jetzt synchronisieren";
         currentDraft = draft;
+        report = null;
+        hasSignature = false;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        confirmation.classList.add("d-none");
         const ownId = String(draft.employeeId || activeEmployeeId);
         employeeSchedules = {};
         employeeOvernights = draft.employeeOvernights || {};
@@ -663,20 +644,20 @@ document.addEventListener("DOMContentLoaded", () => {
         field("workResult").value = draft.workResult || "";
         renderDays();
         renderEmployeeOvernight();
+        window.nolteStundenbericht?.flatRates?.import?.(draft.flatRates || []);
         window.nolteStundenbericht?.materials?.import?.(draft.materials || []);
         window.nolteStundenbericht?.checklist?.import?.(draft.checklist || []);
         window.dispatchEvent(new Event("nolte:draft-loaded"));
         window.dispatchEvent(new CustomEvent("nolte:show-view", {detail: "general"}));
         window.nolteStundenbericht?.refreshTimePickers?.();
-        say("Entwurf wurde geladen. Änderungen bitte erneut auf diesem Gerät speichern.");
+        say("Entwurf wurde geladen. Änderungen werden automatisch auf diesem Gerät gespeichert.");
         form.scrollIntoView({behavior: "smooth"});
     };
     const newReport = () => {
+        if (syncInProgress) return say("Bitte die laufende Übertragung abwarten.");
         if (!confirm("Einen neuen Bericht beginnen? Nicht gespeicherte Eingaben gehen verloren.")) return;
         syncCompleted = false;
         localStorage.removeItem(SYNCED_STATE_KEY);
-        syncButton.disabled = false;
-        syncButton.textContent = "Jetzt synchronisieren";
         form.reset();
         showWorkTemplate();
         window.nolteStundenbericht?.refreshTimePickers?.();
@@ -699,6 +680,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.scrollTo({top: 0, behavior: "smooth"});
     };
     const deleteDraft = draft => {
+        if (syncInProgress) return say("Bitte die laufende Übertragung abwarten.");
         storeDrafts(drafts().filter(item => item.mobileUuid !== draft.mobileUuid));
         if (currentDraft?.mobileUuid === draft.mobileUuid) {
             form.reset();
@@ -723,6 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return currentDraft?.mobileUuid || null;
     };
     const loadServerReport = async data => {
+        if (syncInProgress) return say("Bitte die laufende Übertragung abwarten.");
         await boot;
         const taskId = data.taskId ? String(data.taskId) : "";
         if (taskId) {
@@ -774,12 +757,16 @@ document.addEventListener("DOMContentLoaded", () => {
             serviceLocationContactName: data.serviceLocationContactName || data.taskDefaults?.serviceLocationContactName || "",
             serviceLocationContactPhone: data.serviceLocationContactPhone || data.taskDefaults?.serviceLocationContactPhone || "",
             publicNote: data.publicNote || "",
+            flatRates: data.flatRates || [],
             materials: data.materials || [],
             checklist: data.checklist || [],
         };
         await loadDraft(draft);
         currentDraft.serverRevision = data.serverRevision;
         await saveDraftLocally(true);
+        report = data;
+        syncCompleted = !["draft", "returned"].includes(data.state);
+        if (syncCompleted) window.dispatchEvent(new Event("nolte:sync-complete"));
         say("Gespeicherte Berichtsdaten wurden geladen. Änderungen kannst du bearbeiten und erneut synchronisieren.");
     };
     window.nolteStundenbericht = {drafts, loadDraft, loadServerReport, newReport, deleteDraft, ensureDraft, getCurrentDraftUuid: () => currentDraft?.mobileUuid || null, getCurrentReport: () => report};
@@ -787,20 +774,49 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("input", scheduleAutoSave);
     form.addEventListener("change", scheduleAutoSave);
     window.addEventListener("nolte:report-content-changed", scheduleAutoSave);
-    app.querySelector("[data-save]").onclick = async () => {
-        try { await saveDraftLocally(); } catch (error) { say(error.message, true); }
-    };
-    syncButton.onclick = async () => {
-        if (syncCompleted || syncButton.disabled) return;
+    const synchronizeForSignature = async () => {
+        if (syncInProgress) return;
+        if (syncCompleted && report) {
+            confirmation.classList.remove("d-none");
+            return;
+        }
+        syncInProgress = true;
+        transferRetry.classList.add("d-none");
+        confirmation.classList.add("d-none");
+        transferStatus.textContent = "Bericht wird übertragen …";
+        let locallySaved = false;
         try {
-            if (!validateTimeBlocks()) return;
-            if (!form.reportValidity()) { form.reportValidity(); return; }
-            syncButton.disabled = true;
-            let all = drafts();
-            const active = await buildDraft();
-            all = [...all.filter(item => item.mobileUuid !== active.mobileUuid), active];
-            for (const draft of all) report = await rpc("/nolte_stundenbericht/api/v1/reports/upsert", {payload: draft});
-            storeDrafts([]); currentDraft = null; draftState.textContent = "";
+            clearTimeout(autoSaveTimer);
+            // Persist before networking, even when the form is incomplete or
+            // offline. Only this report is transferred, not unrelated drafts.
+            await saveDraftLocally(true);
+            locallySaved = true;
+            await window.nolteStundenbericht?.checklist?.ready?.();
+            await saveDraftLocally(true);
+            if (!validateTimeBlocks() || !form.checkValidity()) {
+                transferStatus.textContent = "Bitte die Pflichtfelder und Zeiten prüfen. Deine Eingaben sind lokal gespeichert.";
+                say(transferStatus.textContent, true);
+                transferRetry.classList.remove("d-none");
+                window.dispatchEvent(new CustomEvent("nolte:show-view", {detail: "general"}));
+                form.reportValidity();
+                return;
+            }
+            if (!navigator.onLine) throw Error("Keine Internetverbindung. Die Übertragung wird bei Verbindung erneut versucht.");
+            const active = currentDraft;
+            const sentRevision = contentRevision;
+            const result = await rpc("/nolte_stundenbericht/api/v1/reports/upsert", {payload: active});
+            report = result;
+            // Keep the UUID and server revision so later edits update the same
+            // report instead of creating another one.
+            currentDraft = {...currentDraft, serverRevision: result.serverRevision};
+            if (sentRevision !== contentRevision) {
+                await saveDraftLocally(true);
+                transferStatus.textContent = "Es gibt neue Änderungen. Bitte „Unterschrift“ erneut öffnen.";
+                transferRetry.classList.remove("d-none");
+                return;
+            }
+            storeDrafts(drafts().filter(item => item.mobileUuid !== active.mobileUuid));
+            draftState.textContent = "Auf dem Server gespeichert";
             const previewPanel = app.querySelector("[data-pdf-preview]");
             const previewLink = app.querySelector("[data-pdf-link]");
             if (report?.previewPdfUrl && previewPanel && previewLink) {
@@ -812,18 +828,27 @@ document.addEventListener("DOMContentLoaded", () => {
             updateCustomerEmailPanel();
             syncCompleted = true;
             localStorage.setItem(SYNCED_STATE_KEY, "1");
-            syncButton.textContent = "Bericht synchronisiert";
+            transferStatus.textContent = "Bericht übertragen. Bitte prüfen und unterschreiben lassen.";
             window.dispatchEvent(new Event("nolte:sync-complete"));
             window.dispatchEvent(new Event("nolte:drafts-changed"));
             say("Stundenbericht wurde synchronisiert. Bitte jetzt vom Kunden bestätigen lassen.");
             confirmation.classList.remove("d-none");
-            window.dispatchEvent(new CustomEvent("nolte:show-view", {detail: "signature"}));
-            confirmation.scrollIntoView({behavior: "smooth"});
+            if (activeView === "signature") confirmation.scrollIntoView({behavior: "smooth"});
         } catch (error) {
-            syncButton.disabled = false;
-            say(`Synchronisation fehlgeschlagen: ${error.message}`, true);
+            transferStatus.textContent = locallySaved
+                ? `Übertragung fehlgeschlagen: ${error.message} Die lokale Sicherung bleibt erhalten.`
+                : `Lokales Speichern fehlgeschlagen: ${error.message} Bitte diese Seite nicht schließen.`;
+            transferRetry.classList.remove("d-none");
+        } finally {
+            syncInProgress = false;
         }
     };
+    transferRetry.onclick = synchronizeForSignature;
+    window.addEventListener("nolte:view-selected", event => {
+        activeView = event.detail;
+        if (activeView === "signature") synchronizeForSignature();
+    });
+    window.addEventListener("online", () => { if (activeView === "signature" && !syncCompleted) synchronizeForSignature(); });
     const point = event => { const rect = canvas.getBoundingClientRect(); return {x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height}; };
     canvas.onpointerdown = event => { event.preventDefault(); drawing = true; canvas.setPointerCapture?.(event.pointerId); lastPoint = point(event); };
     canvas.onpointermove = event => {
@@ -838,7 +863,7 @@ document.addEventListener("DOMContentLoaded", () => {
     app.querySelector("[data-signature-clear]").onclick = () => { context.clearRect(0, 0, canvas.width, canvas.height); hasSignature = false; };
     app.querySelector("[data-confirm]").onclick = async () => {
         const signer = app.querySelector("[data-signer-name]").value.trim();
-        if (!report || !signer || !hasSignature) return say("Bericht, Name oder Unterschrift fehlt.", true);
+        if (!syncCompleted || syncInProgress || !report || !signer || !hasSignature) return say("Bericht bitte zuerst übertragen und Name sowie Unterschrift ergänzen.", true);
         try {
             report = await rpc("/nolte_stundenbericht/api/v1/reports/customer-confirm", {mobile_uuid: report.mobileUuid, signer_name: signer, signature: canvas.toDataURL("image/png"), expected_server_revision: report.serverRevision});
             updateCustomerEmailPanel();
