@@ -5,7 +5,7 @@
         <field name="arch" type="xml">
             <list js_class="nolte_service_report_list">
                 <field name="name"/>
-                <field name="service_date"/>
+                <field name="display_service_date"/>
                 <field name="partner_id"/>
                 <field name="task_id"/>
                 <field name="country_rate_key"/>
@@ -20,6 +20,10 @@
         <field name="arch" type="xml">
             <form string="Einsatzbericht" js_class="nolte_service_report_form">
                 <header>
+                    <button name="action_archive_completed" type="object" string="Archivieren" invisible="is_closed or state in ('draft', 'returned', 'awaiting_signature')" confirm="Diesen Bericht ins Archiv verschieben? Er bleibt dort und in der Kundenhistorie erhalten."/>
+                    <button name="action_unarchive_manual" type="object" string="Aus Archiv holen" invisible="not archived_manually"/>
+                    <button name="action_open_mobile_report" type="object" string="Stundenbericht öffnen" invisible="not task_id or not member_ids or state not in ('draft', 'returned') or owner_user_id != uid" groups="nolte_stundenbericht.group_stundenbericht_user"/>
+                    <button name="action_open_service_task" type="object" string="Zum Einsatzauftrag" invisible="not task_id"/>
                     <button name="action_request_online_signature" type="object" string="Kundenunterschrift anfordern" invisible="state not in ('draft', 'returned')"/>
                     <button name="action_revoke_online_signature" type="object" string="Unterschriftsanfrage widerrufen" invisible="state != 'awaiting_signature'" confirm="Den Kundenlink ungültig machen und den Bericht wieder zur Bearbeitung freigeben?"/>
                     <button name="action_submit_review" type="object" string="Zur Prüfung" invisible="state not in ('customer_confirmed', 'internally_amended', 'returned')"/>
@@ -30,10 +34,14 @@
                 <sheet>
                     <widget name="web_ribbon" title="Im Archiv" bg_color="text-bg-success" invisible="not is_closed"/>
                     <field name="is_closed" invisible="1"/>
+                    <field name="archived_manually" invisible="1"/>
+                    <field name="planning_draft" invisible="1"/>
+                    <field name="owner_user_id" invisible="1"/>
                     <div class="oe_title"><h1><field name="name"/></h1></div>
                     <group>
                         <group>
-                            <field name="service_date"/>
+                            <field name="service_date" invisible="planning_draft"/>
+                            <field name="display_service_date" string="Geplanter Termin" invisible="not planning_draft"/>
                             <field name="partner_id"/>
                             <field name="manual_customer_name" invisible="partner_id"/>
                             <field name="manual_customer_street" invisible="partner_id"/>
@@ -48,7 +56,9 @@
                             <field name="machine_type"/>
                         </group>
                         <group>
-                            <field name="country_rate_key"/>
+                            <field name="bmf_rate_year" invisible="1"/>
+                            <field name="bmf_rate_id" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="country_rate_key" string="Bisheriger BMF-Schlüssel" readonly="1" invisible="bmf_rate_id"/>
                             <field name="service_location_name"/>
                             <field name="service_location_contact_name"/>
                             <field name="service_location_contact_phone"/>
@@ -197,6 +207,18 @@
     <menuitem id="menu_nolte_service_report" name="Einsatzberichte"
               parent="menu_nolte_stundenbericht_root" action="action_nolte_service_report"
               groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="10"/>
+    <record id="action_nolte_open_service_project" model="ir.actions.server">
+        <field name="name">Planung Aussendienst öffnen</field>
+        <field name="model_id" ref="model_nolte_service_report"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_service_project()</field>
+    </record>
+    <menuitem id="menu_nolte_service_project" name="Planung"
+              parent="menu_nolte_stundenbericht_root" action="action_nolte_open_service_project"
+              groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="12"/>
+    <menuitem id="menu_project_nolte_service_reports" name="Stundenberichte"
+              parent="project.menu_main_pm" action="action_nolte_stundenbericht_mobile"
+              groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="80"/>
     <menuitem id="menu_nolte_service_report_archive" name="Archiv"
               parent="menu_nolte_stundenbericht_root"
               groups="nolte_stundenbericht.group_stundenbericht_approver" sequence="20"/>

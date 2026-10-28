@@ -61,7 +61,7 @@ class TestChecklistSync(TransactionCase):
     def test_single_customer_checklist_and_pdf_boxes(self):
         report = self.reports[0]
         self.api._sync_checklist(report, [self.item,
-            {"checklistUuid": str(uuid4()), "name": "Customer completed", "visibility": "customer", "checked": True},
+            {"checklistUuid": str(uuid4()), "name": "Customer completed", "visibility": "customer", "checked": True, "note": "Not for PDF"},
             {"checklistUuid": str(uuid4()), "name": "Customer open", "visibility": "customer", "checked": False},
         ])
         template_model = self.env["nolte.service.checklist.template"]
@@ -81,11 +81,36 @@ class TestChecklistSync(TransactionCase):
             "nolte_stundenbericht.action_report_customer_service_report", report.ids)
         document = html.fromstring(rendered)
         boxes = document.xpath('//span[@class="ns-rate-checkbox"]')
-        self.assertEqual(len(boxes), 2)
+        self.assertEqual(len(boxes), 1)
         self.assertEqual(boxes[0].text_content(), "X")
-        self.assertEqual(boxes[1].text_content(), "")
+        self.assertIn("Customer completed", document.text_content())
+        self.assertNotIn("Customer open", document.text_content())
+        self.assertNotIn("Not for PDF", document.text_content())
         self.assertNotIn("Internal check", document.text_content())
         self.assertEqual(len(report.checklist_ids), 3, "Legacy internal entries remain stored")
+        self.assertEqual(report.checklist_ids.filtered(lambda item: item.checked and item.visibility == "customer").note, "Not for PDF")
+
+    def test_pdf_completion_after_flat_rates_and_hidden_without_checks(self):
+        report = self.reports[0]
+        product = self.env["product.product"].create({"name": "Completion test article", "type": "service"})
+        rate = self.env["nolte.service.flat.rate"].create({"name": "Completion test rate", "product_id": product.id})
+        report._sync_flat_rates([rate.id])
+        self.api._sync_checklist(report, [{"checklistUuid": str(uuid4()), "name": "Completed point", "visibility": "customer", "checked": True, "note": "Private completion note"}])
+        rendered, _ = self.env["ir.actions.report"]._render_qweb_html(
+            "nolte_stundenbericht.action_report_customer_service_report", report.ids)
+        document = html.fromstring(rendered)
+        headings = document.xpath('//section/h2/text()')
+        self.assertEqual(headings.index("Einsatzabschluss"), headings.index("Pauschalen") + 1)
+        boxes = document.xpath('//span[@class="ns-rate-checkbox"]')
+        self.assertEqual([box.text_content() for box in boxes], ["X", "X"])
+        self.assertNotIn("Private completion note", document.text_content())
+        report.checklist_ids.checked = False
+        rendered, _ = self.env["ir.actions.report"]._render_qweb_html(
+            "nolte_stundenbericht.action_report_customer_service_report", report.ids)
+        document = html.fromstring(rendered)
+        self.assertNotIn("Einsatzabschluss", document.xpath('//section/h2/text()'))
+        self.assertNotIn("Completed point", document.text_content())
+        self.assertEqual(report.checklist_ids.note, "Private completion note")
 
     def test_one_company_default_and_manager_configuration(self):
         template_model = self.env["nolte.service.checklist.template"]

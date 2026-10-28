@@ -44,6 +44,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                 actions.append(load);
             }
             const pdf = document.createElement("a"); pdf.className = "btn btn-sm btn-outline-secondary"; pdf.href = report.url; pdf.target = "_blank"; pdf.rel = "noopener"; pdf.textContent = "PDF";
+            if (report.canArchive) {
+                const archive = document.createElement("button"); archive.type = "button";
+                archive.className = "btn btn-sm btn-outline-secondary"; archive.textContent = "Archivieren";
+                archive.onclick = async () => {
+                    archive.disabled = true;
+                    try {
+                        const response = await fetch("/nolte_stundenbericht/api/v1/reports/archive", {
+                            method: "POST", credentials: "same-origin", headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({jsonrpc: "2.0", method: "call", id: Date.now(), params: {report_id: report.id}}),
+                        });
+                        const result = await response.json();
+                        if (result.error) throw Error(result.error.data?.message || result.error.message);
+                        row.remove();
+                        window.dispatchEvent(new CustomEvent("nolte:task-archived", {detail: result.result}));
+                    } catch (error) {
+                        const message = app.querySelector("[data-message]"); message.textContent = error.message; message.className = "alert alert-danger";
+                    } finally { archive.disabled = false; }
+                };
+                actions.append(archive);
+            }
             actions.append(details, pdf); row.append(left, actions); body.append(row);
         });
     } catch {

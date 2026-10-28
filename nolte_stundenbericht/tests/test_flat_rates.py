@@ -74,6 +74,7 @@ class TestFlatRates(TransactionCase):
         self.assertEqual(self.report.customer_snapshot_for_pdf()["flatRates"], [{"name": "Test Pauschale"}])
 
     def test_approval_is_once_and_reaches_invoice(self):
+        self.report.write({"service_location_name": "Test factory", "service_location": "Factory Street 12, 12345 Teststadt"})
         self.report._sync_flat_rates([self.rate.id])
         for suffix in ["work", "work_ot30", "work_ot50", "travel", "travel_ot30", "travel_ot50", "km", "overnight", "allowance"]:
             self.env["ir.config_parameter"].set_param("nolte_overtime_billing.product_%s_id" % suffix, str(self.product.id))
@@ -88,10 +89,31 @@ class TestFlatRates(TransactionCase):
         self.report.action_approve_billing()
         self.assertEqual(selection.sale_line_id, line)
         self.assertEqual(len(self.report.sale_order_id.order_line.filtered(lambda item: item.product_id == self.product)), 1)
+        notes = self.report.sale_order_id.order_line.filtered(lambda line: line.display_type == "line_note")
+        self.assertEqual(len(notes), 1)
+        self.assertIn("Einsatzort: Test factory, Factory Street 12, 12345 Teststadt", notes.name)
         with patch.object(type(self.env["mail.mail"]), "send", return_value=True), patch.object(type(self.env["mail.mail"]), "_send", return_value=True):
             self.report.sale_order_id.action_confirm()
             invoice = self.report.sale_order_id._create_invoices()
         self.assertEqual(len(invoice.invoice_line_ids.filtered(lambda item: item.product_id == self.product)), 1)
+        self.assertIn("Einsatzort: Test factory, Factory Street 12, 12345 Teststadt", "\n".join(invoice.invoice_line_ids.mapped("name")))
+
+    def test_sales_note_only_includes_explicit_service_location(self):
+        self.partner.write({"street": "Customer Street 5", "zip": "54321", "city": "Teststadt"})
+        note = self.report._sale_order_service_note()
+        self.assertNotIn("Einsatzort:", note)
+        self.assertNotIn("Customer Street 5", note)
+        self.assertIn("Service Techniker:", note)
+        self.assertIn("Maschinen Nr.:", note)
+        self.assertIn("Zeitraum:", note)
+        self.report.write({"service_location": "Different Street 8"})
+        note = self.report._sale_order_service_note()
+        self.assertIn("Einsatzort: Different Street 8", note)
+        self.assertNotIn("Customer Street 5", note)
+        self.report.write({"service_location": False, "service_location_name": "Factory only"})
+        note = self.report._sale_order_service_note()
+        self.assertIn("Einsatzort: Factory only", note)
+        self.assertNotIn("Customer Street 5", note)
 
     def test_mobile_api_round_trip_and_older_clients(self):
         employee = self.env["hr.employee"].create({"name": "Flat-rate test technician", "user_id": self.tech.id, "company_id": self.env.company.id})

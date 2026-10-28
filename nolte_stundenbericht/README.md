@@ -1,15 +1,23 @@
-# Nolte Stundenbericht – Odoo 19 Community
+# Nolte Stundenbericht – Odoo 19 Community und Enterprise
 
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.1.8
+## Version 19.0.1.3.5
 
 - Zentral verwaltete, optional einfügbare und anschließend editierbare Arbeitsvorlagen.
 - Ein zentraler **Einsatzabschluss** je Unternehmen unter Konfiguration. Neue Berichte übernehmen die Vorgabe automatisch; Monteure können eigene Prüfpunkte ergänzen. Bestehende interne Einträge bleiben gespeichert und privat.
 - Ankreuzbare **Pauschalen** mit zentral hinterlegten Artikeln. Jede Auswahl wird einmal je Bericht ins Angebot übertragen und regulär abgerechnet. Im Kunden-PDF erscheinen nur Namen mit angekreuztem Kästchen.
 - Automatische lokale Sicherung. Beim Öffnen von **Unterschrift** wird der aktuelle Bericht automatisch übertragen; bei Fehlern bleibt der lokale Entwurf erhalten. Keine separaten Speicher-/Synchronisationsbuttons mehr.
 - Aufgeräumte Tagesaktionen in zwei Zeilen und Kopierdialog für Folgetag oder mehrere Mitarbeiter. Vorhandene Zeiten werden nicht überschrieben; Übernachtungen werden nicht kopiert.
+- Serviceeinsätze ohne Termin oder Monteur anlegen; ein Termin setzt den Einsatz auf „Einsatz geplant“.
+- Freie Einsätze aus dem Projekt „Aussendienst“ übernehmen und vorbereitete Berichte weiterverwenden.
+- Auftragsauswahl als „Kunde · Auftragstitel“; abgeschlossene und archivierte Einsätze werden ausgeblendet.
+- Einzelne Berichte und vollständige Einsätze archivieren und manuelle Archivierungen zurücknehmen.
+- BMF-Land und Ortszuschlag aus der zentralen Spesentabelle, im Backend passend zum Einsatzjahr auswählbar.
+- Firmensuche in manuellen Berichten sowie neue Einsatzorte über die Kontaktverwaltung anlegen.
+- Direkte Navigation zwischen Planung und Stundenbericht; manuelle mobile Berichte erzeugen einen Einsatzauftrag.
+- Korrekte PDF-Sonderzeichen; nach dem E-Mail-Versand öffnet sich der zugehörige Einsatzbericht.
 - Kundenhistorie, Archiv und Konfigurationsmenü.
 - PDF-Vorschau vor der Kundenbestätigung; Versand mit editierbarem Odoo-E-Mail-Dialog.
 - Online-Unterschrift ohne Enterprise-Modul `sign`: befristeter Kundenlink,

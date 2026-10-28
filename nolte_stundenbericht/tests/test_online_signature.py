@@ -4,6 +4,7 @@ import io
 import re
 from datetime import timedelta
 from unittest.mock import patch
+from lxml import html
 
 from PIL import Image, ImageDraw
 from odoo import Command, fields
@@ -13,6 +14,43 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestOnlineSignature(TransactionCase):
+    def test_report_mail_returns_to_report_without_changing_other_composers(self):
+        report = self.env['nolte.service.report'].create({'name': 'COMPOSER-RETURN', 'owner_user_id': self.technician.id})
+        composer = self.env['mail.compose.message'].create({
+            'model': report._name, 'res_ids': str(report.ids), 'composition_mode': 'comment',
+            'subject': 'Return test', 'body': 'Test body',
+        })
+        # Exercise the real public send action, suppressing only dispatch.
+        # No outgoing mail is created or sent by this regression test.
+        with patch.object(type(composer), '_action_send_mail', return_value=(self.env['mail.mail'], self.env['mail.message'])) as dispatch:
+            action = composer.action_send_mail()
+            dispatch.assert_called_once_with(auto_commit=False)
+        self.assertEqual(action['type'], 'ir.actions.act_url')
+        self.assertEqual(action['target'], 'self')
+        self.assertEqual(action['url'], '/odoo/action-%s/%s' % (self.env.ref('nolte_stundenbericht.action_nolte_service_report').id, report.id))
+        composer.write({'model': 'res.partner', 'res_ids': str(self.env.company.partner_id.ids)})
+        with patch.object(type(composer), '_action_send_mail', return_value=(self.env['mail.mail'], self.env['mail.message'])):
+            self.assertEqual(composer.action_send_mail()['tag'], 'action_send_mail_callback')
+        composer.write({'model': report._name, 'res_ids': str(report.ids)})
+        with patch.object(type(composer), '_action_send_mail', side_effect=UserError('Dispatch failed')):
+            with self.assertRaises(UserError):
+                composer.action_send_mail()
+
+    def test_pdf_special_characters_are_safe_and_preserved(self):
+        model = self.env["nolte.service.report"]
+        source = '100552 · Siemens 3RV20 → 3RV24 – 20 °C € <script>alert("x")</script> &'
+        encoded = str(model.pdf_text(source))
+        fragment = html.fragment_fromstring('<div>' + encoded + '</div>')
+        self.assertFalse(fragment.xpath('.//script'))
+        self.assertEqual(fragment.text_content(), source)
+        self.assertEqual(str(model.pdf_text('Übernachtung')), 'Uebernachtung')
+        renderer = self.env['ir.actions.report']
+        paperformat = self.env.ref('nolte_stundenbericht.paperformat_customer_service_report')
+        args = renderer._build_wkhtmltopdf_args(paperformat, False)
+        self.assertEqual(args[args.index('--encoding') + 1], 'utf-8')
+        other_format = paperformat.copy({'name': 'Unrelated report format'})
+        self.assertNotIn('--encoding', renderer._build_wkhtmltopdf_args(other_format, False))
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -31,7 +69,7 @@ class TestOnlineSignature(TransactionCase):
         })
         self.env["nolte.service.report.checklist"].create([
             {"report_id": report.id, "name": "PRIVATE_INTERNAL_CHECK", "visibility": "internal"},
-            {"report_id": report.id, "name": "Visible customer check", "visibility": "customer"},
+            {"report_id": report.id, "name": "Visible customer check", "visibility": "customer", "checked": True},
         ])
         if not report.company_id.email:
             report.company_id.email = "service@example.invalid"
