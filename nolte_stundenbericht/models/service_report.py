@@ -1,5 +1,6 @@
 import base64
 import json
+import unicodedata
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from uuid import uuid4
@@ -32,7 +33,15 @@ class NolteServiceReport(models.Model):
     manual_contact_phone = fields.Char(string="Telefon (manuell)")
     manual_contact_email = fields.Char(string="E-Mail (manuell)")
     service_date = fields.Date(string="Einsatzdatum", required=True, default=fields.Date.context_today, index=True, tracking=True)
+    planning_draft = fields.Boolean(string="Vorbereiteter Planungsentwurf", default=False, readonly=True, copy=False)
+    display_service_date = fields.Date(string="Einsatzdatum", compute="_compute_display_service_date", store=True)
     country_rate_key = fields.Char(string="BMF-Tarifschlüssel", default="DE", required=True)
+    bmf_rate_year = fields.Integer(compute="_compute_bmf_rate_selection")
+    bmf_rate_id = fields.Many2one(
+        "nolte.bmf.rate", string="BMF-Tarifschlüssel", compute="_compute_bmf_rate_selection",
+        inverse="_inverse_bmf_rate_selection",
+        domain="[('active', '=', True), ('year', '=', bmf_rate_year)]",
+    )
     service_location = fields.Char(string="Einsatzort")
     service_location_name = fields.Char(string="Firma am Einsatzort")
     service_location_contact_name = fields.Char(string="Ansprechpartner am Einsatzort")
@@ -50,6 +59,7 @@ class NolteServiceReport(models.Model):
         ("returned", "Zur Korrektur"),
     ], default="draft", required=True, tracking=True, index=True)
     is_closed = fields.Boolean(string="Abgeschlossen", compute="_compute_is_closed", store=True, index=True)
+    archived_manually = fields.Boolean(string="Manuell archiviert", default=False, copy=False, tracking=True)
     mobile_uuid = fields.Char(default=lambda self: str(uuid4()), required=True, copy=False, readonly=True, index=True)
     mobile_revision = fields.Integer(default=0, required=True, copy=False)
     server_revision = fields.Integer(default=0, required=True, copy=False)
@@ -128,16 +138,71 @@ class NolteServiceReport(models.Model):
                 ) or _("Neu")
         return super().create(vals_list)
 
-    @api.depends("state", "task_id.state", "task_id.stage_id.name")
+    @api.depends("service_date", "planning_draft", "task_id.date_deadline", "state", "member_ids.segment_ids")
+    def _compute_display_service_date(self):
+        for report in self:
+            pristine = report.planning_draft and report.state == "draft" and not report.member_ids.segment_ids
+            report.display_service_date = fields.Date.to_date(report.task_id.date_deadline) if pristine else report.service_date
+
+    @api.depends("state", "task_id.state", "task_id.stage_id.name", "task_id.active", "archived_manually")
     def _compute_is_closed(self):
         for report in self:
             task = report.task_id
             stage_name = (task.stage_id.with_context(lang=None).name or "").strip().casefold()
             report.is_closed = bool(
-                report.state == "billed"
+                report.archived_manually or report.state == "billed"
+                or (task and not task.active)
                 or task.state == "1_done"
                 or stage_name in ("abgeschlossen", "abgerechnet")
             )
+
+    def action_archive_completed(self):
+        self.check_access("write")
+        for report in self:
+            report._lock_customer_confirmation()
+        for report in self:
+            if report.state in ("draft", "returned", "awaiting_signature"):
+                raise UserError(_("Ein offener Entwurf oder eine ausstehende Kundenunterschrift kann noch nicht archiviert werden."))
+        self.write({"archived_manually": True})
+        return {"type": "ir.actions.client", "tag": "reload"}
+
+    def action_unarchive_manual(self):
+        self.check_access("write")
+        for report in self:
+            report._lock_customer_confirmation()
+        self.write({"archived_manually": False})
+        # Automatic closure (billed or completed task) remains authoritative.
+        return {"type": "ir.actions.client", "tag": "reload"}
+
+    @api.model
+    def action_open_service_project(self):
+        if not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
+            raise UserError(_("Sie sind nicht für den Stundenbericht freigeschaltet."))
+        projects = self.env["project.project"]
+        project = projects.search([("name", "=", "Aussendienst"), ("company_id", "=", self.env.company.id)],
+                                  order="sequence, id", limit=1) or projects.search([
+            ("name", "=", "Aussendienst"), ("company_id", "=", False)], order="sequence, id", limit=1)
+        if not project:
+            raise UserError(_("Das Projekt Aussendienst ist für Sie in diesem Unternehmen nicht verfügbar."))
+        return {"type": "ir.actions.act_url", "url": "/odoo/project/%s/tasks" % project.id, "target": "self"}
+
+    def action_open_mobile_report(self):
+        self.ensure_one()
+        self.check_access("read")
+        if self.owner_user_id != self.env.user or self.state not in ("draft", "returned"):
+            raise UserError(_("Nur eigene, bearbeitbare Berichte können in der App geöffnet werden."))
+        if self.env.user not in self.member_ids.employee_id.mapped("user_id"):
+            raise UserError(_("Bitte zuerst einen verantwortlichen Monteur in der Planung zuweisen."))
+        return {"type": "ir.actions.act_url", "url": "/my/stundenbericht?task_id=%s&report_id=%s" % (self.task_id.id, self.id), "target": "self"}
+
+    def action_open_service_task(self):
+        self.ensure_one()
+        self.check_access("read")
+        if not self.task_id:
+            raise UserError(_("Dieser Bericht ist keinem Einsatzauftrag zugeordnet."))
+        self.task_id.check_access("read")
+        return {"type": "ir.actions.act_window", "res_model": "project.task",
+                "views": [(False, "form")], "res_id": self.task_id.id, "target": "current"}
 
     def action_submit_review(self):
         self.filtered(lambda report: report.state in ("customer_confirmed", "internally_amended", "returned")).write({"state": "under_review"})
@@ -490,6 +555,57 @@ class NolteServiceReport(models.Model):
             report.message_post(body=_("Zeiten an die Odoo-Anwesenheit übergeben."))
         return True
 
+    @api.depends("country_rate_key", "service_date")
+    def _compute_bmf_rate_selection(self):
+        rates = self.env["nolte.bmf.rate"]
+        for report in self:
+            day = report.service_date or fields.Date.context_today(report)
+            report.bmf_rate_year = day.year
+            try:
+                key = report._expense_bmf_key(day)
+            except UserError:
+                # Keep unknown legacy keys intact; never silently choose DE
+                # or a rate from a different year when a catalogue is missing.
+                report.bmf_rate_id = False
+                continue
+            report.bmf_rate_id = rates.search([
+                ("year", "=", day.year), ("rate_key", "=", key), ("active", "=", True),
+            ], limit=1)
+
+    def _inverse_bmf_rate_selection(self):
+        for report in self:
+            rate = report.bmf_rate_id
+            day = report.service_date or fields.Date.context_today(report)
+            if not rate or not rate.active or rate.year != day.year:
+                raise UserError(_("Bitte einen aktiven BMF-Tarif für das Einsatzjahr %s auswählen.") % day.year)
+            report.country_rate_key = rate.rate_key
+
+    def _expense_bmf_key(self, service_date):
+        """Resolve the selected central BMF key for the actual service year.
+
+        Older mobile drafts contain ISO country codes rather than BMF keys.
+        Resolve those only when the country has an unambiguous general rate.
+        Never guess a city rate or fall back to Germany.
+        """
+        self.ensure_one()
+        key = (self.country_rate_key or "").strip()
+        rates = self.env["nolte.bmf.rate"].search([
+            ("year", "=", service_date.year), ("active", "=", True),
+        ])
+        exact = rates.filtered(lambda rate: rate.rate_key == key)
+        if len(exact) == 1:
+            return exact.rate_key
+        def normalized(value):
+            return "".join(char for char in unicodedata.normalize("NFKD", value or "").casefold() if char.isalnum())
+        country = self.env["res.country"].with_context(lang="de_DE").search([("code", "=", key.upper())], limit=1) if len(key) == 2 else self.env["res.country"]
+        if country:
+            names = {normalized(country.name), normalized(country.with_context(lang="en_US").name)}
+            general = rates.filtered(lambda rate: normalized(rate.country_name) in names
+                and normalized(rate.location_name) in ("", "imubrigen"))
+            if len(general) == 1:
+                return general.rate_key
+        raise UserError(_("Für den BMF-Schlüssel %(key)s fehlt ein eindeutiger aktiver Tarif für %(year)s. Bitte den passenden Eintrag aus der BMF-Auswahl wählen.") % {"key": key or "-", "year": service_date.year})
+
     def action_sync_spesenbericht(self):
         """Create/update the existing work report and distribute it safely.
 
@@ -533,6 +649,10 @@ class NolteServiceReport(models.Model):
                     continue
                 try:
                     group["summary"] = report._members_day_summary(day_members)
+                    country_keys = {item._expense_bmf_key(service_date) for item in day_members.mapped("report_id")}
+                    if len(country_keys) != 1:
+                        raise UserError(_("Für diesen Mitarbeiter sind am selben Tag unterschiedliche BMF-Länder/Tarife erfasst. Bitte den Tag im Spesenbericht prüfen."))
+                    group["country"] = next(iter(country_keys))
                 except UserError as error:
                     report._create_sync_conflict(employee, "manual_entry", str(error), service_date)
                     conflicts = True
@@ -547,6 +667,9 @@ class NolteServiceReport(models.Model):
                     continue
                 if monthly_report:
                     daily_line = monthly_report.line_ids.filtered(lambda item: item.date == service_date)[:1]
+                    if daily_line and daily_line.country and not daily_line.travel_type_automatic and daily_line.country != group["country"]:
+                        report._create_sync_conflict(employee, "manual_entry", _("Das manuell eingetragene BMF-Land im Spesenbericht weicht vom Stundenbericht ab und wurde nicht überschrieben."), service_date)
+                        conflicts = True
                     if daily_line and daily_line.absence_hours:
                         report._create_sync_conflict(employee, "absence", _("Für diesen Tag ist eine Abwesenheit eingetragen."), service_date)
                         conflicts = True
@@ -612,6 +735,8 @@ class NolteServiceReport(models.Model):
                 ], limit=1)
                 work_line = day_members.mapped("work_report_line_id")[:1]
                 expense_line = monthly_report.line_ids.filtered(lambda item: item.work_report_line_id == work_line)[:1]
+                if expense_line:
+                    expense_line.write({"country": group["country"]})
                 day_members.write({"expense_report_line_id": expense_line.id})
             report.write({"spesen_sync_state": "synchronized", "spesen_sync_message": _("An den Spesenbericht übergeben."), "server_revision": report.server_revision + 1})
             report.message_post(body=_("Zeiten an den bestehenden Spesenbericht übergeben."))
@@ -665,12 +790,15 @@ class NolteServiceReport(models.Model):
         date_text = dates[0].strftime("%d.%m.%Y") if dates else "-"
         if dates and dates[-1] != dates[0]:
             date_text += "–%s" % dates[-1].strftime("%d.%m.%Y")
+        location_name = self.service_location_name or self.task_id.nolte_service_location_name or ""
+        location_address = self.service_location or self.task_id.nolte_service_location or ""
+        location_text = ", ".join(filter(None, [location_name.strip(), location_address.strip()]))
         return "\n".join([
             "Service Techniker: %s" % (", ".join(technicians) or "-"),
             "Maschinen Nr.: %s" % (self.machine_number or "-"),
             "Maschinen Typ: %s" % (self.machine_type or "-"),
             "Zeitraum: %s" % date_text,
-        ])
+        ] + (["Einsatzort: %s" % location_text] if location_text else []))
 
     def _ensure_sale_order(self, partner=None):
         """Return the report's quotation, creating it at most once per report."""
@@ -1044,6 +1172,23 @@ class NolteServiceReportConflict(models.Model):
 
 class NolteProjectTask(models.Model):
     _inherit = "project.task"
+
+    def action_open_nolte_stundenbericht(self):
+        self.ensure_one()
+        self.check_access("read")
+        if not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
+            raise UserError(_("Sie sind nicht für den Stundenbericht freigeschaltet."))
+        reports = self.env["nolte.service.report"].search([("task_id", "=", self.id)], order="service_date desc, id desc")
+        if (len(reports) == 1 and reports.state in ("draft", "returned") and reports.owner_user_id == self.env.user
+                and self.env.user in reports.member_ids.employee_id.mapped("user_id")):
+            return reports.action_open_mobile_report()
+        if reports:
+            action = self.env["ir.actions.actions"]._for_xml_id("nolte_stundenbericht.action_nolte_service_report")
+            action.update({"domain": [("id", "in", reports.ids)], "context": {"default_task_id": self.id}})
+            if len(reports) == 1:
+                action.update({"views": [(False, "form")], "res_id": reports.id})
+            return action
+        return {"type": "ir.actions.act_url", "url": "/my/stundenbericht?task_id=%s" % self.id, "target": "self"}
 
     nolte_service_contact_id = fields.Many2one("res.partner", string="Ansprechpartner Einsatz")
     nolte_service_location = fields.Char(string="Standard-Einsatzort")

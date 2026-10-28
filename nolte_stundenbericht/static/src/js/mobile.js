@@ -1,6 +1,7 @@
 /** @odoo-module **/
 const DRAFT_KEY = "nolte-stundenbericht-drafts-v1";
 const SYNCED_STATE_KEY = "nolte-stundenbericht-sync-complete-v1";
+const taskOptionLabel = assignment => `${assignment.customerName || "Ohne Kundenzuordnung"} · ${assignment.name || "Einsatzauftrag"}`;
 const uuid = () => window.nolteUuid();
 const drafts = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "[]"); } catch { return []; } };
 const storeDrafts = value => localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
@@ -16,6 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const app = document.querySelector("#nolte-stundenbericht-mobile");
     if (!app) return;
     const form = app.querySelector("[data-report-form]");
+    const entryParams = new URLSearchParams(window.location.search);
+    const entryTaskId = /^\d+$/.test(entryParams.get("task_id") || "") ? entryParams.get("task_id") : null;
+    const entryReportId = /^\d+$/.test(entryParams.get("report_id") || "") ? entryParams.get("report_id") : null;
+    const taskBackLink = app.querySelector("[data-task-back-link]");
+    const updateTaskBackLink = taskId => {
+        if (!taskBackLink) return;
+        taskBackLink.classList.toggle("d-none", !taskId);
+        taskBackLink.href = taskId ? `/odoo/project.task/${encodeURIComponent(taskId)}` : "#";
+    };
     const message = app.querySelector("[data-message]");
     const customerEmailPanel = app.querySelector("[data-customer-email-panel]");
     const companyServiceEmail = app.querySelector("[data-company-service-email]");
@@ -301,8 +311,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=44", {scope: "/"}).catch(() => null);
-    const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", {}).then(data => {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=49", {scope: "/"}).catch(() => null);
+    const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", entryTaskId ? {task_id: entryTaskId} : {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");
         const selectedCountry = countryField.value || "DE";
@@ -314,7 +324,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 return option;
             }));
         }
-        countryField.value = data.countries?.some(country => country.code === selectedCountry) ? selectedCountry : "DE";
+        if (![...countryField.options].some(option => option.value === selectedCountry)) {
+            const option = document.createElement("option");
+            option.value = selectedCountry; option.textContent = `${selectedCountry} (gespeicherter BMF-Schlüssel)`;
+            countryField.append(option);
+        }
+        countryField.value = selectedCountry;
         const initialOvernights = employeeOvernights[activeEmployeeId] || 0;
         ownEmployeeId = String(data.employee.id);
         activeEmployeeId = ownEmployeeId;
@@ -337,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
             option.value = assignment.id;
             // The user needs to recognize the customer when choosing an
             // assignment. Technician instructions are shown separately below.
-            option.textContent = assignment.customerName || "Einsatzauftrag";
+            option.textContent = taskOptionLabel(assignment);
             option.dataset.customerId = assignment.customerId || "";
             option.dataset.customerName = assignment.customerName || "";
             option.dataset.customerAddress = assignment.customerAddress || "";
@@ -360,6 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     const applyTaskDefaults = () => {
         const taskId = String(field("taskId").value || "");
+        updateTaskBackLink(taskId);
         const task = field("taskId").selectedOptions[0];
         const assignment = assignmentsById.get(taskId);
         const historyWrap = app.querySelector("[data-customer-history-wrap]");
@@ -398,7 +414,39 @@ document.addEventListener("DOMContentLoaded", () => {
         field("machineNumber").value = task.dataset.machineNumber || "";
         field("machineType").value = task.dataset.machineType || "";
     };
-    field("taskId").addEventListener("change", applyTaskDefaults);
+    // Claim before any autosave can associate data with a stale assignment.
+    let taskClaimInProgress = false;
+    field("taskId").addEventListener("input", event => event.stopPropagation());
+    field("taskId").addEventListener("change", async event => {
+        event.stopPropagation();
+        clearTimeout(autoSaveTimer);
+        const select = field("taskId");
+        if (taskClaimInProgress) return;
+        const chosen = select.value;
+        if (!chosen) { applyTaskDefaults(); scheduleAutoSave(); return; }
+        select.disabled = true;
+        taskClaimInProgress = true;
+        try {
+            const claimed = await rpc("/nolte_stundenbericht/api/v1/tasks/claim", {task_id: Number(chosen)});
+            if (claimed.reportId) {
+                const data = await rpc("/nolte_stundenbericht/api/v1/reports/load", {report_id: claimed.reportId});
+                await loadServerReport(data);
+            } else {
+                applyTaskDefaults();
+                scheduleAutoSave();
+            }
+        } catch (error) {
+            select.value = currentDraft?.taskId || "";
+            applyTaskDefaults();
+            say(`Auftrag konnte nicht übernommen werden: ${error.message}`, true);
+        } finally { select.disabled = false; taskClaimInProgress = false; }
+    });
+    window.addEventListener("nolte:task-archived", event => {
+        const id = String(event.detail.taskId || "");
+        if (!id) return;
+        assignmentsById.delete(id);
+        [...field("taskId").options].find(option => option.value === id)?.remove();
+    });
     const renderDays = () => {
         dayList.replaceChildren();
         const activeEmployee = employeeOptions.find(item => String(item.id) === String(activeEmployeeId));
@@ -530,8 +578,8 @@ document.addEventListener("DOMContentLoaded", () => {
             employeeDays,
             employeeSchedules,
             activeEmployeeId: Number(activeEmployeeId),
-            taskId: field("taskId").value || null,
-            partnerId: task?.dataset.customerId || null,
+            taskId: field("taskId").value || currentDraft?.taskId || null,
+            partnerId: task?.dataset.customerId || field("manualPartnerId")?.value || null,
             manualCustomerName: field("manualCustomerName").value,
             manualCustomerStreet: field("manualCustomerStreet").value,
             manualCustomerZip: field("manualCustomerZip").value,
@@ -620,13 +668,20 @@ document.addEventListener("DOMContentLoaded", () => {
         field("taskId").value = draft.taskId || "";
         applyTaskDefaults();
         field("manualCustomerName").value = draft.manualCustomerName || "";
+        if (field("manualPartnerId")) field("manualPartnerId").value = draft.taskId ? "" : (draft.partnerId || "");
         field("manualCustomerStreet").value = draft.manualCustomerStreet || "";
         field("manualCustomerZip").value = draft.manualCustomerZip || "";
         field("manualCustomerCity").value = draft.manualCustomerCity || "";
         field("manualContactName").value = draft.manualContactName || "";
         field("manualContactPhone").value = draft.manualContactPhone || "";
         field("manualContactEmail").value = draft.manualContactEmail || "";
-        field("countryRateKey").value = draft.countryRateKey || "DE";
+        const savedCountryKey = draft.countryRateKey || "DE";
+        if (![...field("countryRateKey").options].some(option => option.value === savedCountryKey)) {
+            const option = document.createElement("option"); option.value = savedCountryKey;
+            option.textContent = `${savedCountryKey} (gespeicherter BMF-Schlüssel)`;
+            field("countryRateKey").append(option);
+        }
+        field("countryRateKey").value = savedCountryKey;
         field("serviceLocation").value = draft.serviceLocation || "";
         field("serviceLocationName").value = draft.serviceLocationName || "";
         field("serviceLocationContactName").value = draft.serviceLocationContactName || "";
@@ -717,7 +772,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 option.value = taskId;
                 field("taskId").append(option);
             }
-            option.textContent = task.customerName || "Einsatzauftrag";
+            option.textContent = taskOptionLabel(task);
             const values = {
                 customerId: task.customerId ?? data.partnerId,
                 customerName: task.customerName ?? data.customerName,
@@ -770,12 +825,44 @@ document.addEventListener("DOMContentLoaded", () => {
         say("Gespeicherte Berichtsdaten wurden geladen. Änderungen kannst du bearbeiten und erneut synchronisieren.");
     };
     window.nolteStundenbericht = {drafts, loadDraft, loadServerReport, newReport, deleteDraft, ensureDraft, getCurrentDraftUuid: () => currentDraft?.mobileUuid || null, getCurrentReport: () => report};
+    if (taskBackLink) taskBackLink.onclick = async event => {
+        event.preventDefault();
+        if (syncInProgress) return say("Bitte die laufende Übertragung abwarten.", true);
+        try {
+            clearTimeout(autoSaveTimer);
+            if (!syncCompleted) await saveDraftLocally(true);
+            window.location.assign(taskBackLink.href);
+        } catch {
+            say("Die Eingaben konnten nicht lokal gespeichert werden. Bitte diese Seite nicht schließen.", true);
+        }
+    };
+    if (entryTaskId) boot.then(async () => {
+        taskClaimInProgress = true;
+        const claimed = await rpc("/nolte_stundenbericht/api/v1/tasks/claim", {task_id: Number(entryTaskId)});
+        const loadReportId = entryReportId || claimed?.reportId;
+        if (loadReportId) {
+            const data = await rpc("/nolte_stundenbericht/api/v1/reports/load", {report_id: Number(loadReportId)});
+            if (String(data.taskId) !== entryTaskId) throw Error("Der Bericht gehört nicht zu diesem Einsatzauftrag.");
+            const local = drafts().find(item => item.mobileUuid === data.mobileUuid);
+            if (local) await loadDraft(local);
+            else await loadServerReport(data);
+        } else {
+            const local = drafts().filter(item => String(item.taskId) === entryTaskId).at(-1);
+            if (local) await loadDraft(local);
+            else {
+                field("taskId").value = entryTaskId;
+                applyTaskDefaults();
+                await saveDraftLocally(true);
+            }
+        }
+        window.dispatchEvent(new CustomEvent("nolte:show-view", {detail: "general"}));
+    }).catch(error => say(`Stundenbericht konnte nicht geöffnet werden: ${error.message}`, true)).finally(() => { taskClaimInProgress = false; });
     app.querySelectorAll("[data-new-report]").forEach(button => { button.onclick = newReport; });
     form.addEventListener("input", scheduleAutoSave);
     form.addEventListener("change", scheduleAutoSave);
     window.addEventListener("nolte:report-content-changed", scheduleAutoSave);
     const synchronizeForSignature = async () => {
-        if (syncInProgress) return;
+        if (syncInProgress || taskClaimInProgress) return;
         if (syncCompleted && report) {
             confirmation.classList.remove("d-none");
             return;
@@ -808,7 +895,8 @@ document.addEventListener("DOMContentLoaded", () => {
             report = result;
             // Keep the UUID and server revision so later edits update the same
             // report instead of creating another one.
-            currentDraft = {...currentDraft, serverRevision: result.serverRevision};
+            currentDraft = {...currentDraft, serverRevision: result.serverRevision, taskId: result.taskId || currentDraft.taskId};
+            updateTaskBackLink(result.taskId || currentDraft.taskId);
             if (sentRevision !== contentRevision) {
                 await saveDraftLocally(true);
                 transferStatus.textContent = "Es gibt neue Änderungen. Bitte „Unterschrift“ erneut öffnen.";
@@ -863,7 +951,7 @@ document.addEventListener("DOMContentLoaded", () => {
     app.querySelector("[data-signature-clear]").onclick = () => { context.clearRect(0, 0, canvas.width, canvas.height); hasSignature = false; };
     app.querySelector("[data-confirm]").onclick = async () => {
         const signer = app.querySelector("[data-signer-name]").value.trim();
-        if (!syncCompleted || syncInProgress || !report || !signer || !hasSignature) return say("Bericht bitte zuerst übertragen und Name sowie Unterschrift ergänzen.", true);
+        if (!syncCompleted || syncInProgress || taskClaimInProgress || !report || !signer || !hasSignature) return say("Bericht bitte zuerst übertragen und Name sowie Unterschrift ergänzen.", true);
         try {
             report = await rpc("/nolte_stundenbericht/api/v1/reports/customer-confirm", {mobile_uuid: report.mobileUuid, signer_name: signer, signature: canvas.toDataURL("image/png"), expected_server_revision: report.serverRevision});
             updateCustomerEmailPanel();

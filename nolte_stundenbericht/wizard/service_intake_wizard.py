@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, Command
 from odoo.exceptions import UserError
 
 
@@ -25,10 +25,15 @@ class NolteServiceIntakeWizard(models.TransientModel):
         domain="[('active', '=', True)]",
     )
     technician_ids = fields.Many2many(
-        "hr.employee", string="Servicetechniker", required=True,
-        domain="[('active', '=', True), ('user_id', '!=', False)]",
+        "hr.employee", string="Servicetechniker",
+        domain=lambda self: [("active", "=", True), ("user_id.group_ids", "in", self.env.ref("nolte_stundenbericht.group_stundenbericht_user").id),
+                             "|", ("company_id", "=", False), ("company_id", "=", self.env.company.id)],
     )
-    planned_date = fields.Date(string="Geplanter Termin", default=fields.Date.context_today)
+    report_owner_employee_id = fields.Many2one("hr.employee", string="Berichtverantwortlich",
+        domain="[('id', 'in', technician_ids)]",
+        help="Dieser Monteur führt den gemeinsamen Stundenbericht in der App weiter.")
+    created_report_id = fields.Many2one("nolte.service.report", readonly=True, copy=False)
+    planned_date = fields.Date(string="Geplanter Termin")
     service_location = fields.Text(
         string="Abweichender Einsatzort",
         help="Leer lassen, wenn der Einsatz beim Kunden stattfindet. Sonst vollständige Adresse eintragen.",
@@ -89,6 +94,11 @@ class NolteServiceIntakeWizard(models.TransientModel):
     def _onchange_partner_id(self):
         self.service_contact_id = False
 
+    @api.onchange("technician_ids")
+    def _onchange_technician_ids(self):
+        if self.report_owner_employee_id not in self.technician_ids:
+            self.report_owner_employee_id = self.technician_ids.filtered(lambda employee: employee.user_id == self.env.user)[:1] or self.technician_ids[:1]
+
     @api.onchange("service_location_contact_id")
     def _onchange_service_location_contact_id(self):
         for wizard in self:
@@ -114,14 +124,32 @@ class NolteServiceIntakeWizard(models.TransientModel):
 
     def action_create_service_task(self):
         self.ensure_one()
+        self.check_access("write")
+        # Serialize retries/double clicks on the same saved planning wizard.
+        self.flush_recordset()
+        self.env.cr.execute("SELECT id FROM nolte_service_intake_wizard WHERE id = %s FOR UPDATE", [self.id])
+        self.invalidate_recordset(["created_report_id"])
+        if self.created_report_id:
+            self.created_report_id.check_access("read")
+            return self._created_report_action()
         name = (self.name or "").strip()
         if not name:
             raise UserError(_("Bitte eine Bezeichnung für den Einsatz eingeben."))
         technicians = self.technician_ids.filtered(lambda employee: employee.user_id)
-        if not technicians:
-            raise UserError(_("Bitte mindestens einen Servicetechniker mit Odoo-Benutzer auswählen."))
+        group = self.env.ref("nolte_stundenbericht.group_stundenbericht_user")
+        allowed = self.env["hr.employee"].sudo().search([
+            ("id", "in", technicians.ids), ("active", "=", True), ("user_id.group_ids", "in", group.id),
+            "|", ("company_id", "=", False), ("company_id", "=", self.company_id.id),
+        ])
+        if set(allowed.ids) != set(self.technician_ids.ids):
+            raise UserError(_("Alle ausgewählten Servicetechniker müssen für Stundenbericht Monteur im gewählten Unternehmen freigeschaltet sein."))
+        owner = self.report_owner_employee_id or technicians.filtered(lambda employee: employee.user_id == self.env.user)[:1] or technicians[:1]
+        if owner and owner not in technicians:
+            raise UserError(_("Der Berichtverantwortliche muss ein ausgewählter Servicetechniker sein."))
+        if self.project_id.company_id and self.project_id.company_id != self.company_id:
+            raise UserError(_("Projekt und Serviceeinsatz müssen zum selben Unternehmen gehören."))
         planned_stage = self.env["project.task.type"].search([
-            ("name", "=", "Einsatz geplant"),
+            ("name", "=", "Einsatz geplant" if self.planned_date else "Ungeplant"),
             "|", ("project_ids", "=", False), ("project_ids", "in", [self.project_id.id]),
         ], order="sequence, id", limit=1)
         values = {
@@ -129,9 +157,6 @@ class NolteServiceIntakeWizard(models.TransientModel):
             "project_id": self.project_id.id,
             "company_id": self.project_id.company_id.id or self.company_id.id,
             "partner_id": self.partner_id.id,
-            # The deployed task form shows the Studio customer field for
-            # non-billable projects; the standard partner_id is hidden there.
-            "x_customer_id": self.partner_id.id,
             "nolte_service_contact_id": self.service_contact_id.id or False,
             "user_ids": [(6, 0, technicians.mapped("user_id").ids)],
             "date_deadline": self.planned_date or False,
@@ -145,12 +170,34 @@ class NolteServiceIntakeWizard(models.TransientModel):
         }
         if planned_stage:
             values["stage_id"] = planned_stage.id
+        if "x_customer_id" in self.env["project.task"]._fields:
+            values["x_customer_id"] = self.partner_id.id
         task = self.env["project.task"].create(values)
+        service_date = self.planned_date or fields.Date.context_today(self)
+        template = self.env["nolte.service.checklist.template"].with_company(self.company_id)._default_for_current_company()
+        report = self.env["nolte.service.report"].create({
+            "task_id": task.id, "partner_id": self.partner_id.id, "company_id": self.company_id.id,
+            "owner_user_id": owner.user_id.id if owner else self.env.user.id, "service_date": service_date,
+            "planning_draft": True,
+            "service_location": values["nolte_service_location"],
+            "service_location_name": values["nolte_service_location_name"],
+            "service_location_contact_name": values["nolte_service_location_contact_name"],
+            "service_location_contact_phone": values["nolte_service_location_contact_phone"],
+            "machine_number": values["nolte_machine_number"], "machine_type": values["nolte_machine_type"],
+            "employee_assignment_ids": [Command.create({"employee_id": employee.id}) for employee in technicians],
+            "member_ids": [Command.create({"employee_id": employee.id, "service_date": service_date}) for employee in technicians],
+            "checklist_ids": [Command.create({"name": line.name, "note": line.note or False,
+                "visibility": "customer", "checked": False, "sequence": line.sequence}) for line in template.line_ids],
+        })
+        self.created_report_id = report
+        return self._created_report_action()
+
+    def _created_report_action(self):
         return {
             "type": "ir.actions.act_window",
-            "name": _("Serviceeinsatz"),
-            "res_model": "project.task",
-            "res_id": task.id,
-            "view_mode": "form",
+            "name": _("Einsatzbericht"),
+            "res_model": "nolte.service.report",
+            "res_id": self.created_report_id.id,
+            "views": [(False, "form")],
             "target": "current",
         }

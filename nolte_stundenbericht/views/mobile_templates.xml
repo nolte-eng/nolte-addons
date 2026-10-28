@@ -25,7 +25,7 @@
               <h1>Stundenbericht</h1>
               <p>Service. Maschinen. Mehr erreichen.</p>
             </div>
-            <div class="text-end ns-header-actions"><span class="badge text-bg-secondary" data-status="">Offline bereit</span><small class="d-block mt-1" data-draft-state=""></small><button class="btn btn-primary mt-2" type="button" data-new-report="">＋ Neuer Bericht</button></div>
+            <div class="text-end ns-header-actions"><span class="badge text-bg-secondary" data-status="">Offline bereit</span><small class="d-block mt-1" data-draft-state=""></small><a class="btn btn-outline-primary mt-2 d-none" data-task-back-link="" href="#">Zum Einsatzauftrag</a> <button class="btn btn-primary mt-2" type="button" data-new-report="">＋ Neuer Bericht</button></div>
           </header>
           <div class="alert ns-message" data-message="">Entw&#xFC;rfe werden auf diesem Ger&#xE4;t gespeichert und bei Verbindung synchronisiert.</div>
           <section class="card mb-3" data-report-view="home" data-recent-reports=""><div class="card-body"><h2 class="h5 mb-2">Letzte Berichte</h2><p class="small text-muted mb-0">Wird geladen …</p></div></section>
@@ -75,7 +75,15 @@
                   <div class="col-12" data-manual-customer="">
                     <div class="border rounded bg-light p-3">
                       <div class="fw-bold mb-2">Firma und Ansprechpartner</div>
-                      <p class="small text-muted mb-2">Für einen Bericht ohne Einsatzauftrag werden diese Daten nur für diesen Bericht erfasst.</p>
+                      <p class="small text-muted mb-2">Vorhandene Firma suchen oder die Daten frei eingeben. Änderungen hier ändern nicht den Kontaktstamm.</p>
+                      <input type="hidden" name="manualPartnerId"/>
+                      <div class="mb-3">
+                        <label for="ns-company-search">Firma suchen</label>
+                        <input id="ns-company-search" class="form-control" type="search" data-company-search="" placeholder="Firmenname, Ort oder PLZ – mindestens 2 Zeichen" autocomplete="off" aria-controls="ns-company-results"/>
+                        <div id="ns-company-results" class="list-group mt-1 d-none" data-company-results=""/>
+                        <div class="small text-muted mt-1" data-company-search-status="" role="status" aria-live="polite"/>
+                        <button class="btn btn-link btn-sm px-0 d-none" type="button" data-company-clear="">Auswahl aufheben / frei eingeben</button>
+                      </div>
                       <div class="row g-2">
                         <div class="col-12 col-md-6"><label>Firma</label><input class="form-control" name="manualCustomerName" placeholder="Firmenname"/></div>
                         <div class="col-12 col-md-6"><label>Straße / Hausnummer</label><input class="form-control" name="manualCustomerStreet"/></div>
@@ -261,13 +269,14 @@
       </main>
         <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/day_copy.js?v=1"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=66"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=71"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/company_search.js?v=1"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/flat_rates.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/materials.js?v=6"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/checklist.js?v=7"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/photos.js?v=6"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/recent_reports.js?v=4"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/recent_reports.js?v=5"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/confirmation_preview.js?v=4"/>
         <script src="/nolte_stundenbericht/static/src/js/request_online_signature.js?v=2" defer="defer"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/pdf_preview.js?v=2"/>

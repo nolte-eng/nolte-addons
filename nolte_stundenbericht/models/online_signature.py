@@ -328,6 +328,20 @@ class SignatureMailComposer(models.TransientModel):
 
     nolte_signature_request_id = fields.Many2one("nolte.service.signature.request", readonly=True)
 
+    def action_send_mail(self):
+        self.ensure_one()
+        result = super().action_send_mail()
+        res_ids = self._evaluate_res_ids()
+        if self.model == "nolte.service.report" and self.composition_mode == "comment" and len(res_ids) == 1:
+            report = self.env["nolte.service.report"].browse(res_ids).exists()
+            if report:
+                report.check_access("read")
+                action = self.env.ref("nolte_stundenbericht.action_nolte_service_report")
+                # A composer opened by a standalone server-action URL has no
+                # underlying form to restore when Odoo closes its dialog.
+                return {"type": "ir.actions.act_url", "url": "/odoo/action-%s/%s" % (action.id, report.id), "target": "self"}
+        return result
+
     def _prepare_signature_dispatch(self):
         self.ensure_one()
         record = self.nolte_signature_request_id.sudo()

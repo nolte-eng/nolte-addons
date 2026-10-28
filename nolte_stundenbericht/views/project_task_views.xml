@@ -5,6 +5,18 @@
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
+                <field name="nolte_service_planning" invisible="1"/>
+                <field name="active" invisible="1"/>
+                <button name="action_nolte_archive_service" type="object" string="Archivieren"
+                        invisible="not active or not nolte_service_planning"
+                        groups="nolte_stundenbericht.group_stundenbericht_approver"
+                        confirm="Diesen Einsatz mit allen zugehörigen Berichten archivieren? Er verschwindet aus der aktiven Planung und der Auftragsauswahl. Daten und Abrechnungsstatus bleiben erhalten."/>
+                <button name="action_nolte_restore_service" type="object" string="Wiederherstellen"
+                        invisible="active or not nolte_service_planning"
+                        groups="nolte_stundenbericht.group_stundenbericht_approver"/>
+                <button name="action_open_nolte_stundenbericht" type="object"
+                        string="Stundenbericht öffnen" class="oe_highlight"
+                        groups="nolte_stundenbericht.group_stundenbericht_user"/>
                 <button name="action_open_nolte_customer_history" type="object"
                         string="Kundenhistorie" class="oe_highlight"
                         groups="nolte_stundenbericht.group_stundenbericht_user"/>

@@ -20,12 +20,16 @@
                         </group>
                         <group string="Einsatzplanung">
                             <field name="technician_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="report_owner_employee_id" options="{'no_create': True}" invisible="not technician_ids"/>
                             <field name="planned_date"/>
                             <field name="company_id" invisible="1"/>
                         </group>
                     </group>
                     <group string="Einsatzort">
-                        <field name="service_location_contact_id" string="Kontakt suchen" options="{'no_create': True, 'no_create_edit': True}" placeholder="Firma oder Adresse suchen …"/>
+                        <field name="service_location_contact_id" string="Kontakt suchen"
+                               options="{'no_quick_create': True, 'no_create_edit': False}"
+                               context="{'default_is_company': True, 'default_company_id': company_id, 'default_phone': service_location_contact_phone}"
+                               placeholder="Firma oder Adresse suchen oder neu anlegen …"/>
                         <field name="service_location_name" placeholder="Firma am Einsatzort (falls abweichend vom Auftraggeber)"/>
                         <field name="service_location_contact_name" placeholder="Name des Ansprechpartners vor Ort"/>
                         <field name="service_location_contact_phone" placeholder="Telefonnummer für Rückfragen vor Ort"/>
