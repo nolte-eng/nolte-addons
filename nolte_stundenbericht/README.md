@@ -3,7 +3,7 @@
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.3.5
+## Version 19.0.1.3.6
 
 - Zentral verwaltete, optional einfügbare und anschließend editierbare Arbeitsvorlagen.
 - Ein zentraler **Einsatzabschluss** je Unternehmen unter Konfiguration. Neue Berichte übernehmen die Vorgabe automatisch; Monteure können eigene Prüfpunkte ergänzen. Bestehende interne Einträge bleiben gespeichert und privat.
@@ -14,6 +14,7 @@ Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 - Freie Einsätze aus dem Projekt „Aussendienst“ übernehmen und vorbereitete Berichte weiterverwenden.
 - Auftragsauswahl als „Kunde · Auftragstitel“; abgeschlossene und archivierte Einsätze werden ausgeblendet.
 - Einzelne Berichte und vollständige Einsätze archivieren und manuelle Archivierungen zurücknehmen.
+- Pausen werden bei der Spesenübergabe auch innerhalb durchgehender Arbeitsblöcke abgezogen; überlappende Pausen und bereits freie Zeitlücken zählen nur einmal. Bestehende Spesen werden nicht automatisch neu berechnet.
 - BMF-Land und Ortszuschlag aus der zentralen Spesentabelle, im Backend passend zum Einsatzjahr auswählbar.
 - Firmensuche in manuellen Berichten sowie neue Einsatzorte über die Kontaktverwaltung anlegen.
 - Direkte Navigation zwischen Planung und Stundenbericht; manuelle mobile Berichte erzeugen einen Einsatzauftrag.
