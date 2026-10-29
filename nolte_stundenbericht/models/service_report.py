@@ -1,6 +1,7 @@
 import base64
 import json
 import unicodedata
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from email.utils import formataddr
 from zoneinfo import ZoneInfo
@@ -10,7 +11,7 @@ from psycopg2 import IntegrityError
 from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import email_normalize
 
 
@@ -77,6 +78,7 @@ class NolteServiceReport(models.Model):
     internal_note = fields.Text(string="Interne Bemerkung")
     member_ids = fields.One2many("nolte.service.report.member", "report_id", string="Mitarbeiter")
     employee_assignment_ids = fields.One2many("nolte.service.report.employee", "report_id", string="Einsatzmitarbeiter")
+    technician_ids = fields.Many2many("hr.employee", string="Monteure", compute="_compute_technician_ids")
     material_ids = fields.One2many("nolte.service.report.material", "report_id", string="Material")
     checklist_ids = fields.One2many("nolte.service.report.checklist", "report_id", string="Checkliste")
     customer_checklist_ids = fields.One2many("nolte.service.report.checklist", "report_id", string="Kundencheckliste", domain=[("visibility", "=", "customer")])
@@ -139,6 +141,11 @@ class NolteServiceReport(models.Model):
                     "nolte.service.report", sequence_date=sequence_date
                 ) or _("Neu")
         return super().create(vals_list)
+
+    @api.depends("employee_assignment_ids.employee_id", "member_ids.employee_id")
+    def _compute_technician_ids(self):
+        for report in self:
+            report.technician_ids = report.employee_assignment_ids.employee_id | report.member_ids.employee_id
 
     @api.depends("service_date", "planning_draft", "task_id.date_deadline", "state", "member_ids.segment_ids")
     def _compute_display_service_date(self):
@@ -884,6 +891,51 @@ class NolteServiceReport(models.Model):
         })
         return order
 
+    def _check_sale_order_transfer_target(self, lock=False, allow_locked=False):
+        """Allow quotations and confirmed orders, preserving explicit locks."""
+        self.ensure_one()
+        order = self.sale_order_id
+        if not order:
+            return
+        if lock:
+            order.flush_recordset(["state", "locked", "company_id", "partner_id"])
+            self.env.cr.execute("SELECT id FROM sale_order WHERE id = %s FOR UPDATE", [order.id])
+            order.invalidate_recordset(["state", "locked", "company_id", "partner_id"])
+        if order.company_id != self.company_id:
+            raise UserError(_("Der Verkaufsauftrag gehört zu einem anderen Unternehmen."))
+        if self.partner_id and order.partner_id.commercial_partner_id != self.partner_id.commercial_partner_id:
+            raise UserError(_("Der Verkaufsauftrag gehört zu einem anderen Kunden als der Stundenbericht."))
+        if order.state not in ("draft", "sent", "sale"):
+            raise UserError(_("Bitte ein Angebot oder einen bestätigten Verkaufsauftrag zuordnen. Stornierte Aufträge können nicht ergänzt werden."))
+        if order.locked and not allow_locked:
+            raise UserError(_("Der Verkaufsauftrag ist gesperrt. Bitte zuerst im Verkauf über „Entsperren“ freigeben und anschließend die Übertragung erneut starten."))
+
+    @contextmanager
+    def _temporarily_unlocked_sale_order(self):
+        """Unlock only for approved transfer and restore the original lock."""
+        self.ensure_one()
+        with self.env.cr.savepoint():
+            self.flush_recordset(["state", "sale_order_id"])
+            self.env.cr.execute("SELECT id FROM nolte_service_report WHERE id = %s FOR UPDATE", [self.id])
+            self.invalidate_recordset(["state", "sale_order_id"])
+            # A retry must not unlock or change an already transferred order.
+            if self.state == "ready_to_bill" or (self.member_ids and all(member.billing_state == "transferred" for member in self.member_ids)):
+                yield
+                return
+            self._check_sale_order_transfer_target(lock=True, allow_locked=True)
+            order = self.sale_order_id
+            was_locked = bool(order and order.locked)
+            if was_locked:
+                # The following transfer uses controlled elevation, but native
+                # unlocking must remain subject to the actual user's rights.
+                order.check_access("write")
+                order.action_unlock()
+            try:
+                yield
+            finally:
+                if was_locked:
+                    order.action_lock()
+
     def action_approve_billing(self, approved_quantities=None):
         """Create sale lines only after an explicit office approval.
 
@@ -892,6 +944,9 @@ class NolteServiceReport(models.Model):
         the calculated preview; a zero explicitly suppresses that billable
         quantity while keeping the raw internal time intact.
         """
+        self.check_access("write")
+        if not self.env.su and not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_approver"):
+            raise AccessError(_("Nur Stundenbericht-Prüfer dürfen die Abrechnung an Verkauf übergeben."))
         approved_quantities = approved_quantities or {}
         product_keys = {
             "work_normal": "nolte_overtime_billing.product_work_id",
@@ -912,123 +967,122 @@ class NolteServiceReport(models.Model):
             "allowance_days": _("Auslöse pro Tag"),
         }
         for original_report in self:
-            report = original_report.sudo()
-            report.flush_recordset(["state", "sale_order_id"])
-            report.env.cr.execute(
-                "SELECT id FROM nolte_service_report WHERE id = %s FOR UPDATE",
-                [report.id],
-            )
-            report.invalidate_recordset(["state", "sale_order_id"])
-            if report.state == "ready_to_bill" or (report.member_ids and all(member.billing_state == "transferred" for member in report.member_ids)):
-                continue
-            if report.state != "under_review":
-                raise UserError(_("Die Abrechnung kann erst nach der Büroprüfung freigegeben werden."))
-            if report.sale_order_id and report.sale_order_id.state not in ("draft", "sent"):
-                raise UserError(_("Für die Abrechnung ist ein offener Auftrag erforderlich."))
-            report._ensure_sale_order()
-            existing_note_lines = report.sale_order_id.order_line.filtered(
-                lambda line: line.display_type == "line_note"
-            )
-            service_note = report._sale_order_service_note()
-            legacy_note = existing_note_lines.filtered(
-                lambda line: (line.name or "").split("\n", 1)[0] == "Stundenbericht: %s" % report.name
-            )[:1]
-            if legacy_note:
-                legacy_note.write({"name": service_note})
-            if not any(line.name == service_note for line in existing_note_lines):
-                report.env["sale.order.line"].create({
-                    "order_id": report.sale_order_id.id,
-                    "display_type": "line_note",
-                    "name": service_note,
-                    "sequence": 2,
-                })
-            if any(member.billing_state != "preview" for member in report.member_ids):
-                raise UserError(_("Für alle Mitarbeiter muss zuerst eine Abrechnungsvorschau vorliegen."))
-            parameters = report.env["ir.config_parameter"].sudo()
-            products = {}
-            for key, parameter in product_keys.items():
-                value = parameters.get_param(parameter) or ""
-                product = report.env["product.product"].browse(int(value)) if value.isdigit() else report.env["product.product"]
-                if key not in ("kilometers", "overnights") and not product:
-                    raise UserError(_("Für %s ist im Überstundenmodul kein Abrechnungsprodukt konfiguriert.") % labels[key])
-                products[key] = product
-            approved_by_employee = {}
-            members_by_employee = {}
-            for member in report.member_ids:
-                preview = member.billing_preview or {}
-                source = {
-                    "work_normal": (preview.get("work") or {}).get("normal", 0.0),
-                    "work_ot30": (preview.get("work") or {}).get("ot30", 0.0),
-                    "work_ot50": (preview.get("work") or {}).get("ot50", 0.0),
-                    "travel_normal": (preview.get("travel") or {}).get("normal", 0.0),
-                    "travel_ot30": (preview.get("travel") or {}).get("ot30", 0.0),
-                    "travel_ot50": (preview.get("travel") or {}).get("ot50", 0.0),
-                    "kilometers": preview.get("kilometers", 0.0),
-                    "overnights": preview.get("overnights", 0.0),
-                    "allowance_days": preview.get("allowance_days", 1.0),
-                }
-                overrides = approved_quantities.get(str(member.id), approved_quantities.get(member.id))
-                if overrides is None:
-                    overrides = approved_quantities.get(str(member.employee_id.id), approved_quantities.get(member.employee_id.id, {}))
-                approved = {}
-                for key, calculated in source.items():
-                    quantity = float(overrides[key]) if key in overrides else float(calculated)
-                    if quantity < 0 or quantity > float(calculated) + 1e-6:
-                        raise UserError(_("Die freigegebene Menge für %s ist ungültig.") % labels[key])
-                    approved[key] = quantity
-                employee_id = member.employee_id.id
-                if employee_id not in approved_by_employee:
-                    approved_by_employee[employee_id] = {key: 0.0 for key in product_keys}
-                    members_by_employee[employee_id] = report.env["nolte.service.report.member"]
-                members_by_employee[employee_id] |= member
-                for key, quantity in approved.items():
-                    approved_by_employee[employee_id][key] += quantity
-                member.billing_approved = approved
-
-            for employee_id, approved in approved_by_employee.items():
-                employee_members = members_by_employee[employee_id].sorted("service_date")
-                employee = employee_members[0].employee_id
-                created_lines = report.env["sale.order.line"]
-                for sequence, key in enumerate(product_keys, start=10):
-                    product = products[key]
-                    quantity = approved[key]
-                    if not product or quantity <= 1e-6:
-                        continue
-                    line = report.env["sale.order.line"].new({
+            with original_report._temporarily_unlocked_sale_order():
+                report = original_report.sudo()
+                report.flush_recordset(["state", "sale_order_id"])
+                report.env.cr.execute(
+                    "SELECT id FROM nolte_service_report WHERE id = %s FOR UPDATE",
+                    [report.id],
+                )
+                report.invalidate_recordset(["state", "sale_order_id"])
+                if report.state == "ready_to_bill" or (report.member_ids and all(member.billing_state == "transferred" for member in report.member_ids)):
+                    continue
+                if report.state != "under_review":
+                    raise UserError(_("Die Abrechnung kann erst nach der Büroprüfung freigegeben werden."))
+                report._check_sale_order_transfer_target(lock=True)
+                report._ensure_sale_order()
+                existing_note_lines = report.sale_order_id.order_line.filtered(
+                    lambda line: line.display_type == "line_note"
+                )
+                service_note = report._sale_order_service_note()
+                legacy_note = existing_note_lines.filtered(
+                    lambda line: (line.name or "").split("\n", 1)[0] == "Stundenbericht: %s" % report.name
+                )[:1]
+                if legacy_note:
+                    legacy_note.write({"name": service_note})
+                if not any(line.name == service_note for line in existing_note_lines):
+                    report.env["sale.order.line"].create({
                         "order_id": report.sale_order_id.id,
-                        "product_id": product.id,
-                        "product_uom_qty": quantity,
+                        "display_type": "line_note",
+                        "name": service_note,
+                        "sequence": 2,
                     })
-                    if hasattr(line, "_onchange_product_id"):
-                        line._onchange_product_id()
-                    if hasattr(line, "_onchange_product_uom_qty"):
-                        line._onchange_product_uom_qty()
-                    line.product_uom_qty = quantity
-                    detail = employee.name
-                    if key == "allowance_days":
-                        service_dates = sorted(set(employee_members.mapped("service_date")))
-                        date_text = ", ".join(day.strftime("%d.%m.%Y") for day in service_dates)
-                        if date_text:
-                            detail += "\nAuslöse: %s" % date_text
-                    product_description = line.name or product.display_name
-                    line.name = "%s\n%s" % (product_description, detail)
-                    line.sequence = sequence
-                    created_lines |= report.env["sale.order.line"].create(line._convert_to_write(line._cache))
-                employee_members.write({
-                    "billing_sale_line_ids": [(6, 0, created_lines.ids)],
-                    "billing_state": "transferred",
-                })
-            report._transfer_flat_rates()
-            report.write({"state": "ready_to_bill", "server_revision": report.server_revision + 1})
-            report.message_post(body=_("Abrechnung freigegeben und Auftragspositionen erstellt."))
+                if any(member.billing_state != "preview" for member in report.member_ids):
+                    raise UserError(_("Für alle Mitarbeiter muss zuerst eine Abrechnungsvorschau vorliegen."))
+                parameters = report.env["ir.config_parameter"].sudo()
+                products = {}
+                for key, parameter in product_keys.items():
+                    value = parameters.get_param(parameter) or ""
+                    product = report.env["product.product"].browse(int(value)) if value.isdigit() else report.env["product.product"]
+                    if key not in ("kilometers", "overnights") and not product:
+                        raise UserError(_("Für %s ist im Überstundenmodul kein Abrechnungsprodukt konfiguriert.") % labels[key])
+                    products[key] = product
+                approved_by_employee = {}
+                members_by_employee = {}
+                for member in report.member_ids:
+                    preview = member.billing_preview or {}
+                    source = {
+                        "work_normal": (preview.get("work") or {}).get("normal", 0.0),
+                        "work_ot30": (preview.get("work") or {}).get("ot30", 0.0),
+                        "work_ot50": (preview.get("work") or {}).get("ot50", 0.0),
+                        "travel_normal": (preview.get("travel") or {}).get("normal", 0.0),
+                        "travel_ot30": (preview.get("travel") or {}).get("ot30", 0.0),
+                        "travel_ot50": (preview.get("travel") or {}).get("ot50", 0.0),
+                        "kilometers": preview.get("kilometers", 0.0),
+                        "overnights": preview.get("overnights", 0.0),
+                        "allowance_days": preview.get("allowance_days", 1.0),
+                    }
+                    overrides = approved_quantities.get(str(member.id), approved_quantities.get(member.id))
+                    if overrides is None:
+                        overrides = approved_quantities.get(str(member.employee_id.id), approved_quantities.get(member.employee_id.id, {}))
+                    approved = {}
+                    for key, calculated in source.items():
+                        quantity = float(overrides[key]) if key in overrides else float(calculated)
+                        if quantity < 0 or quantity > float(calculated) + 1e-6:
+                            raise UserError(_("Die freigegebene Menge für %s ist ungültig.") % labels[key])
+                        approved[key] = quantity
+                    employee_id = member.employee_id.id
+                    if employee_id not in approved_by_employee:
+                        approved_by_employee[employee_id] = {key: 0.0 for key in product_keys}
+                        members_by_employee[employee_id] = report.env["nolte.service.report.member"]
+                    members_by_employee[employee_id] |= member
+                    for key, quantity in approved.items():
+                        approved_by_employee[employee_id][key] += quantity
+                    member.billing_approved = approved
+
+                for employee_id, approved in approved_by_employee.items():
+                    employee_members = members_by_employee[employee_id].sorted("service_date")
+                    employee = employee_members[0].employee_id
+                    created_lines = report.env["sale.order.line"]
+                    for sequence, key in enumerate(product_keys, start=10):
+                        product = products[key]
+                        quantity = approved[key]
+                        if not product or quantity <= 1e-6:
+                            continue
+                        line = report.env["sale.order.line"].new({
+                            "order_id": report.sale_order_id.id,
+                            "product_id": product.id,
+                            "product_uom_qty": quantity,
+                        })
+                        if hasattr(line, "_onchange_product_id"):
+                            line._onchange_product_id()
+                        if hasattr(line, "_onchange_product_uom_qty"):
+                            line._onchange_product_uom_qty()
+                        line.product_uom_qty = quantity
+                        detail = employee.name
+                        if key == "allowance_days":
+                            service_dates = sorted(set(employee_members.mapped("service_date")))
+                            date_text = ", ".join(day.strftime("%d.%m.%Y") for day in service_dates)
+                            if date_text:
+                                detail += "\nAuslöse: %s" % date_text
+                        product_description = line.name or product.display_name
+                        line.name = "%s\n%s" % (product_description, detail)
+                        line.sequence = sequence
+                        created_lines |= report.env["sale.order.line"].create(line._convert_to_write(line._cache))
+                    employee_members.write({
+                        "billing_sale_line_ids": [(6, 0, created_lines.ids)],
+                        "billing_state": "transferred",
+                    })
+                report._transfer_flat_rates()
+                report.write({"state": "ready_to_bill", "server_revision": report.server_revision + 1})
+                report.message_post(body=_("Abrechnung freigegeben und Auftragspositionen erstellt."))
         return True
 
     def action_open_billing_approval_wizard(self):
         self.ensure_one()
         if self.state != "under_review":
             raise UserError(_("Die Verkaufsübergabe ist nur nach der Büroprüfung möglich."))
-        if self.sale_order_id and self.sale_order_id.state not in ("draft", "sent"):
-            raise UserError(_("Für die Abrechnung ist kein offener Verkaufsauftrag verfügbar."))
+        self._check_sale_order_transfer_target(allow_locked=True)
         if any(member.billing_state == "transferred" for member in self.member_ids):
             raise UserError(_("Die Abrechnung wurde für diesen Bericht bereits an Verkauf übergeben."))
         if any(member.billing_state != "preview" for member in self.member_ids):

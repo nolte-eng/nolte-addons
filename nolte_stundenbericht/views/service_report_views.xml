@@ -7,6 +7,7 @@
                 <field name="name"/>
                 <field name="display_service_date"/>
                 <field name="partner_id"/>
+                <field name="technician_ids" widget="many2many_tags" optional="show" options="{'no_open': True}"/>
                 <field name="task_id"/>
                 <field name="country_rate_key"/>
                 <field name="state" widget="badge"/>
@@ -50,7 +51,7 @@
                             <field name="manual_contact_name" invisible="partner_id"/>
                             <field name="manual_contact_phone" invisible="partner_id"/>
                             <field name="manual_contact_email" invisible="partner_id"/>
-                            <field name="sale_order_id"/>
+                            <field name="sale_order_id" context="{'sale_show_partner_name': True}" domain="[('company_id', '=', company_id), ('state', 'in', ['draft', 'sent', 'sale'])]" options="{'no_create': True, 'no_create_edit': True}"/>
                             <field name="task_id"/>
                             <field name="machine_number"/>
                             <field name="machine_type"/>

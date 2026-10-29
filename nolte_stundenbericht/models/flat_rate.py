@@ -77,8 +77,9 @@ class ServiceReport(models.Model):
 
     def _transfer_flat_rates(self):
         self.ensure_one()
-        if not self.sale_order_id or self.sale_order_id.state not in ("draft", "sent"):
-            raise UserError(_("Für die Pauschalen ist ein offenes Angebot erforderlich."))
+        if not self.sale_order_id:
+            raise UserError(_("Bitte zuerst einen Verkaufsauftrag für die Pauschalen zuordnen."))
+        self._check_sale_order_transfer_target(lock=True)
         for selection in self.flat_rate_line_ids:
             if selection.sale_line_id:
                 if selection.sale_line_id.order_id != self.sale_order_id:

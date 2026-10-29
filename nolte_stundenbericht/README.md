@@ -3,7 +3,7 @@
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.3.7
+## Version 19.0.1.3.10
 
 - Zentral verwaltete, optional einfügbare und anschließend editierbare Arbeitsvorlagen.
 - Ein zentraler **Einsatzabschluss** je Unternehmen unter Konfiguration. Neue Berichte übernehmen die Vorgabe automatisch; Monteure können eigene Prüfpunkte ergänzen. Bestehende interne Einträge bleiben gespeichert und privat.
@@ -21,10 +21,12 @@ Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 - Firmensuche in manuellen Berichten sowie neue Einsatzorte über die Kontaktverwaltung anlegen.
 - Direkte Navigation zwischen Planung und Stundenbericht; manuelle mobile Berichte erzeugen einen Einsatzauftrag.
 - Korrekte PDF-Sonderzeichen; nach dem E-Mail-Versand öffnet sich der zugehörige Einsatzbericht.
+- Monteure direkt in der Berichtsliste sichtbar, ohne doppelte Namen bei mehreren Einsatztagen.
 - Kundenhistorie, Archiv und Konfigurationsmenü.
 - PDF-Vorschau vor der Kundenbestätigung; Versand mit editierbarem Odoo-E-Mail-Dialog.
 - Online-Unterschrift ohne Enterprise-Modul `sign`: befristeter Kundenlink,
   eingefrorene Berichtsfassung und PDF-Rücklauf als Alternative.
+- Auftragsauswahl mit Auftragsnummer und Kundenname sowie Suche nach beiden Angaben. Übernahme auch in bestätigte Verkaufsaufträge. Bei der Freigabe werden gesperrte Aufträge mit den normalen Verkaufs-Schreibrechten vorübergehend entsperrt und anschließend wieder gesperrt. Bei Fehlern wird die gesamte Übernahme zurückgenommen. Stornierte oder fremde Kunden-/Unternehmensaufträge bleiben geschützt.
 - Gegen wiederholte Übernahme geschützte Verkaufsübergabe und kompakte Auftragsnotiz.
 
 ## Abhängigkeiten
