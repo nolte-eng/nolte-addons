@@ -3,11 +3,12 @@
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.3.6
+## Version 19.0.1.3.7
 
 - Zentral verwaltete, optional einfügbare und anschließend editierbare Arbeitsvorlagen.
 - Ein zentraler **Einsatzabschluss** je Unternehmen unter Konfiguration. Neue Berichte übernehmen die Vorgabe automatisch; Monteure können eigene Prüfpunkte ergänzen. Bestehende interne Einträge bleiben gespeichert und privat.
 - Ankreuzbare **Pauschalen** mit zentral hinterlegten Artikeln. Jede Auswahl wird einmal je Bericht ins Angebot übertragen und regulär abgerechnet. Im Kunden-PDF erscheinen nur Namen mit angekreuztem Kästchen.
+- Kilometerfelder ohne Pfeile; Scrollen verändert keine Kilometerwerte.
 - Automatische lokale Sicherung. Beim Öffnen von **Unterschrift** wird der aktuelle Bericht automatisch übertragen; bei Fehlern bleibt der lokale Entwurf erhalten. Keine separaten Speicher-/Synchronisationsbuttons mehr.
 - Aufgeräumte Tagesaktionen in zwei Zeilen und Kopierdialog für Folgetag oder mehrere Mitarbeiter. Vorhandene Zeiten werden nicht überschrieben; Übernachtungen werden nicht kopiert.
 - Serviceeinsätze ohne Termin oder Monteur anlegen; ein Termin setzt den Einsatz auf „Einsatz geplant“.
