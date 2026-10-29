@@ -465,8 +465,8 @@ class NolteServiceReport(models.Model):
         """Produce one daily source line without counting gaps between jobs as work.
 
         The legacy expense module has one line per employee/day.  We preserve
-        that contract and store the gaps between separate assignments as break
-        minutes, so its existing work-hour calculation remains correct.
+        that contract and store explicit pauses plus gaps between assignments as
+        break minutes, so its existing work-hour calculation remains correct.
         """
         intervals = []
         for member in members:
@@ -487,7 +487,31 @@ class NolteServiceReport(models.Model):
             else:
                 merged[-1][1] = max(merged[-1][1], end)
         first, last = merged[0][0], merged[-1][1]
-        active_minutes = sum(end - start for start, end in merged)
+        # Subtract the union of explicit pauses from active time. Pauses in
+        # existing gaps or outside the day's span must not be counted twice.
+        pauses = []
+        for segment in members.mapped("segment_ids").filtered(lambda item: item.segment_type == "break"):
+            start_h, start_m = map(int, segment.start_time.split(":"))
+            end_h, end_m = map(int, segment.end_time.split(":"))
+            start, end = start_h * 60 + start_m, end_h * 60 + end_m
+            if end < start:
+                end += 24 * 60
+            for offset in (-1440, 0, 1440):
+                clipped_start, clipped_end = max(first, start + offset), min(last, end + offset)
+                if clipped_start < clipped_end:
+                    pauses.append((clipped_start, clipped_end))
+        merged_pauses = []
+        for start, end in sorted(pauses):
+            if not merged_pauses or start > merged_pauses[-1][1]:
+                merged_pauses.append([start, end])
+            else:
+                merged_pauses[-1][1] = max(merged_pauses[-1][1], end)
+        paused_active_minutes = sum(
+            max(0, min(end, pause_end) - max(start, pause_start))
+            for start, end in merged
+            for pause_start, pause_end in merged_pauses
+        )
+        active_minutes = sum(end - start for start, end in merged) - paused_active_minutes
         return {
             "start_time": "%02d:%02d" % ((first // 60) % 24, first % 60),
             "end_time": "%02d:%02d" % ((last // 60) % 24, last % 60),

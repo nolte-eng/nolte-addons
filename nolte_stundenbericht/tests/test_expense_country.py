@@ -153,3 +153,58 @@ class TestExpenseCountry(TransactionCase):
         with patch.object(api_v1, "request", SimpleNamespace(env=self.env["nolte.service.report"].with_user(tech).env)):
             options = api_v1.NolteStundenberichtApiV1().bootstrap()["countries"]
         self.assertIn({"code": "TEST_FOREIGN:CITY", "name": "Testland (Teststadt)"}, options)
+
+    def test_expense_sync_subtracts_explicit_pause_and_is_idempotent(self):
+        report = self.report()
+        member = report.member_ids
+        member.segment_ids.end_time = "17:00"
+        member.write({"segment_ids": [Command.create({"segment_type": "break", "start_time": "12:00", "end_time": "12:30"})]})
+        report.action_sync_spesenbericht()
+        self.assertEqual(report.spesen_sync_state, "synchronized")
+        source, expense = member.work_report_line_id, member.expense_report_line_id
+        self.assertEqual(source.break_minutes, 30)
+        self.assertEqual(expense.break_minutes, 30)
+        self.assertEqual(expense.work_hours, 8.5)
+        report.action_sync_spesenbericht()
+        self.assertEqual(member.work_report_line_id, source)
+        self.assertEqual(member.expense_report_line_id, expense)
+        self.assertEqual(expense.break_minutes, 30)
+        self.assertEqual(expense.work_hours, 8.5)
+
+    def test_daily_pause_union_clips_gaps_duplicates_and_other_reports(self):
+        first = self.report()
+        second = self.report()
+        first.member_ids.segment_ids.unlink()
+        second.member_ids.segment_ids.unlink()
+        def add(member, kind, start, end):
+            member.write({"segment_ids": [Command.create({"segment_type": kind, "start_time": start, "end_time": end})]})
+        add(first.member_ids, "outbound_travel", "08:00", "09:00")
+        add(first.member_ids, "work", "09:00", "12:00")
+        add(second.member_ids, "work", "13:00", "17:00")
+        add(second.member_ids, "return_travel", "17:00", "18:00")
+        # This pause already lies in the gap between assignments.
+        add(first.member_ids, "break", "12:00", "13:00")
+        # Duplicate/overlapping pauses count only once, clipped to active time.
+        add(first.member_ids, "break", "11:30", "12:30")
+        add(second.member_ids, "break", "11:45", "12:30")
+        add(second.member_ids, "break", "06:00", "07:00")
+        summary = first._members_day_summary(first.member_ids | second.member_ids)
+        self.assertEqual(summary, {"start_time": "08:00", "end_time": "18:00", "break_minutes": 90})
+        first.action_sync_spesenbericht()
+        self.assertEqual(first.spesen_sync_state, "synchronized")
+        expense = first.member_ids.expense_report_line_id
+        self.assertEqual(expense.break_minutes, 90)
+        self.assertEqual(expense.work_hours, 8.5)
+        self.assertEqual(second.member_ids.expense_report_line_id, expense)
+
+    def test_pause_after_midnight_in_overnight_work(self):
+        report = self.report()
+        member = report.member_ids
+        member.segment_ids.write({"start_time": "22:00", "end_time": "06:00"})
+        member.write({"segment_ids": [Command.create({"segment_type": "break", "start_time": "01:00", "end_time": "01:30"}),
+            Command.create({"segment_type": "break", "start_time": "23:45", "end_time": "00:15"})]})
+        summary = report._members_day_summary(member)
+        self.assertEqual(summary, {"start_time": "22:00", "end_time": "06:00", "break_minutes": 60})
+        report.action_sync_spesenbericht()
+        self.assertEqual(report.spesen_sync_state, "synchronized")
+        self.assertEqual(member.expense_report_line_id.work_hours, 7.0)
