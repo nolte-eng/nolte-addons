@@ -132,3 +132,57 @@ class TestOnlineSignature(TransactionCase):
         settings.action_save()
         self.assertEqual(parameters.get_param("nolte_stundenbericht.signature_base_url"), "https://example.invalid")
         self.assertEqual(parameters.get_param("nolte_signature_test_unrelated"), "unchanged")
+
+    def test_employee_sender_keeps_service_address_and_all_three_mail_paths(self):
+        from email.utils import parseaddr
+        self.env.company.email = 'service@sender.example.invalid'
+        self.technician.email = 'user@sender.example.invalid'
+        employee = self.env['hr.employee'].create({
+            'name': 'Report Technician', 'user_id': self.technician.id,
+            'company_id': self.env.company.id, 'work_email': 'technician@sender.example.invalid'})
+        report = self.env['nolte.service.report'].create({
+            'name': 'EMPLOYEE-SENDER', 'owner_user_id': self.technician.id,
+            'manual_contact_email': 'customer@sender.example.invalid',
+            'member_ids': [Command.create({'employee_id': employee.id, 'service_date': fields.Date.today()})]})
+        identity = report.with_user(self.technician)._customer_mail_identity()
+        self.assertEqual(parseaddr(identity['email_from']), ('Report Technician', 'service@sender.example.invalid'))
+        self.assertEqual(parseaddr(identity['reply_to']), ('Report Technician', 'technician@sender.example.invalid'))
+        renderer = self.env['ir.actions.report']
+        with patch.object(type(renderer), '_render_qweb_pdf', return_value=(b'%PDF-1.4 test', 'pdf')), \
+             patch.object(type(renderer), '_render_qweb_html', return_value=(b'<html></html>', 'html')):
+            action = report.with_user(self.technician).action_request_online_signature()
+        context = action['context']
+        self.assertEqual(context['default_email_from'], identity['email_from'])
+        self.assertEqual(context['default_reply_to'], identity['reply_to'])
+        composer = self.env['mail.compose.message'].with_user(self.technician).with_context(context).create({})
+        values = composer._prepare_mail_values(report.ids)[report.id]
+        self.assertEqual(parseaddr(values['email_from'])[1], 'service@sender.example.invalid')
+        self.assertEqual(parseaddr(values['reply_to'])[1], 'technician@sender.example.invalid')
+        recipients = self.env['res.partner'].browse(context['default_partner_ids'][0][2])
+        self.assertIn('service@sender.example.invalid', recipients.mapped('email'))
+        self.assertIn('customer@sender.example.invalid', recipients.mapped('email'))
+        report.with_user(self.technician).action_revoke_online_signature()
+        report.customer_pdf_attachment_id = self.env['ir.attachment'].create({
+            'name': 'Test PDF', 'raw': b'%PDF-1.4 test', 'res_model': report._name, 'res_id': report.id})
+        action = report.with_user(self.technician).action_send_customer_pdf()
+        self.assertEqual(action['context']['default_email_from'], identity['email_from'])
+        self.assertEqual(action['context']['default_reply_to'], identity['reply_to'])
+        # Queue only; TransactionCase rolls this back without any SMTP dispatch.
+        report._queue_signed_customer_copy('customer@sender.example.invalid', 'service@sender.example.invalid')
+        mail = self.env['mail.mail'].search([('model', '=', report._name), ('res_id', '=', report.id)], order='id desc', limit=1)
+        self.assertEqual(mail.email_from, identity['email_from'])
+        self.assertEqual(mail.reply_to, identity['reply_to'])
+        self.assertEqual(mail.email_cc, 'service@sender.example.invalid')
+
+    def test_employee_reply_fallback_never_changes_company_sender(self):
+        from email.utils import parseaddr
+        self.env.company.email = 'service@fallback.example.invalid'
+        self.technician.email = 'user@fallback.example.invalid'
+        report = self.env['nolte.service.report'].create({'owner_user_id': self.technician.id})
+        identity = report.with_user(self.technician)._customer_mail_identity()
+        self.assertEqual(parseaddr(identity['email_from'])[1], 'service@fallback.example.invalid')
+        self.assertEqual(parseaddr(identity['reply_to'])[1], 'user@fallback.example.invalid')
+        self.technician.email = False
+        identity = report.with_user(self.technician)._customer_mail_identity()
+        self.assertEqual(parseaddr(identity['reply_to'])[1], 'service@fallback.example.invalid')
+        self.assertEqual(parseaddr(identity['email_from'])[1], 'service@fallback.example.invalid')

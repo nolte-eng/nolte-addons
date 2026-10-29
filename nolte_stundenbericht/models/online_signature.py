@@ -144,6 +144,7 @@ class ServiceReport(models.Model):
         if report.state not in ("draft", "returned"):
             raise UserError(_("Eine neue Anfrage ist nur für einen unbestätigten Bericht möglich. Eine bestehende Anfrage bitte zuerst widerrufen."))
         customer, company = report._signature_recipients()
+        identity = report._customer_mail_identity(company)
         # Technicians need no general Contact/Creation privilege merely to
         # send to the two addresses on a report they are allowed to access.
         recipients = self.env["res.partner"].sudo()
@@ -175,7 +176,7 @@ class ServiceReport(models.Model):
         report.message_post(body=_("Online-Unterschriftsanfrage von %s vorbereitet. Die Kundenfassung ist festgeschrieben; bitte die vorbereitete E-Mail senden. Der Link ist 14 Tage gültig.") % actor.name)
         return {"type": "ir.actions.act_window", "name": _("Kundenunterschrift anfordern"), "res_model": "mail.compose.message", "view_mode": "form", "target": "new", "context": {
             "default_model": self._name, "default_res_ids": self.ids, "default_composition_mode": "comment", "default_subtype_xmlid": "mail.mt_comment",
-            "default_partner_ids": [(6, 0, recipients.ids)], "default_email_from": company, "default_reply_to": company,
+            "default_partner_ids": [(6, 0, recipients.ids)], "default_email_from": identity["email_from"], "default_reply_to": identity["reply_to"],
             "default_notify_author": True, "default_notify_skip_followers": True,
             "default_subject": _("Bitte um Bestätigung: Stundenbericht %s") % report.name,
             "default_body": Markup("<p>Guten Tag,</p><p>bitte prüfen und unterschreiben Sie unseren Stundenbericht %s über diesen geschützten Link:</p><p><a href=\"%s\">Stundenbericht ansehen und unterschreiben</a></p><p>Der Link ist 14 Tage gültig. Nach der Bestätigung erhalten Sie den unterschriebenen Bericht als PDF. Alternativ können Sie die angehängte PDF unterschrieben zurücksenden.</p><p>Freundliche Grüße<br/>%s</p>") % (report.name, url, report.company_id.name),
@@ -244,7 +245,7 @@ class ServiceReport(models.Model):
         self.env["mail.mail"].sudo().create({
             "subject": _("Unterschriebener Stundenbericht %s") % self.name,
             "body_html": Markup("<p>Guten Tag,</p><p>vielen Dank für die Bestätigung. Anbei erhalten Sie den unterschriebenen Stundenbericht %s.</p><p>Freundliche Grüße<br/>%s</p>") % (self.name, self.company_id.name),
-            "email_from": company_email, "reply_to": company_email, "email_to": customer_email,
+            **self._customer_mail_identity(company_email), "email_to": customer_email,
             "email_cc": company_email if customer_email.strip().casefold() != company_email.strip().casefold() else False,
             "attachment_ids": [(4, self.customer_pdf_attachment_id.id)], "model": self._name, "res_id": self.id, "auto_delete": False,
         })
