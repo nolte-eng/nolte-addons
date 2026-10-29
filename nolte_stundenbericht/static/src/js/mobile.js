@@ -17,6 +17,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const app = document.querySelector("#nolte-stundenbericht-mobile");
     if (!app) return;
     const form = app.querySelector("[data-report-form]");
+    // A focused number input can change on a laptop's wheel/trackpad gesture.
+    // Release focus before subsequent gestures scroll the page normally.
+    app.addEventListener("wheel", event => {
+        const input = event.target.closest?.(".ns-kilometer-input");
+        if (input && input === document.activeElement) {
+            event.preventDefault();
+            input.blur();
+        }
+    }, {capture: true, passive: false});
+
     const entryParams = new URLSearchParams(window.location.search);
     const entryTaskId = /^\d+$/.test(entryParams.get("task_id") || "") ? entryParams.get("task_id") : null;
     const entryReportId = /^\d+$/.test(entryParams.get("report_id") || "") ? entryParams.get("report_id") : null;
@@ -229,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
         grid.append(start, end);
         if (segment.type.includes("travel")) {
             const km = document.createElement("div"); km.className = "col-12 col-md-3"; km.innerHTML = "<label class=\"form-label small mb-1\">Kilometer</label>";
-            const input = document.createElement("input"); input.className = "form-control"; input.type = "number"; input.min = "0"; input.step = "0.1"; input.value = segment.kilometers || ""; input.oninput = () => { segment.kilometers = Number(input.value || 0); renderTimeTable(); scheduleAutoSave(); }; km.append(input); grid.append(km);
+            const input = document.createElement("input"); input.className = "form-control ns-kilometer-input"; input.type = "number"; input.min = "0"; input.step = "0.1"; input.inputMode = "decimal"; input.value = segment.kilometers || ""; input.oninput = () => { segment.kilometers = Number(input.value || 0); renderTimeTable(); scheduleAutoSave(); }; km.append(input); grid.append(km);
         }
         const total = document.createElement("div"); total.className = "col-12 col-md-3 small text-muted"; total.textContent = segment.start && segment.end ? `Dauer: ${showDuration(duration(segment))}` : "Zeit auswählen"; grid.append(total);
         row.append(grid); return row;
@@ -311,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=49", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=50", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", entryTaskId ? {task_id: entryTaskId} : {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");

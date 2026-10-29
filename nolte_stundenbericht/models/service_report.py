@@ -2,6 +2,7 @@ import base64
 import json
 import unicodedata
 from datetime import datetime, timedelta
+from email.utils import formataddr
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
@@ -10,6 +11,7 @@ from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import email_normalize
 
 
 class NolteServiceReport(models.Model):
@@ -207,6 +209,27 @@ class NolteServiceReport(models.Model):
     def action_submit_review(self):
         self.filtered(lambda report: report.state in ("customer_confirmed", "internally_amended", "returned")).write({"state": "under_review"})
 
+    def _customer_mail_identity(self, service_email=None):
+        """Keep the configured company relay; route replies to the report owner."""
+        self.ensure_one()
+        self.check_access("read")
+        service_email = service_email or self.company_id.email or self.company_id.partner_id.email
+        company_address = email_normalize(service_email)
+        if not company_address:
+            raise UserError(_("Für Ihr Unternehmen ist keine gültige Service-E-Mail-Adresse hinterlegt."))
+        # Read only the responsible user's work identity on this authorized
+        # report; technicians need no additional HR or user-management rights.
+        owner = self.owner_user_id.sudo()
+        employee = self.member_ids.sudo().employee_id.filtered(
+            lambda item: item.user_id == owner and item.company_id == self.company_id
+        )[:1]
+        name = employee.name or owner.name or self.company_id.name
+        reply_address = email_normalize(employee.work_email) or email_normalize(owner.email) or company_address
+        return {
+            "email_from": formataddr((name, company_address)),
+            "reply_to": formataddr((name, reply_address)),
+        }
+
     def action_send_customer_pdf(self):
         self.ensure_one()
         self.check_access("read")
@@ -226,6 +249,7 @@ class NolteServiceReport(models.Model):
         for address in (recipient, company_email):
             recipients |= recipients.find_or_create(address, assert_valid_email=True)
 
+        identity = self._customer_mail_identity(company_email)
         attachment = self.customer_pdf_attachment_id
         if not attachment:
             pdf, _report_format = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
@@ -251,8 +275,8 @@ class NolteServiceReport(models.Model):
                 "default_composition_mode": "comment",
                 "default_subtype_xmlid": "mail.mt_comment",
                 "default_partner_ids": [(6, 0, recipients.ids)],
-                "default_email_from": company_email,
-                "default_reply_to": company_email,
+                "default_email_from": identity["email_from"],
+                "default_reply_to": identity["reply_to"],
                 "default_notify_author": True,
                 "default_notify_skip_followers": True,
                 "default_subject": _("Stundenbericht %s") % self.name,

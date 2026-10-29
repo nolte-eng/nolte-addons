@@ -259,7 +259,7 @@
               <div class="row g-2">
                 <div class="col-6"><label>von</label><input class="form-control" type="time" data-return-start=""/></div>
                 <div class="col-6"><label>bis</label><input class="form-control" type="time" data-return-end=""/></div>
-                <div class="col-12"><label>Kilometer</label><input class="form-control" type="number" min="0" step="0.1" data-return-km=""/></div>
+                <div class="col-12"><label>Kilometer</label><input class="form-control ns-kilometer-input" type="number" inputmode="decimal" min="0" step="0.1" data-return-km=""/></div>
               </div>
               <button class="btn btn-primary w-100 mt-3" type="button" data-return-save="">Rückfahrt intern speichern</button>
             </div>
@@ -269,7 +269,7 @@
       </main>
         <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/day_copy.js?v=1"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=71"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=72"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/company_search.js?v=1"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/flat_rates.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>

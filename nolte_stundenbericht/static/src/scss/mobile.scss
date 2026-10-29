@@ -29,3 +29,14 @@
 .ns-mobile-app .ns-section-nav a:first-child{border-bottom-color:transparent;color:#486983}
 .ns-mobile-app .ns-section-nav a.ns-nav-active{background:#f5faff;border-bottom-color:#0879dc;color:#0870ca}
 @media (min-width:768px) and (max-width:1366px){.ns-mobile-app .ns-section-nav{border-radius:7px;margin-bottom:10px!important}.ns-mobile-app .ns-section-nav a{font-size:.72rem;padding:9px 12px}.ns-mobile-app .ns-app-header{min-height:74px}.ns-mobile-app .card{border-radius:8px}.ns-mobile-app .form-control,.ns-mobile-app .form-select{min-height:35px}}
+
+/* Kilometers are entered directly; never adjust them through spin buttons. */
+.ns-mobile-app input.ns-kilometer-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.ns-mobile-app input.ns-kilometer-input::-webkit-inner-spin-button,
+.ns-mobile-app input.ns-kilometer-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
