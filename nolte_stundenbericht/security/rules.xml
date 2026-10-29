@@ -39,12 +39,12 @@
         <field name="model_id" ref="model_nolte_service_work_template"/>
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
     </record>
-    <!-- Service users may need Odoo's internal "Note" subtype while the
-         chatter prepares a project task. Keep the exception limited to that
-         single subtype; the portal/public rule still hides other internal
-         notification types. -->
+    <!-- Retain the legacy external ID, but disable the obsolete subtype
+         restriction. Internal users use Odoo's normal subtype access;
+         portal/public users remain restricted by the native mail rule. -->
     <record id="rule_stundenbericht_read_note_subtype" model="ir.rule">
         <field name="name">Stundenbericht: Notiz-Subtyp lesen</field>
+        <field name="active" eval="False"/>
         <field name="model_id" ref="mail.model_mail_message_subtype"/>
         <field name="groups" eval="[(4, ref('group_stundenbericht_user'))]"/>
         <field name="domain_force" eval="&quot;[('id', '=', %s)]&quot; % ref('mail.mt_note')"/>

@@ -5,7 +5,7 @@
         <field name="arch" type="xml">
             <form string="Abrechnung prüfen und an Verkauf übergeben">
                 <group><field name="report_id"/></group>
-                <div class="alert alert-info" role="alert"><strong>Prüfen vor Freigabe:</strong> Links stehen die berechneten Mengen. Die Felder „Freigabe“ dürfen reduziert oder auf null gesetzt werden; die Originalzeiten bleiben unverändert.</div>
+                <div class="alert alert-info" role="alert"><strong>Prüfen vor Freigabe:</strong> Links stehen die berechneten Mengen. Die Felder „Freigabe“ dürfen reduziert oder auf null gesetzt werden; die Originalzeiten bleiben unverändert. Ein gesperrter Verkaufsauftrag wird für die Übernahme vorübergehend entsperrt und danach wieder gesperrt. Dafür sind Verkaufs-Schreibrechte erforderlich.</div>
                 <field name="line_ids">
                     <list editable="bottom" create="false" delete="false">
                         <field name="member_id" column_invisible="True"/>
