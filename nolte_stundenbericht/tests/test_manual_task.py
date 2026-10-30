@@ -397,3 +397,29 @@ class TestManualTask(TransactionCase):
         task.user_ids = False
         with patch.object(api_v1, "request", SimpleNamespace(env=task.with_user(self.tech).env)), self.assertRaises(AccessError):
             self.api.bootstrap(task_id=task.id)
+
+    def test_backend_form_reads_without_attendance_or_sales_access(self):
+        report = self.env['nolte.service.report'].create({'owner_user_id': self.tech.id,
+            'member_ids': [Command.create({'employee_id': self.employee.id, 'service_date': fields.Date.today()})]})
+        model = report.with_user(self.tech)
+        self.assertFalse(self.env['hr.attendance'].with_user(self.tech).has_access('read'))
+        self.assertFalse(self.env['sale.order.line'].with_user(self.tech).has_access('read'))
+        view = model.get_view(view_id=self.env.ref('nolte_stundenbericht.view_nolte_service_report_form').id, view_type='form')
+        arch = etree.fromstring(view['arch'])
+        self.assertFalse(arch.xpath('//field[@name="attendance_ids"]'))
+        self.assertFalse(arch.xpath('//field[@name="billing_sale_line_ids"]'))
+        # Match the web client's child-field specification across both tabs;
+        # merely creating a wizard does not exercise the subsequent form read.
+        child_names = set(arch.xpath('//field[@name="member_ids"]//field/@name'))
+        specification = {'name': {}, 'member_ids': {'fields': {name: {} for name in child_names}}}
+        data = model.web_read(specification)
+        self.assertEqual(data[0]['id'], report.id)
+        self.assertEqual(data[0]['member_ids'][0]['employee_id'], self.employee.id)
+        # Authorized attendance staff still see the technical link.
+        reader = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Attendance form reader', 'login': 'test_attendance_form_reader',
+            'group_ids': [Command.set([self.env.ref('nolte_stundenbericht.group_stundenbericht_approver').id,
+                                      self.env.ref('hr_attendance.group_hr_attendance_user').id])],
+            'company_id': self.env.company.id, 'company_ids': [Command.set(self.env.company.ids)]})
+        allowed_view = report.with_user(reader).get_view(view_id=self.env.ref('nolte_stundenbericht.view_nolte_service_report_form').id, view_type='form')
+        self.assertTrue(etree.fromstring(allowed_view['arch']).xpath('//field[@name="attendance_ids"]'))
