@@ -126,8 +126,8 @@
                                     <field name="employee_id"/>
                                     <field name="billing_state"/>
                                     <field name="billing_approved"/>
-                                    <field name="billing_sale_line_ids" widget="many2many_tags"/>
-                                    <field name="attendance_ids" widget="many2many_tags"/>
+                                    <field name="billing_sale_line_ids" widget="many2many_tags" groups="sales_team.group_sale_salesman"/>
+                                    <field name="attendance_ids" widget="many2many_tags" groups="hr_attendance.group_hr_attendance_user"/>
                                 </list>
                             </field>
                         </page>
