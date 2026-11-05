@@ -33,6 +33,7 @@ class NolteServiceIntakeWizard(models.TransientModel):
         domain="[('id', 'in', technician_ids)]",
         help="Dieser Monteur führt den gemeinsamen Stundenbericht in der App weiter.")
     created_report_id = fields.Many2one("nolte.service.report", readonly=True, copy=False)
+    customer_email = fields.Char(string="Kunden-E-Mail für diesen Bericht")
     planned_date = fields.Date(string="Geplanter Termin")
     service_location = fields.Text(
         string="Abweichender Einsatzort",
@@ -93,6 +94,11 @@ class NolteServiceIntakeWizard(models.TransientModel):
     @api.onchange("partner_id")
     def _onchange_partner_id(self):
         self.service_contact_id = False
+        self.customer_email = self.partner_id.email or False
+
+    @api.onchange("service_contact_id")
+    def _onchange_service_contact_id(self):
+        self.customer_email = self.service_contact_id.email or self.partner_id.email or False
 
     @api.onchange("technician_ids")
     def _onchange_technician_ids(self):
@@ -179,6 +185,7 @@ class NolteServiceIntakeWizard(models.TransientModel):
             "task_id": task.id, "partner_id": self.partner_id.id, "company_id": self.company_id.id,
             "owner_user_id": owner.user_id.id if owner else self.env.user.id, "service_date": service_date,
             "planning_draft": True,
+            "manual_contact_email": (self.customer_email or "").strip() or False,
             "service_location": values["nolte_service_location"],
             "service_location_name": values["nolte_service_location_name"],
             "service_location_contact_name": values["nolte_service_location_contact_name"],

@@ -121,6 +121,19 @@ class TestManualTask(TransactionCase):
         self.assertIn("12345 Site City", wizard.service_location)
         self.assertEqual(wizard.service_location_contact_phone, "123")
 
+    def test_intake_email_defaults_to_contact_and_keeps_customer_master_unchanged(self):
+        customer = self.env['res.partner'].create({'name': 'Email customer', 'email': 'office@intake.example.invalid'})
+        contact = self.env['res.partner'].create({'name': 'Email contact', 'parent_id': customer.id, 'email': 'contact@intake.example.invalid'})
+        wizard = self.env['nolte.service.intake.wizard'].new({'partner_id': customer.id})
+        wizard._onchange_partner_id()
+        self.assertEqual(wizard.customer_email, customer.email)
+        wizard.service_contact_id = contact
+        wizard._onchange_service_contact_id()
+        self.assertEqual(wizard.customer_email, contact.email)
+        wizard.customer_email = 'custom@intake.example.invalid'
+        self.assertEqual(customer.email, 'office@intake.example.invalid')
+        self.assertEqual(contact.email, 'contact@intake.example.invalid')
+
     def test_intake_creates_visible_draft_and_retries_reuse_task_and_report(self):
         partner = self.env["res.partner"].create({"name": "Intake draft customer", "is_company": True, "customer_rank": 1})
         template = self.env["nolte.service.checklist.template"].create({"name": "Intake default completion",
@@ -131,6 +144,7 @@ class TestManualTask(TransactionCase):
             "partner_id": partner.id, "project_id": self.project.id,
             "technician_ids": [Command.set(self.employee.ids)], "planned_date": "2026-11-02",
             "service_location": "Site Street 1", "machine_number": "M-129",
+            "customer_email": "delivery@intake.example.invalid",
             "work_description": "Instructions, NOT performed work"})
         before_tasks = self.env["project.task"].search_count([])
         action = wizard.action_create_service_task()
@@ -143,6 +157,8 @@ class TestManualTask(TransactionCase):
         self.assertEqual(report.partner_id, partner)
         self.assertEqual(report.project_id, self.project)
         self.assertEqual(fields.Date.to_string(report.service_date), "2026-11-02")
+        self.assertEqual(report.manual_contact_email, "delivery@intake.example.invalid")
+        self.assertFalse(partner.email)
         self.assertEqual(report.machine_number, "M-129")
         self.assertEqual(report.service_location, "Site Street 1")
         self.assertFalse(report.work_description)

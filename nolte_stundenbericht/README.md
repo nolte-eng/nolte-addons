@@ -3,7 +3,10 @@
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.3.11
+## Version 19.0.1.3.12
+
+- Kunden-E-Mail beim Anlegen und in der mobilen Erfassung ergänzen. Fehlt eine Adresse beim Versand oder bei der Unterschriftsanfrage, kann sie vor dem normalen Odoo-E-Mail-Dialog eingetragen werden. Kontaktstamm und bestätigte Berichtsfassung bleiben unverändert.
+- Monteure können bestätigte Kunden-PDFs auch im Backend versenden.
 
 - Zentral verwaltete, optional einfügbare und anschließend editierbare Arbeitsvorlagen.
 - Ein zentraler **Einsatzabschluss** je Unternehmen unter Konfiguration. Neue Berichte übernehmen die Vorgabe automatisch; Monteure können eigene Prüfpunkte ergänzen. Bestehende interne Einträge bleiben gespeichert und privat.

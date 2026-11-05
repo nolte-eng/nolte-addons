@@ -17,6 +17,7 @@
                             <field name="project_id" options="{'no_create': True}"/>
                             <field name="partner_id" options="{'no_create': True}"/>
                             <field name="service_contact_id" options="{'no_create': True}"/>
+                            <field name="customer_email" placeholder="name@firma.de"/>
                         </group>
                         <group string="Einsatzplanung">
                             <field name="technician_ids" widget="many2many_tags" options="{'no_create': True}"/>

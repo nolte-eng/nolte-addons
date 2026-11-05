@@ -29,7 +29,8 @@
                     <button name="action_revoke_online_signature" type="object" string="Unterschriftsanfrage widerrufen" invisible="state != 'awaiting_signature'" confirm="Den Kundenlink ungültig machen und den Bericht wieder zur Bearbeitung freigeben?"/>
                     <button name="action_submit_review" type="object" string="Zur Prüfung" invisible="state not in ('customer_confirmed', 'internally_amended', 'returned')"/>
                     <button name="action_open_billing_approval_wizard" type="object" string="Abrechnung prüfen und an Verkauf übergeben" class="btn-primary" invisible="state != 'under_review'" groups="nolte_stundenbericht.group_stundenbericht_manager"/>
-                    <button name="action_send_customer_pdf" type="object" string="PDF an Kunden senden" invisible="not partner_id and not manual_contact_email" groups="nolte_stundenbericht.group_stundenbericht_approver"/>
+                    <button name="action_send_customer_pdf" type="object" string="PDF an Kunden senden" groups="nolte_stundenbericht.group_stundenbericht_approver"/>
+                    <button name="action_send_customer_pdf" type="object" string="PDF an Kunden senden" invisible="not customer_pdf_attachment_id" groups="nolte_stundenbericht.group_stundenbericht_user,!nolte_stundenbericht.group_stundenbericht_approver"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,awaiting_signature,customer_confirmed,internally_amended,under_review,ready_to_bill,billed"/>
                 </header>
                 <sheet>
@@ -38,6 +39,7 @@
                     <field name="archived_manually" invisible="1"/>
                     <field name="planning_draft" invisible="1"/>
                     <field name="owner_user_id" invisible="1"/>
+                    <field name="customer_pdf_attachment_id" invisible="1"/>
                     <div class="oe_title"><h1><field name="name"/></h1></div>
                     <group>
                         <group>
@@ -50,7 +52,7 @@
                             <field name="manual_customer_city" invisible="partner_id"/>
                             <field name="manual_contact_name" invisible="partner_id"/>
                             <field name="manual_contact_phone" invisible="partner_id"/>
-                            <field name="manual_contact_email" invisible="partner_id"/>
+                            <field name="manual_contact_email" widget="email" placeholder="Abweichende oder fehlende Kunden-E-Mail" readonly="state == 'awaiting_signature'"/>
                             <field name="sale_order_id" context="{'sale_show_partner_name': True}" domain="[('company_id', '=', company_id), ('state', 'in', ['draft', 'sent', 'sale'])]" options="{'no_create': True, 'no_create_edit': True}"/>
                             <field name="task_id"/>
                             <field name="machine_number"/>
