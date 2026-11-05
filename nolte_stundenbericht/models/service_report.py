@@ -34,7 +34,7 @@ class NolteServiceReport(models.Model):
     manual_customer_city = fields.Char(string="Ort (manuell)")
     manual_contact_name = fields.Char(string="Ansprechpartner (manuell)")
     manual_contact_phone = fields.Char(string="Telefon (manuell)")
-    manual_contact_email = fields.Char(string="E-Mail (manuell)")
+    manual_contact_email = fields.Char(string="Kunden-E-Mail für diesen Bericht")
     service_date = fields.Date(string="Einsatzdatum", required=True, default=fields.Date.context_today, index=True, tracking=True)
     planning_draft = fields.Boolean(string="Vorbereiteter Planungsentwurf", default=False, readonly=True, copy=False)
     display_service_date = fields.Date(string="Einsatzdatum", compute="_compute_display_service_date", store=True)
@@ -237,18 +237,32 @@ class NolteServiceReport(models.Model):
             "reply_to": formataddr((name, reply_address)),
         }
 
+    def _customer_email(self):
+        self.ensure_one()
+        contact = self.task_id.nolte_service_contact_id if self.task_id else self.env["res.partner"]
+        return self.manual_contact_email or contact.email or self.partner_id.email or False
+
+    def _action_complete_customer_email(self, purpose):
+        self.ensure_one()
+        self.check_access("write")
+        return {
+            "type": "ir.actions.act_window", "name": _("Kunden-E-Mail ergänzen"),
+            "res_model": "nolte.service.report.email.wizard", "view_mode": "form", "target": "new",
+            "context": {"default_report_id": self.id, "default_purpose": purpose,
+                        "default_customer_email": self._customer_email()},
+        }
+
     def action_send_customer_pdf(self):
         self.ensure_one()
         self.check_access("read")
-        service_contact = self.task_id.nolte_service_contact_id if self.task_id else self.env["res.partner"]
-        recipient = self.manual_contact_email or service_contact.email or (self.partner_id.email if self.partner_id else False)
-        if not recipient:
-            raise UserError(_("Für den Kunden ist keine E-Mail-Adresse hinterlegt. Bitte zuerst eine E-Mail-Adresse am Kunden oder im Bericht eintragen."))
         company_email = self.company_id.email or self.company_id.partner_id.email
         if not company_email:
             raise UserError(_("Für Ihr Unternehmen ist keine Service-E-Mail-Adresse hinterlegt."))
         if not self.customer_pdf_attachment_id and not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_approver"):
             raise UserError(_("Der Kundenbericht kann erst nach der Kundenbestätigung versendet werden."))
+        recipient = self._customer_email()
+        if not recipient:
+            return self._action_complete_customer_email("pdf")
         # The standard Odoo composer uses contact tags for editable recipients.
         # Resolve only these authorized report addresses; sending must not
         # require granting technicians general contact-creation privileges.

@@ -1,0 +1,13 @@
+<odoo>
+    <record id="view_report_email_wizard" model="ir.ui.view">
+        <field name="name">nolte.service.report.email.wizard.form</field>
+        <field name="model">nolte.service.report.email.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Kunden-E-Mail ergänzen">
+                <p>Diese Adresse gilt für den Bericht. Den Nachrichtentext und die Empfänger können Sie im nächsten Schritt bearbeiten.</p>
+                <group><field name="report_id" options="{'no_open': True}"/><field name="purpose" invisible="1"/><field name="customer_email" placeholder="name@firma.de"/></group>
+                <footer><button name="action_continue" type="object" string="E-Mail vorbereiten" class="btn-primary"/><button string="Abbrechen" special="cancel"/></footer>
+            </form>
+        </field>
+    </record>
+</odoo>

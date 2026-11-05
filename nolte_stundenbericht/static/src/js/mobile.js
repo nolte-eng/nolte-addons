@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=50", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=51", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", entryTaskId ? {task_id: entryTaskId} : {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");
@@ -406,6 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
         customerCard.querySelector("[data-customer-display]").textContent = task?.dataset.customerName || "";
         customerCard.querySelector("[data-customer-address]").textContent = task?.dataset.customerAddress || "";
         const contact = customerCard.querySelector("[data-contact-display]");
+        field("manualContactEmail").placeholder = task?.dataset.contactEmail || "name@firma.de";
         const contactParts = [task?.dataset.contactPhone, task?.dataset.contactEmail].filter(Boolean).join(" · ");
         contact.classList.toggle("d-none", !(task?.dataset.contactName || contactParts));
         customerCard.querySelector("[data-contact-name]").textContent = task?.dataset.contactName || "";

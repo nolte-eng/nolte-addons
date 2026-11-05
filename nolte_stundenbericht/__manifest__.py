@@ -1,6 +1,6 @@
 {
     "name": "Nolte Stundenbericht",
-    "version": "19.0.1.3.11",
+    "version": "19.0.1.3.12",
     "category": "Services/Project",
     "summary": "Offlinefähige Einsatz- und Stundenberichte",
     "author": "Nolte Engineering",
@@ -26,6 +26,7 @@
         "wizard/billing_approval_wizard_views.xml",
         "wizard/sale_order_from_report_views.xml",
         "wizard/service_intake_wizard_views.xml",
+        "wizard/report_email_wizard_views.xml",
         "reports/service_report_pdf.xml",
     ],
     "assets": {

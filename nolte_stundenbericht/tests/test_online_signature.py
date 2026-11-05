@@ -174,6 +174,76 @@ class TestOnlineSignature(TransactionCase):
         self.assertEqual(mail.reply_to, identity['reply_to'])
         self.assertEqual(mail.email_cc, 'service@sender.example.invalid')
 
+    def test_missing_email_can_be_completed_and_dispatched_with_technician_rights(self):
+        self.env.company.email = 'service@recipient.example.invalid'
+        customer = self.env['res.partner'].create({'name': 'Customer without email'})
+        report = self.env['nolte.service.report'].create({
+            'owner_user_id': self.technician.id, 'partner_id': customer.id,
+            'state': 'customer_confirmed', 'customer_snapshot_payload': '{"frozen": true}',
+        })
+        attachment = self.env['ir.attachment'].create({
+            'name': 'Confirmed.pdf', 'raw': b'%PDF-1.4 frozen',
+            'res_model': report._name, 'res_id': report.id})
+        report.customer_pdf_attachment_id = attachment
+        original = report.customer_snapshot_payload
+        tech_report = report.with_user(self.technician)
+        action = tech_report.action_send_customer_pdf()
+        self.assertEqual(action['res_model'], 'nolte.service.report.email.wizard')
+        wizard = self.env[action['res_model']].with_user(self.technician).with_context(action['context']).create({
+            'customer_email': 'not-an-email'})
+        with self.assertRaises(UserError):
+            wizard.action_continue()
+        wizard.customer_email = 'delivery@recipient.example.invalid'
+        action = wizard.action_continue()
+        self.assertEqual(action['res_model'], 'mail.compose.message')
+        self.assertFalse(customer.email)
+        self.assertEqual(report.customer_snapshot_payload, original)
+        self.assertEqual(report.customer_pdf_attachment_id.raw, b'%PDF-1.4 frozen')
+        composer = self.env['mail.compose.message'].with_user(self.technician).with_context(action['context']).create({})
+        composer.write({'subject': 'Edited subject', 'body': '<p>Edited text</p>'})
+        # Exercise the complete composer / message_post / notification flow.
+        # Only delivery to SMTP is suppressed; no real e-mail leaves the test.
+        with patch.object(type(self.env['mail.mail']), 'send', return_value=True):
+            composer.action_send_mail()
+        messages = self.env['mail.message'].search([('model', '=', report._name), ('res_id', '=', report.id), ('subject', '=', 'Edited subject')])
+        self.assertEqual(len(messages), 1)
+        self.assertIn('Edited text', messages.body)
+        self.assertIn(attachment, messages.attachment_ids)
+        self.assertEqual(set(messages.partner_ids.mapped('email')), {
+            'delivery@recipient.example.invalid', 'service@recipient.example.invalid'})
+        notifications = self.env['mail.notification'].search([('mail_message_id', '=', messages.id)])
+        self.assertEqual(set(notifications.res_partner_id.mapped('email')), {
+            'delivery@recipient.example.invalid', 'service@recipient.example.invalid'})
+        self.assertTrue(all(n.notification_type == 'email' for n in notifications))
+        other = self.env['nolte.service.report'].create({'owner_user_id': self.env.ref('base.user_admin').id})
+        forbidden = self.env['nolte.service.report.email.wizard'].with_user(self.technician).create({
+            'report_id': other.id, 'purpose': 'pdf', 'customer_email': 'outside@example.invalid'})
+        with self.assertRaises(AccessError):
+            forbidden.action_continue()
+        self.assertFalse(other.manual_contact_email)
+        self.assertFalse(self.env['mail.mail'].with_user(self.technician).has_access('create'))
+
+    def test_missing_email_signature_is_not_frozen_until_address_is_provided(self):
+        self.env.company.email = 'service@recipient.example.invalid'
+        report = self.env['nolte.service.report'].create({'owner_user_id': self.technician.id})
+        action = report.with_user(self.technician).action_request_online_signature()
+        self.assertEqual(action['res_model'], 'nolte.service.report.email.wizard')
+        self.assertEqual(report.state, 'draft')
+        self.assertFalse(report.customer_snapshot_payload)
+        wizard = self.env[action['res_model']].with_user(self.technician).with_context(action['context']).create({
+            'customer_email': 'signature@recipient.example.invalid'})
+        renderer = self.env['ir.actions.report']
+        with patch.object(type(renderer), '_render_qweb_pdf', return_value=(b'%PDF-1.4 test', 'pdf')), \
+             patch.object(type(renderer), '_render_qweb_html', return_value=(b'<html></html>', 'html')):
+            action = wizard.action_continue()
+        self.assertEqual(action['res_model'], 'mail.compose.message')
+        composer = self.env['mail.compose.message'].with_user(self.technician).with_context(action['context']).create({})
+        with patch.object(type(self.env['mail.mail']), 'send', return_value=True):
+            composer.action_send_mail()
+        signature = self.env['nolte.service.signature.request'].search([('report_id', '=', report.id)])
+        self.assertTrue(signature.sent_at)
+        self.assertEqual(signature.customer_email, 'signature@recipient.example.invalid')
+
     def test_employee_reply_fallback_never_changes_company_sender(self):
         from email.utils import parseaddr
         self.env.company.email = 'service@fallback.example.invalid'

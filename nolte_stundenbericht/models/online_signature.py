@@ -126,8 +126,7 @@ class ServiceReport(models.Model):
         return super().write(values)
 
     def _signature_recipients(self):
-        contact = self.task_id.nolte_service_contact_id if self.task_id else self.env["res.partner"]
-        customer = self.manual_contact_email or contact.email or self.partner_id.email
+        customer = self._customer_email()
         company = self.company_id.email or self.company_id.partner_id.email
         if not customer or not company:
             raise UserError(_("Bitte Kunden-E-Mail und Service-E-Mail des eigenen Unternehmens hinterlegen."))
@@ -138,6 +137,8 @@ class ServiceReport(models.Model):
         self.check_access("write")
         if not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_user"):
             raise AccessError(_("Keine Berechtigung für Unterschriftsanfragen."))
+        if not self._customer_email():
+            return self._action_complete_customer_email("signature")
         actor = self.env.user
         report = self.sudo()
         report._lock_customer_confirmation()

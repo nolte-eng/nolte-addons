@@ -91,9 +91,13 @@
                         <div class="col-8"><label>Ort</label><input class="form-control" name="manualCustomerCity"/></div>
                         <div class="col-12 col-md-6"><label>Ansprechpartner</label><input class="form-control" name="manualContactName"/></div>
                         <div class="col-6"><label>Telefon</label><input class="form-control" type="tel" name="manualContactPhone"/></div>
-                        <div class="col-6"><label>E-Mail</label><input class="form-control" type="email" name="manualContactEmail"/></div>
+
                       </div>
                     </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="ns-customer-email">Kunden-E-Mail für diesen Bericht</label>
+                    <input id="ns-customer-email" class="form-control" type="email" name="manualContactEmail" placeholder="name@firma.de"/>
                   </div>
                   <input type="hidden" data-customer-name=""/>
                   <div class="col-6">
@@ -269,7 +273,7 @@
       </main>
         <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/day_copy.js?v=1"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=72"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=73"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/company_search.js?v=1"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/flat_rates.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>
