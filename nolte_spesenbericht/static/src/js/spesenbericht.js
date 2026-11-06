@@ -34,6 +34,7 @@ class NolteSpesenbericht {
     this.root.querySelector(".js_ns_next").addEventListener("click", () => this.changeMonth(1));
     this.root.querySelector(".js_ns_employee").addEventListener("change", (ev) => this.changeEmployee(ev.target.value));
     this.root.querySelector(".js_ns_rows").addEventListener("change", (ev) => this.onChange(ev));
+    this.root.querySelector(".js_ns_rows").addEventListener("input", () => this.updateLiveTotals());
     this.root.querySelector(".js_ns_rows").addEventListener("click", (ev) => {
       const deleteButton = ev.target.closest("[data-delete-attachment]");
       if (deleteButton) {
@@ -94,6 +95,7 @@ class NolteSpesenbericht {
     this.root.querySelector(".js_ns_overtime_basis").textContent = `Soll ${hours(this.report.totals.target)} Std.`;
     this.root.querySelector(".js_ns_allowance").textContent = `${euro(this.report.totals.allowance)} €`;
     this.root.querySelector(".js_ns_expenses").textContent = `${euro(this.report.totals.hotel + this.report.totals.expenses)} €`;
+    this.root.querySelector(".js_ns_total").textContent = `${euro(this.report.totals.allowance + this.report.totals.hotel + this.report.totals.expenses)} €`;
     const labels = { draft: "In Bearbeitung", rejected: "Zur Korrektur", submitted: "Eingereicht", approved: "Freigegeben", exported: "An Odoo übergeben" };
     const editable = ["draft", "rejected"].includes(this.report.state);
     const status = this.root.querySelector(".js_ns_status");
@@ -102,6 +104,24 @@ class NolteSpesenbericht {
     this.root.querySelector(".js_ns_submit").classList.toggle("d-none", !editable);
     this.root.querySelector(".js_ns_approve").classList.toggle("d-none", !(this.report.state === "submitted" && this.report.canApprove));
     this.root.querySelector(".js_ns_export").classList.toggle("d-none", !(this.report.state === "approved" && this.report.canExport));
+  }
+
+  updateLiveTotals() {
+    if (!this.report) return;
+    let total = 0;
+    for (const row of this.root.querySelectorAll("tr[data-date]")) {
+      const saved = this.report.rows.find((item) => item.date === row.dataset.date);
+      const allowance = Number(saved?.allowance || 0);
+      const hotelMode = row.querySelector('[data-field="hotel_mode"]').value;
+      const hotelInput = row.querySelector('[data-field="hotel_input"]');
+      const hotel = hotelMode === "receipt" ? Number(hotelInput.value || 0) : Number(saved?.hotelAmount || 0);
+      const expenses = Number(row.querySelector('[data-field="expense_amount"]').value || 0);
+      const daily = allowance + hotel + expenses;
+      const dailyCell = row.querySelector(".ns-daily-total");
+      if (dailyCell) dailyCell.textContent = `${euro(daily)} €`;
+      total += daily;
+    }
+    this.root.querySelector(".js_ns_total").textContent = `${euro(total)} €`;
   }
 
   rowHtml(row, editable) {
@@ -183,6 +203,7 @@ class NolteSpesenbericht {
       hotelInput.disabled = ev.target.value !== "receipt";
       if (ev.target.value !== "receipt") hotelInput.value = "";
     }
+    this.updateLiveTotals();
     clearTimeout(this.saveTimer); this.saveTimer = setTimeout(() => this.save(), 450);
   }
 

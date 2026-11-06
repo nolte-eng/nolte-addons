@@ -14,6 +14,7 @@
             <article><i>↗</i><span><small>Überstunden</small><strong class="js_ns_overtime">0:00 Std.</strong><em class="js_ns_overtime_basis">Monatssaldo</em></span></article>
             <article><i>€</i><span><small>Verpflegung</small><strong class="js_ns_allowance">0,00 €</strong><em>BMF-Pauschalen</em></span></article>
             <article><i>▤</i><span><small>Auslagen</small><strong class="js_ns_expenses">0,00 €</strong><em>Hotel &amp; Sonstiges</em></span></article>
+            <article class="total"><i>€</i><span><small>Gesamt</small><strong class="js_ns_total">0,00 €</strong><em>Voraussichtliche Erstattung</em></span></article>
           </div>
           <section class="ns-workspace">
             <header><div><h2>Tageserfassung</h2><p>Änderungen werden direkt im Odoo-Bericht gespeichert.</p></div><span class="ns-status js_ns_status">Lädt …</span></header>

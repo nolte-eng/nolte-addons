@@ -1,6 +1,6 @@
 {
     "name": "Nolte Spesenbericht",
-    "version": "19.0.1.7.8",
+    "version": "19.0.1.7.9",
     "category": "Human Resources/Expenses",
     "summary": "Monatliche Arbeitszeit- und Spesenerfassung als Odoo-Webseite",
     "author": "Nolte Engineering / Nolte Sales",
