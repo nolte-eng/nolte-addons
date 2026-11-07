@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=51", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=53", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", entryTaskId ? {task_id: entryTaskId} : {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");
@@ -406,11 +406,16 @@ document.addEventListener("DOMContentLoaded", () => {
         customerCard.querySelector("[data-customer-display]").textContent = task?.dataset.customerName || "";
         customerCard.querySelector("[data-customer-address]").textContent = task?.dataset.customerAddress || "";
         const contact = customerCard.querySelector("[data-contact-display]");
-        field("manualContactEmail").placeholder = task?.dataset.contactEmail || "name@firma.de";
-        const contactParts = [task?.dataset.contactPhone, task?.dataset.contactEmail].filter(Boolean).join(" · ");
-        contact.classList.toggle("d-none", !(task?.dataset.contactName || contactParts));
-        customerCard.querySelector("[data-contact-name]").textContent = task?.dataset.contactName || "";
-        customerCard.querySelector("[data-contact-phone]").textContent = contactParts ? (task?.dataset.contactName ? " · " : "") + contactParts : "";
+        // Old drafts may contain the string "false" from dataset conversion.
+        const contactText = value => typeof value === "string" && value !== "false" ? value : "";
+        const contactName = contactText(task?.dataset.contactName);
+        const contactPhone = contactText(task?.dataset.contactPhone);
+        const contactEmail = contactText(task?.dataset.contactEmail);
+        field("manualContactEmail").placeholder = contactEmail || "name@firma.de";
+        const contactParts = [contactPhone, contactEmail].filter(Boolean).join(" · ");
+        contact.classList.toggle("d-none", !(contactName || contactParts));
+        customerCard.querySelector("[data-contact-name]").textContent = contactName;
+        customerCard.querySelector("[data-contact-phone]").textContent = contactParts ? (contactName ? " · " : "") + contactParts : "";
         customerCard.querySelector("[data-contact-email]").textContent = "";
         const locationWrap = app.querySelector("[data-service-location-wrap]");
         const locationDiffers = task?.dataset.serviceLocationDiffers === "1";
@@ -679,7 +684,7 @@ document.addEventListener("DOMContentLoaded", () => {
         field("taskId").value = draft.taskId || "";
         applyTaskDefaults();
         field("manualCustomerName").value = draft.manualCustomerName || "";
-        if (field("manualPartnerId")) field("manualPartnerId").value = draft.taskId ? "" : (draft.partnerId || "");
+        if (field("manualPartnerId")) field("manualPartnerId").value = draft.partnerId || "";
         field("manualCustomerStreet").value = draft.manualCustomerStreet || "";
         field("manualCustomerZip").value = draft.manualCustomerZip || "";
         field("manualCustomerCity").value = draft.manualCustomerCity || "";
@@ -802,7 +807,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 taskWorkOrderDescription: task.workOrderDescription,
             };
             for (const [key, value] of Object.entries(values)) {
-                if (value !== undefined && value !== null) option.dataset[key] = String(value);
+                if (value !== undefined && value !== null) option.dataset[key] = value === false ? "" : String(value);
             }
         }
         const ownDays = data.days || (data.members || []).filter(member => member.employeeId === data.employeeId).map(member => ({date: member.serviceDate, segments: member.segments || []}));

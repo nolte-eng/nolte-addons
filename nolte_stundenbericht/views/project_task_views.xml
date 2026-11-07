@@ -21,9 +21,15 @@
                         string="Kundenhistorie" class="oe_highlight"
                         groups="nolte_stundenbericht.group_stundenbericht_user"/>
             </xpath>
+            <xpath expr="(//field[@name='project_id'])[1]" position="after">
+                <field name="partner_id" string="Kunde" class="nolte_service_customer" invisible="not nolte_service_planning"/>
+            </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Einsatz-Stammdaten" name="nolte_service_defaults">
                     <group>
+                        <field name="nolte_service_date_start"/>
+                        <field name="nolte_service_date_end"/>
+                        <field name="nolte_calendar_event_id" options="{'no_create': True}" groups="nolte_stundenbericht.group_stundenbericht_user"/>
                         <field name="partner_id" string="Kunde"/>
                         <field name="nolte_service_location_name"/>
                         <field name="nolte_service_location_contact_name"/>

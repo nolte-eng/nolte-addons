@@ -1,12 +1,12 @@
 {
     "name": "Nolte Stundenbericht",
-    "version": "19.0.1.3.12",
+    "version": "19.0.1.3.17",
     "category": "Services/Project",
     "summary": "Offlinefähige Einsatz- und Stundenberichte",
     "author": "Nolte Engineering",
     "icon": "nolte_stundenbericht/static/description/icon.png",
     "license": "LGPL-3",
-    "depends": ["website", "project", "sale_management", "hr", "hr_attendance", "mail", "nolte_spesenbericht", "nolte_overtime_billing"],
+    "depends": ["website", "project", "sale_management", "hr", "hr_attendance", "mail", "calendar", "nolte_spesenbericht", "nolte_overtime_billing"],
     "data": [
         "security/groups.xml",
         "security/ir.model.access.csv",

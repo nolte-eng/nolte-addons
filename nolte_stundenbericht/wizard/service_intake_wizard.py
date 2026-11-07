@@ -1,5 +1,5 @@
 from odoo import _, api, fields, models, Command
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 
 class NolteServiceIntakeWizard(models.TransientModel):
@@ -34,7 +34,15 @@ class NolteServiceIntakeWizard(models.TransientModel):
         help="Dieser Monteur führt den gemeinsamen Stundenbericht in der App weiter.")
     created_report_id = fields.Many2one("nolte.service.report", readonly=True, copy=False)
     customer_email = fields.Char(string="Kunden-E-Mail für diesen Bericht")
-    planned_date = fields.Date(string="Geplanter Termin")
+    planned_date = fields.Date(string="Einsatzbeginn")
+    planned_end_date = fields.Date(string="Einsatzende")
+
+    @api.constrains("planned_date", "planned_end_date")
+    def _check_planned_period(self):
+        for wizard in self:
+            if wizard.planned_end_date and (not wizard.planned_date or wizard.planned_end_date < wizard.planned_date):
+                raise ValidationError(_("Bitte einen Einsatzbeginn und ein dazu passendes Einsatzende eingeben."))
+
     service_location = fields.Text(
         string="Abweichender Einsatzort",
         help="Leer lassen, wenn der Einsatz beim Kunden stattfindet. Sonst vollständige Adresse eintragen.",
@@ -165,7 +173,8 @@ class NolteServiceIntakeWizard(models.TransientModel):
             "partner_id": self.partner_id.id,
             "nolte_service_contact_id": self.service_contact_id.id or False,
             "user_ids": [(6, 0, technicians.mapped("user_id").ids)],
-            "date_deadline": self.planned_date or False,
+            "nolte_service_date_start": self.planned_date or False,
+            "date_deadline": self.planned_end_date or self.planned_date or False,
             "nolte_service_location": (self.service_location or "").strip() or False,
             "nolte_service_location_name": (self.service_location_name or "").strip() or False,
             "nolte_service_location_contact_name": (self.service_location_contact_name or "").strip() or False,
@@ -178,7 +187,7 @@ class NolteServiceIntakeWizard(models.TransientModel):
             values["stage_id"] = planned_stage.id
         if "x_customer_id" in self.env["project.task"]._fields:
             values["x_customer_id"] = self.partner_id.id
-        task = self.env["project.task"].create(values)
+        task = self.env["project.task"].with_context(nolte_skip_report_preparation=True).create(values)
         service_date = self.planned_date or fields.Date.context_today(self)
         template = self.env["nolte.service.checklist.template"].with_company(self.company_id)._default_for_current_company()
         report = self.env["nolte.service.report"].create({
