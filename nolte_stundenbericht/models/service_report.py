@@ -147,11 +147,11 @@ class NolteServiceReport(models.Model):
         for report in self:
             report.technician_ids = report.employee_assignment_ids.employee_id | report.member_ids.employee_id
 
-    @api.depends("service_date", "planning_draft", "task_id.date_deadline", "state", "member_ids.segment_ids")
+    @api.depends("service_date", "planning_draft", "task_id.date_deadline", "task_id.nolte_service_date_start", "state", "member_ids.segment_ids")
     def _compute_display_service_date(self):
         for report in self:
             pristine = report.planning_draft and report.state == "draft" and not report.member_ids.segment_ids
-            report.display_service_date = fields.Date.to_date(report.task_id.date_deadline) if pristine else report.service_date
+            report.display_service_date = report.task_id._nolte_period_start() if pristine else report.service_date
 
     @api.depends("state", "task_id.state", "task_id.stage_id.name", "task_id.active", "archived_manually")
     def _compute_is_closed(self):

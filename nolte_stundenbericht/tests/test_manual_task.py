@@ -40,6 +40,294 @@ class TestManualTask(TransactionCase):
         with patch.object(api_v1, "request", SimpleNamespace(env=self.env["nolte.service.report"].with_user(self.tech).env)):
             return self.api.upsert_report(payload)
 
+    def _shared_task(self, **values):
+        return self.env['project.task'].with_context(nolte_skip_report_preparation=True).create({
+            'name': 'Shared service data', 'project_id': self.project.id,
+            'user_ids': [Command.set(self.tech.ids)], **values})
+
+    def _shared_report(self, task, **values):
+        return self.env['nolte.service.report'].create({
+            'name': 'SYNC-TEST', 'task_id': task.id, 'owner_user_id': self.tech.id,
+            'member_ids': [Command.create({'employee_id': self.employee.id, 'service_date': fields.Date.today()})],
+            **values})
+
+    def test_project_creation_uses_canonical_customer_and_legacy_alias(self):
+        customer = self.env['res.partner'].create({'name': 'Canonical customer'})
+        vals = {'x_customer_id': customer.id} if 'x_customer_id' in self.env['project.task']._fields else {'partner_id': customer.id}
+        task = self._shared_task(**vals, nolte_service_location='Site 1', nolte_machine_number='M-1')
+        self.assertEqual(task.partner_id, customer)
+        report = self._shared_report(task)
+        self.assertEqual(report.partner_id, customer)
+        self.assertEqual(report.service_location, 'Site 1')
+        self.assertEqual(report.machine_number, 'M-1')
+        with patch.object(api_v1, 'request', SimpleNamespace(env=report.with_user(self.tech).env)):
+            assignment = next(item for item in self.api.bootstrap()['assignments'] if item['id'] == task.id)
+            self.assertEqual(assignment['customerId'], customer.id)
+            self.assertEqual(assignment['customerName'], customer.display_name)
+            self.assertEqual(self.api.load_report(report.id)['taskDefaults']['customerId'], customer.id)
+        if 'x_customer_id' in task._fields:
+            self.assertEqual(task.x_customer_id, customer)
+            task.write({'x_customer_id': False})
+            self.assertFalse(task.partner_id)
+            self.assertFalse(report.partner_id)
+
+    def test_report_completion_updates_planning_and_reloads_with_technician_rights(self):
+        customer = self.env['res.partner'].create({'name': 'Completed customer'})
+        task = self._shared_task()
+        report = self._shared_report(task)
+        previous_revision = report.server_revision
+        report.with_user(self.tech).write({'partner_id': customer.id, 'service_location': 'Factory street 3',
+            'service_location_contact_name': 'Site contact', 'machine_type': 'Machine type'})
+        self.assertEqual(task.partner_id, customer)
+        if 'x_customer_id' in task._fields:
+            self.assertEqual(task.x_customer_id, customer)
+        self.assertEqual(task.nolte_service_location, 'Factory street 3')
+        self.assertEqual(task.nolte_service_location_contact_name, 'Site contact')
+        self.assertGreater(report.server_revision, previous_revision)
+        with patch.object(api_v1, 'request', SimpleNamespace(env=report.with_user(self.tech).env)):
+            loaded = self.api.load_report(report.id)
+            self.assertEqual(loaded['partnerId'], customer.id)
+            self.assertEqual(loaded['taskDefaults']['customerName'], customer.display_name)
+            self.assertEqual(loaded['taskDefaults']['serviceLocation'], 'Factory street 3')
+        replacement = self.env['res.partner'].create({'name': 'Explicitly corrected customer'})
+        report.with_user(self.tech).write({'partner_id': replacement.id})
+        self.assertEqual(task.partner_id, replacement)
+        if 'x_customer_id' in task._fields:
+            self.assertEqual(task.x_customer_id, replacement)
+
+    def test_planning_edits_update_drafts_but_preserve_confirmed_and_pending_evidence(self):
+        customer = self.env['res.partner'].create({'name': 'Shared customer'})
+        task = self._shared_task(partner_id=customer.id, nolte_machine_number='Old machine')
+        draft = self._shared_report(task)
+        signed = self._shared_report(task, state='customer_confirmed', customer_snapshot_payload='{"frozen":true}', machine_number='Signed machine')
+        pending = self._shared_report(task)
+        pending.with_context(nolte_shared_sync=True).write({'state': 'awaiting_signature', 'customer_snapshot_payload': '{"pending":true}', 'machine_number': 'Pending machine'})
+        previous_revision = draft.server_revision
+        task.write({'nolte_machine_number': 'New machine', 'nolte_service_location': 'New site'})
+        self.assertEqual(draft.machine_number, 'New machine')
+        self.assertEqual(draft.service_location, 'New site')
+        self.assertGreater(draft.server_revision, previous_revision)
+        self.assertEqual(signed.machine_number, 'Signed machine')
+        self.assertEqual(signed.customer_snapshot_payload, '{"frozen":true}')
+        self.assertEqual(pending.machine_number, 'Pending machine')
+        self.assertEqual(pending.customer_snapshot_payload, '{"pending":true}')
+
+    def test_conflicting_master_data_is_reported_and_changes_are_rolled_back(self):
+        from odoo.exceptions import UserError
+        customer_a = self.env['res.partner'].create({'name': 'Customer A'})
+        customer_b = self.env['res.partner'].create({'name': 'Customer B'})
+        task = self._shared_task(partner_id=customer_a.id)
+        report = self._shared_report(task)
+        # Simulate an older divergent record without invoking new synchronization.
+        report.with_context(nolte_shared_sync=True).write({'partner_id': customer_b.id})
+        with self.assertRaises(UserError):
+            task.write({'partner_id': False, 'nolte_machine_number': 'Must roll back'})
+        self.assertEqual(task.partner_id, customer_a)
+        self.assertFalse(task.nolte_machine_number)
+        self.assertEqual(report.partner_id, customer_b)
+        # Explicitly choose the already present report customer in planning.
+        task.write({'partner_id': customer_b.id})
+        self.assertEqual(task.partner_id, report.partner_id)
+        if 'x_customer_id' in task._fields:
+            with self.assertRaises(UserError):
+                task.write({'partner_id': customer_a.id, 'x_customer_id': customer_b.id})
+
+    def test_mobile_load_prefers_saved_report_over_legacy_planning_defaults(self):
+        customer = self.env['res.partner'].create({'name': 'Stored report customer'})
+        task = self._shared_task()
+        report = self._shared_report(task)
+        report.with_context(nolte_shared_sync=True).write({'partner_id': customer.id,
+            'service_location': 'Saved site', 'machine_number': 'Saved number'})
+        task.with_context(nolte_shared_sync=True).write({'nolte_service_location': 'Older planning value'})
+        with patch.object(api_v1, 'request', SimpleNamespace(env=report.with_user(self.tech).env)):
+            loaded = self.api.load_report(report.id)
+            self.assertEqual(loaded['taskDefaults']['customerId'], customer.id)
+            self.assertEqual(loaded['taskDefaults']['serviceLocation'], 'Saved site')
+            self.assertEqual(loaded['taskDefaults']['machineNumber'], 'Saved number')
+        result = self.upsert(dict(self.payload, mobileUuid=report.mobile_uuid, mobileRevision=1,
+            taskId=task.id, serverRevision=report.server_revision, machineNumber='Saved number',
+            serviceLocation='Saved site', machineType=False))
+        self.assertEqual(self.env['nolte.service.report'].browse(result['id']).partner_id, customer)
+
+    def test_older_device_revision_cannot_erase_a_backend_customer_correction(self):
+        from odoo.exceptions import UserError
+        task = self._shared_task()
+        report = self._shared_report(task)
+        old_revision = report.server_revision
+        customer = self.env['res.partner'].create({'name': 'Backend correction'})
+        report.write({'partner_id': customer.id})
+        with self.assertRaises(UserError):
+            self.upsert(dict(self.payload, mobileUuid=report.mobile_uuid, mobileRevision=1,
+                taskId=task.id, serverRevision=old_revision))
+        self.assertEqual(report.partner_id, customer)
+        self.assertEqual(task.partner_id, customer)
+
+    def test_shared_data_does_not_grant_other_task_or_report_access(self):
+        from odoo.exceptions import AccessError
+        other = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Other service owner', 'login': 'test_sync_other_owner',
+            'group_ids': [Command.set([self.env.ref('base.group_user').id,
+                self.env.ref('nolte_stundenbericht.group_stundenbericht_user').id])]})
+        task = self._shared_task(user_ids=[Command.set(other.ids)])
+        report = self._shared_report(task)
+        with self.assertRaises(AccessError):
+            report.with_user(self.tech).write({'service_location': 'Not authorized'})
+        self.assertFalse(task.nolte_service_location)
+        self.assertFalse(report.service_location)
+        own_task = self._shared_task()
+        foreign_report = self._shared_report(own_task, owner_user_id=other.id)
+        with self.assertRaises(AccessError):
+            foreign_report.with_user(self.tech).write({'service_location': 'Not authorized'})
+        self.assertFalse(own_task.nolte_service_location)
+
+    def test_service_form_uses_standard_customer_and_hides_legacy_alias(self):
+        form = self.env['project.task'].with_user(self.tech).get_view(view_type='form')
+        root = etree.fromstring(form['arch'])
+        canonical = root.xpath('//field[@name="partner_id" and @invisible="not nolte_service_planning"]')
+        self.assertTrue(canonical)
+        for legacy in root.xpath('//field[@name="x_customer_id"]'):
+            self.assertIn('nolte_service_planning', legacy.get('invisible', ''))
+
+    def test_native_project_creation_prepares_visible_report_and_reuses_it(self):
+        customer = self.env['res.partner'].create({'name': 'Native project customer'})
+        task = self.env['project.task'].create({
+            'name': 'Maschinenstillstand test', 'project_id': self.project.id,
+            'partner_id': customer.id, 'user_ids': [Command.set(self.tech.ids)],
+            'nolte_machine_number': '22360024', 'nolte_service_location': 'Site street 1',
+            'description': '<p>Technician instructions</p>'})
+        reports = self.env['nolte.service.report'].search([('task_id', '=', task.id)])
+        self.assertEqual(len(reports), 1)
+        self.assertTrue(reports.planning_draft)
+        self.assertFalse(reports.is_closed)
+        self.assertEqual(reports.owner_user_id, self.tech)
+        self.assertEqual(reports.partner_id, customer)
+        self.assertEqual(reports.machine_number, '22360024')
+        self.assertEqual(reports.service_location, 'Site street 1')
+        self.assertEqual(reports.member_ids.employee_id, self.employee)
+        self.assertFalse(reports.member_ids.segment_ids)
+        self.assertFalse(reports.work_description)
+        self.assertFalse(reports.display_service_date)
+        self.assertEqual(task._nolte_ensure_planning_report().id, reports.id)
+        self.assertEqual(self.env['nolte.service.report'].search_count([('task_id', '=', task.id)]), 1)
+        with patch.object(api_v1, 'request', SimpleNamespace(env=reports.with_user(self.tech).env)):
+            self.assertIn(reports.id, [r['id'] for r in self.api.recent_reports()])
+            self.assertEqual(self.api.claim_task(task.id)['reportId'], reports.id)
+            loaded = self.api.load_report(reports.id)
+            self.assertEqual(loaded['partnerId'], customer.id)
+            for key in ('contactName', 'contactPhone', 'contactEmail'):
+                self.assertEqual(loaded['taskDefaults'][key], '')
+            self.assertEqual(loaded['taskDefaults']['workOrderDescription'], 'Technician instructions')
+        backend = self.env.ref('nolte_stundenbericht.action_nolte_service_report')
+        import ast
+        self.assertIn(reports, self.env['nolte.service.report'].with_user(self.tech).search(ast.literal_eval(backend.domain)))
+
+    def test_native_dated_unassigned_task_can_be_claimed_without_duplicate_report(self):
+        task = self.env['project.task'].create({'name': 'Native unassigned dated task',
+            'project_id': self.project.id, 'date_deadline': '2026-11-12', 'user_ids': [Command.clear()]})
+        report = self.env['nolte.service.report'].search([('task_id', '=', task.id)])
+        self.assertEqual(len(report), 1)
+        self.assertEqual(fields.Date.to_string(report.display_service_date), '2026-11-12')
+        self.assertEqual(task.stage_id.name, 'Einsatz geplant')
+        self.assertFalse(report.member_ids)
+        with patch.object(api_v1, 'request', SimpleNamespace(env=report.with_user(self.tech).env)):
+            result = self.api.claim_task(task.id)
+        self.assertEqual(result['reportId'], report.id)
+        self.assertEqual(report.owner_user_id, self.tech)
+        self.assertEqual(report.member_ids.employee_id, self.employee)
+        self.assertEqual(self.env['nolte.service.report'].search_count([('task_id', '=', task.id)]), 1)
+        internal_project = self.env['project.project'].create({'name': 'Not a service project'})
+        internal = self.env['project.task'].create({'name': 'Internal task', 'project_id': internal_project.id})
+        self.assertFalse(self.env['nolte.service.report'].search([('task_id', '=', internal.id)]))
+
+    def test_service_period_calendar_updates_without_duplicates_or_email_invitations(self):
+        from odoo.exceptions import ValidationError
+        customer = self.env['res.partner'].create({'name': 'Calendar customer', 'email': 'customer@calendar.example.invalid'})
+        wizard = self.env['nolte.service.intake.wizard'].with_context(mail_auto_subscribe_no_notify=True).create({
+            'name': 'Calendar multi-day service', 'project_id': self.project.id, 'partner_id': customer.id,
+            'planned_date': '2026-11-10', 'planned_end_date': '2026-11-12',
+            'technician_ids': [Command.set(self.employee.ids)], 'service_location': 'Factory Street 4'})
+        before_mails = self.env['mail.mail'].search_count([])
+        with patch.object(type(self.env['mail.mail']), 'send', side_effect=AssertionError('Calendar must not send mail')):
+            report = self.env['nolte.service.report'].browse(wizard.action_create_service_task()['res_id'])
+        task = report.task_id
+        event = task.nolte_calendar_event_id
+        self.assertTrue(event)
+        self.assertTrue(event.allday)
+        self.assertEqual(fields.Date.to_string(event.start_date), '2026-11-10')
+        self.assertEqual(fields.Date.to_string(event.stop_date), '2026-11-12')
+        self.assertIn(self.tech.partner_id, event.partner_ids)
+        self.assertNotIn(customer, event.partner_ids)
+        self.assertEqual(event.privacy, 'private')
+        self.assertEqual(event.location, 'Factory Street 4')
+        self.assertIn(customer.name, event.name)
+        self.assertEqual(fields.Date.to_string(report.service_date), '2026-11-10')
+        self.assertEqual(self.env['mail.mail'].search_count([]), before_mails)
+        # Normal technician calendar access works without HR/admin privileges.
+        event.with_user(self.tech).read(['name', 'start', 'stop', 'allday'])
+        report.write({'state': 'customer_confirmed', 'customer_snapshot_payload': '{"frozen":true}'})
+        with patch.object(type(self.env['mail.mail']), 'send', side_effect=AssertionError('Calendar must not send mail')):
+            task.write({'nolte_service_date_start': '2026-11-15', 'nolte_service_date_end': '2026-11-17'})
+        self.assertEqual(task.nolte_calendar_event_id.id, event.id)
+        self.assertEqual(fields.Date.to_string(event.start_date), '2026-11-15')
+        self.assertEqual(fields.Date.to_string(event.stop_date), '2026-11-17')
+        self.assertEqual(report.customer_snapshot_payload, '{"frozen":true}')
+        self.assertEqual(fields.Date.to_string(report.service_date), '2026-11-10')
+        self.assertEqual(fields.Date.to_string(report.member_ids.service_date), '2026-11-10')
+        with self.assertRaises(ValidationError):
+            task.write({'nolte_service_date_end': '2026-11-14'})
+        self.assertEqual(fields.Date.to_string(event.stop_date), '2026-11-17')
+        task.write({'nolte_service_date_start': False, 'date_deadline': False})
+        self.assertFalse(event.active)
+        task.write({'date_deadline': '2026-11-20'})
+        self.assertTrue(event.active)
+        self.assertEqual(task.nolte_calendar_event_id.id, event.id)
+        self.assertEqual(fields.Date.to_string(event.start_date), '2026-11-20')
+        self.assertEqual(fields.Date.to_string(event.stop_date), '2026-11-20')
+        self.assertEqual(self.env['calendar.event'].with_context(active_test=False).search_count([('nolte_service_task_id', '=', task.id)]), 1)
+        self.assertEqual(self.env['mail.mail'].search_count([]), before_mails)
+
+    def test_calendar_no_date_assignment_changes_and_unrelated_events(self):
+        from odoo.exceptions import AccessError
+        task = self.env['project.task'].create({'name': 'Undated calendar service',
+            'project_id': self.project.id, 'user_ids': [Command.set(self.tech.ids)]})
+        self.assertFalse(task.nolte_calendar_event_id)
+        unrelated = self.env['calendar.event'].with_context(no_mail_to_attendees=True).create({
+            'name': 'Unrelated appointment', 'start': '2026-11-10 10:00:00', 'stop': '2026-11-10 11:00:00'})
+        before = unrelated.read(['name', 'start', 'stop', 'partner_ids'])[0]
+        task.write({'date_deadline': '2026-11-11'})
+        event = task.nolte_calendar_event_id
+        task.write({'date_deadline': '2026-11-12'})
+        self.assertEqual(fields.Date.to_string(event.start_date), '2026-11-12')
+        self.assertEqual(fields.Date.to_string(event.stop_date), '2026-11-12')
+        other = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Second calendar technician', 'login': 'test_calendar_second_tech',
+            'group_ids': [Command.set(self.tech.group_ids.ids)]})
+        task.write({'user_ids': [Command.set(other.ids)]})
+        self.assertIn(other.partner_id, event.partner_ids)
+        self.assertNotIn(self.tech.partner_id, event.partner_ids)
+        self.assertEqual(unrelated.read(['name', 'start', 'stop', 'partner_ids'])[0], before)
+        with self.assertRaises(AccessError):
+            unrelated.with_user(self.tech).write({'nolte_service_task_id': task.id})
+        task.write({'active': False})
+        self.assertFalse(event.active)
+        task.write({'active': True})
+        self.assertTrue(event.active)
+
+    def test_calendar_background_update_does_not_create_meeting_activity_or_mail(self):
+        task = self.env['project.task'].with_user(self.tech).sudo().with_context(
+            mail_auto_subscribe_no_notify=True, nolte_skip_report_preparation=True).create({
+                'name': 'Planner differs from creator', 'project_id': self.project.id,
+                'user_ids': [Command.set(self.tech.ids)]})
+        self.assertEqual(task.create_uid, self.tech)
+        mails = self.env['mail.mail'].search_count([])
+        activities = self.env['mail.activity'].search_count([])
+        with patch.object(type(self.env['mail.mail']), 'send', side_effect=AssertionError('Calendar must not send mail')):
+            task.with_user(self.env.ref('base.user_admin')).sudo().write({'date_deadline': '2026-11-18'})
+        self.assertTrue(task.nolte_calendar_event_id)
+        self.assertFalse(task.nolte_calendar_event_id.activity_ids)
+        self.assertEqual(self.env['mail.mail'].search_count([]), mails)
+        self.assertEqual(self.env['mail.activity'].search_count([]), activities)
+
     def test_manual_sync_creates_one_task_and_preserves_link_on_retry(self):
         result = self.upsert(self.payload)
         report = self.env["nolte.service.report"].browse(result["id"])
@@ -60,7 +348,7 @@ class TestManualTask(TransactionCase):
         result = self.upsert(dict(self.payload, manualCustomerName=""))
         self.assertFalse(result["taskId"])
         partner = self.env["res.partner"].create({"name": "Manual task known customer"})
-        task = self.env["project.task"].create({"name": "Existing service task", "project_id": self.project.id,
+        task = self.env["project.task"].with_context(nolte_skip_report_preparation=True).create({"name": "Existing service task", "project_id": self.project.id,
             "partner_id": partner.id, "user_ids": [Command.set(self.tech.ids)]})
         result = self.upsert(dict(self.payload, mobileUuid=str(uuid4()), taskId=task.id, machineNumber=False, machineType=False))
         report = self.env["nolte.service.report"].browse(result["id"])
@@ -283,7 +571,7 @@ class TestManualTask(TransactionCase):
         self.assertEqual(menu.action.with_user(self.tech).run()["url"], action["url"])
 
     def test_navigation_new_task_and_multiple_or_confirmed_reports(self):
-        task = self.env["project.task"].create({"name": "Navigation task", "project_id": self.project.id,
+        task = self.env["project.task"].with_context(nolte_skip_report_preparation=True).create({"name": "Navigation task", "project_id": self.project.id,
             "user_ids": [Command.set(self.tech.ids)]})
         action = task.with_user(self.tech).action_open_nolte_stundenbericht()
         self.assertEqual(action["url"], "/my/stundenbericht?task_id=%s" % task.id)
@@ -389,11 +677,11 @@ class TestManualTask(TransactionCase):
     def test_closed_tasks_are_hidden_even_when_stage_is_not_folded(self):
         from odoo.exceptions import AccessError
         other_project = self.env['project.project'].create({'name': 'Internal workshop', 'company_id': self.env.company.id})
-        internal = self.env['project.task'].create({'name': 'Workshop lifting equipment', 'project_id': other_project.id,
+        internal = self.env['project.task'].with_context(nolte_skip_report_preparation=True).create({'name': 'Workshop lifting equipment', 'project_id': other_project.id,
             'user_ids': [Command.set(self.tech.ids)]})
-        task = self.env['project.task'].create({'name': 'Done but not folded', 'project_id': self.project.id,
+        task = self.env['project.task'].with_context(nolte_skip_report_preparation=True).create({'name': 'Done but not folded', 'project_id': self.project.id,
             'state': '1_done', 'user_ids': [Command.set(self.tech.ids)]})
-        free_done = self.env['project.task'].create({'name': 'Unassigned done', 'project_id': self.project.id, 'state': '1_done'})
+        free_done = self.env['project.task'].with_context(nolte_skip_report_preparation=True).create({'name': 'Unassigned done', 'project_id': self.project.id, 'state': '1_done'})
         with patch.object(api_v1, 'request', SimpleNamespace(env=task.with_user(self.tech).env)):
             ids = [x['id'] for x in self.api.bootstrap()['assignments']]
             self.assertNotIn(task.id, ids)
@@ -405,7 +693,7 @@ class TestManualTask(TransactionCase):
     def test_direct_bootstrap_rejects_closed_task(self):
         stage = self.env["project.task.type"].create({"name": "Closed navigation stage", "fold": True,
             "project_ids": [Command.link(self.project.id)]})
-        task = self.env["project.task"].create({"name": "Old navigation task", "project_id": self.project.id,
+        task = self.env["project.task"].with_context(nolte_skip_report_preparation=True).create({"name": "Old navigation task", "project_id": self.project.id,
             "stage_id": stage.id, "user_ids": [Command.set(self.tech.ids)]})
         from odoo.exceptions import AccessError
         with patch.object(api_v1, "request", SimpleNamespace(env=task.with_user(self.tech).env)), self.assertRaises(AccessError):

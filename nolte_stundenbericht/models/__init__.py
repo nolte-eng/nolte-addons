@@ -8,3 +8,6 @@ from . import online_signature
 from . import legacy_archive
 from . import flat_rate
 from . import ir_actions_report
+
+from . import service_data_sync
+from . import service_calendar

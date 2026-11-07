@@ -41,7 +41,7 @@ class ProjectTask(models.Model):
 
     def write(self, values):
         result = super().write(values)
-        if not self.env.context.get("install_mode") and not self.env.context.get("nolte_skip_planning_sync") and {"date_deadline", "user_ids"}.intersection(values):
+        if not self.env.context.get("install_mode") and not self.env.context.get("nolte_skip_planning_sync") and {"date_deadline", "nolte_service_date_start", "user_ids"}.intersection(values):
             self._sync_nolte_planning_drafts()
         return result
 
@@ -85,7 +85,7 @@ class ProjectTask(models.Model):
                 users = employees.mapped("user_id")
                 owner = (report.owner_user_id if report.owner_user_id in users else
                          (self.env.user if self.env.user in users else users[:1])) or report.create_uid
-                service_date = fields.Date.to_date(task.date_deadline) or report.service_date
+                service_date = task._nolte_period_start() or report.service_date
                 existing = report.member_ids.mapped("employee_id")
                 removed_members = report.member_ids.filtered(lambda member: member.employee_id not in employees)
                 removed_members.unlink()
@@ -100,7 +100,7 @@ class ProjectTask(models.Model):
             # in-progress or completed work back into a planning column.
             if stage_name in ("ungeplant", "einsatz geplant") and task.state != "1_done":
                 stage = self.env["project.task.type"].search([
-                    ("name", "=", "Einsatz geplant" if task.date_deadline else "Ungeplant"),
+                    ("name", "=", "Einsatz geplant" if task._nolte_period_start() else "Ungeplant"),
                     "|", ("project_ids", "=", False), ("project_ids", "in", task.project_id.id),
                 ], order="sequence, id", limit=1)
                 if stage and stage != task.stage_id:

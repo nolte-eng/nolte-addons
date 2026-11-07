@@ -3,7 +3,15 @@
 Mobile Einsatzberichte mit mitarbeiterbezogenen Zeiten, Material, Fotos,
 Kundenbestätigung und Übergabe an Verkauf und Spesenbericht.
 
-## Version 19.0.1.3.12
+## Version 19.0.1.3.17
+
+- Einsatzbeginn und Einsatzende in Planung und Serviceeinsatz-Assistent. Angegebene Zeiträume erscheinen als ganztägiger Termin im Odoo-Kalender. Änderungen aktualisieren denselben Termin und seine internen Teilnehmer, ohne Einladungs-E-Mails zu versenden. Ohne Datum entsteht kein Termin.
+
+- Direkt in Aussendienst angelegte Aufgaben erzeugen automatisch genau einen vorbereiteten Einsatzbericht. Unbesetzte und undatierte Aufträge bleiben möglich. Serviceeinsatz-Assistent und mobile Anlage erzeugen keine zusätzlichen Berichte.
+
+- Einheitlicher Kunde in der Serviceplanung; vorhandene alternative Kundenfelder werden mit dem normalen Kundenfeld abgeglichen.
+- Planung und offene Stundenberichte gleichen Kunde, Einsatzort, Ansprechpartner vor Ort und Maschinendaten ab. Widersprüche werden vor dem Speichern gemeldet; bestätigte Fassungen bleiben unverändert.
+- Beim Bearbeiten haben gespeicherte Berichtsdaten Vorrang vor leeren Planungsvorgaben. Serverseitige Stammdatenänderungen erhöhen die Berichtsrevision zum Schutz vor älteren Geräteentwürfen.
 
 - Kunden-E-Mail beim Anlegen und in der mobilen Erfassung ergänzen. Fehlt eine Adresse beim Versand oder bei der Unterschriftsanfrage, kann sie vor dem normalen Odoo-E-Mail-Dialog eingetragen werden. Kontaktstamm und bestätigte Berichtsfassung bleiben unverändert.
 - Monteure können bestätigte Kunden-PDFs auch im Backend versenden.

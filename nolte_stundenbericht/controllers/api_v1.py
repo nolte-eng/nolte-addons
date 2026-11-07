@@ -149,7 +149,7 @@ class NolteStundenberichtApiV1(http.Controller):
             "nolte_service_location_contact_phone": report.service_location_contact_phone,
         }
         tasks = request.env["project.task"].sudo().with_context(
-            tracking_disable=True, mail_create_nosubscribe=True)
+            tracking_disable=True, mail_create_nosubscribe=True, nolte_skip_report_preparation=True)
         if "x_customer_id" in tasks._fields:
             values["x_customer_id"] = report.partner_id.id or False
         stage = request.env["project.task.type"].sudo().search([
@@ -318,7 +318,7 @@ class NolteStundenberichtApiV1(http.Controller):
 
         def task_values(task):
             sale_order = task.sale_order_id if "sale_order_id" in task._fields else request.env["sale.order"]
-            task_partner = task.partner_id
+            task_partner = task._nolte_customer()
             customer = task_partner.commercial_partner_id if task_partner else request.env["res.partner"]
             contact = task.nolte_service_contact_id or (task_partner if task_partner and task_partner != customer else request.env["res.partner"])
             address_parts = [customer.street, customer.street2, " ".join(part for part in [customer.zip, customer.city] if part), customer.country_id.name]
@@ -332,8 +332,8 @@ class NolteStundenberichtApiV1(http.Controller):
                 "customerName": customer.display_name or "",
                 "customerAddress": customer_address,
                 "contactName": contact.name or "",
-                "contactPhone": (contact.mobile if "mobile" in contact._fields else "") or (contact.phone if "phone" in contact._fields else ""),
-                "contactEmail": contact.email if "email" in contact._fields else "",
+                "contactPhone": (contact.mobile if "mobile" in contact._fields else "") or (contact.phone if "phone" in contact._fields else "") or "",
+                "contactEmail": (contact.email or "") if "email" in contact._fields else "",
                 "saleOrderId": sale_order.id or False,
                 "serviceLocation": service_location,
                 "serviceLocationName": service_location_name,
@@ -418,8 +418,8 @@ class NolteStundenberichtApiV1(http.Controller):
             raise UserError(request.env._("Nur Entwürfe und zur Korrektur zurückgegebene Berichte können in die Eingabemaske geladen werden. Für diesen Bericht bitte die PDF-Vorschau öffnen."))
         data = self._serialize(report)
         task = report.task_id
-        customer = (task.partner_id.commercial_partner_id if task and task.partner_id else report.partner_id)
-        contact = (task.nolte_service_contact_id or (task.partner_id if task and task.partner_id and task.partner_id != customer else request.env["res.partner"])) if task else request.env["res.partner"]
+        customer = report.partner_id or (task._nolte_customer().commercial_partner_id if task else request.env["res.partner"])
+        contact = (task.nolte_service_contact_id or (task._nolte_customer() if task and task._nolte_customer() != customer else request.env["res.partner"])) if task else request.env["res.partner"]
         address_parts = [customer.street, customer.street2, " ".join(part for part in [customer.zip, customer.city] if part), customer.country_id.name] if customer else []
         data.update({
             "employeeId": employee.id,
@@ -432,15 +432,15 @@ class NolteStundenberichtApiV1(http.Controller):
                 "customerName": customer.display_name or "",
                 "customerAddress": ", ".join(part for part in address_parts if part),
                 "contactName": contact.name or "",
-                "contactPhone": (contact.mobile if "mobile" in contact._fields else "") or (contact.phone if "phone" in contact._fields else ""),
-                "contactEmail": contact.email if "email" in contact._fields else "",
-                "serviceLocation": task.nolte_service_location or report.service_location or "",
-                "serviceLocationName": task.nolte_service_location_name or report.service_location_name or "",
-                "serviceLocationContactName": task.nolte_service_location_contact_name or report.service_location_contact_name or "",
-                "serviceLocationContactPhone": task.nolte_service_location_contact_phone or report.service_location_contact_phone or "",
+                "contactPhone": (contact.mobile if "mobile" in contact._fields else "") or (contact.phone if "phone" in contact._fields else "") or "",
+                "contactEmail": (contact.email or "") if "email" in contact._fields else "",
+                "serviceLocation": report.service_location or task.nolte_service_location or "",
+                "serviceLocationName": report.service_location_name or task.nolte_service_location_name or "",
+                "serviceLocationContactName": report.service_location_contact_name or task.nolte_service_location_contact_name or "",
+                "serviceLocationContactPhone": report.service_location_contact_phone or task.nolte_service_location_contact_phone or "",
                 "serviceLocationDiffers": bool(task.nolte_service_location or task.nolte_service_location_name or task.nolte_service_location_contact_name or task.nolte_service_location_contact_phone),
-                "machineNumber": task.nolte_machine_number or report.machine_number or "",
-                "machineType": task.nolte_machine_type or report.machine_type or "",
+                "machineNumber": report.machine_number or task.nolte_machine_number or "",
+                "machineType": report.machine_type or task.nolte_machine_type or "",
                 "overnightCount": task.nolte_overnight_count if task else report.overnight_count,
                 "workOrderDescription": html2plaintext(task.description or "").strip(),
             } if task else {},
@@ -655,10 +655,10 @@ class NolteStundenberichtApiV1(http.Controller):
             if partner.company_id and partner.company_id != request.env.company:
                 raise AccessError(request.env._("Der ausgewählte Kunde gehört zu einem anderen Unternehmen."))
         sale_order = task.sale_order_id if task and "sale_order_id" in task._fields else request.env["sale.order"]
-        task_partner = task.partner_id
+        task_partner = task._nolte_customer()
         allowed.update({
             "task_id": task.id or False,
-            "partner_id": task_partner.id or partner.id or False,
+            "partner_id": partner.id or (report.partner_id.id if report else False) or task_partner.id or False,
             "sale_order_id": sale_order.id or False,
         })
         if allowed["service_date"]:
