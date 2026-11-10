@@ -4,11 +4,21 @@
         <field name="model">nolte.service.report.billing.wizard</field>
         <field name="arch" type="xml">
             <form string="Abrechnung prüfen und an Verkauf übergeben">
-                <group><field name="report_id"/></group>
-                <div class="alert alert-info" role="alert"><strong>Prüfen vor Freigabe:</strong> Links stehen die berechneten Mengen. Die Felder „Freigabe“ dürfen reduziert oder auf null gesetzt werden; die Originalzeiten bleiben unverändert. Ein gesperrter Verkaufsauftrag wird für die Übernahme vorübergehend entsperrt und danach wieder gesperrt. Dafür sind Verkaufs-Schreibrechte erforderlich.</div>
+                <group>
+                    <field name="report_id" invisible="report_ids"/>
+                    <field name="report_ids" widget="many2many_tags" invisible="not report_ids"/>
+                </group>
+                <div class="alert alert-info" role="alert" invisible="not report_ids">
+                    Die Zuschläge wurden pro Mitarbeiter und Tag über alle ausgewählten Berichte berechnet.
+                    Zum Verschieben der Auslöse die bisherige Zeile auf 0 und die gewünschte Zeile desselben Mitarbeiters und Tages auf 1 setzen.
+                    Die Übergabe erstellt oder ergänzt je Bericht einen eigenen Verkaufsauftrag.
+                </div>
+                <div class="alert alert-info" role="alert"><strong>Prüfen vor Freigabe:</strong> Links stehen die berechneten Mengen. Die berechneten Stunden und Mengen können in der Freigabe reduziert werden; die Originalzeiten bleiben unverändert. Ein gesperrter Verkaufsauftrag wird für die Übernahme vorübergehend entsperrt und danach wieder gesperrt. Dafür sind Verkaufs-Schreibrechte erforderlich.</div>
                 <field name="line_ids">
                     <list editable="bottom" create="false" delete="false">
                         <field name="member_id" column_invisible="True"/>
+                        <field name="report_id" column_invisible="not parent.report_ids"/>
+                        <field name="machine_number" column_invisible="not parent.report_ids"/>
                         <field name="service_date"/>
                         <field name="employee_id"/>
                         <field name="calculated_work_normal"/><field name="work_normal" string="Freigabe Arbeit normal"/>

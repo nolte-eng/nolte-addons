@@ -217,7 +217,7 @@ class NolteServiceReport(models.Model):
         self.filtered(lambda report: report.state in ("customer_confirmed", "internally_amended", "returned")).write({"state": "under_review"})
 
     def _customer_mail_identity(self, service_email=None):
-        """Keep the configured company relay; route replies to the report owner."""
+        """Build the sender and reply address for customer-facing report mail."""
         self.ensure_one()
         self.check_access("read")
         service_email = service_email or self.company_id.email or self.company_id.partner_id.email
@@ -232,8 +232,21 @@ class NolteServiceReport(models.Model):
         )[:1]
         name = employee.name or owner.name or self.company_id.name
         reply_address = email_normalize(employee.work_email) or email_normalize(owner.email) or company_address
+        sender_address = company_address
+        sender_domain = self.env["ir.config_parameter"].sudo().get_param(
+            "nolte_stundenbericht.employee_sender_domain", ""
+        ).strip().lower()
+        if sender_domain and company_address.rsplit("@", 1)[-1] == sender_domain:
+            # Work and contact emails can be self-edited. Require the company
+            # address to match the report owner's administratively set login.
+            login_address = email_normalize(owner.login)
+            if reply_address.rsplit("@", 1)[-1] == sender_domain and reply_address == login_address:
+                sender_address = reply_address
+            else:
+                sender_address = f"info@{sender_domain}"
+        from_name = f"{name} | {self.company_id.name}" if name != self.company_id.name else name
         return {
-            "email_from": formataddr((name, company_address)),
+            "email_from": formataddr((from_name, sender_address)),
             "reply_to": formataddr((name, reply_address)),
         }
 
@@ -950,6 +963,46 @@ class NolteServiceReport(models.Model):
                 if was_locked:
                     order.action_lock()
 
+    def _transfer_material(self, recovery=False):
+        self.ensure_one()
+        order = self.sale_order_id
+        self._check_sale_order_transfer_target(lock=True)
+        if recovery and (order.state not in ("draft", "sent") or order.invoice_ids):
+            raise UserError(_("Material kann nur in einem unverrechneten Angebotsentwurf nachgetragen werden."))
+        pending = self.material_ids.filtered(lambda item: not item.sale_line_id)
+        if recovery and pending.product_id & order.order_line.product_id:
+            raise UserError(_("Ein nachzutragender Artikel steht bereits im Angebot. Bitte die Positionen vor einer Übernahme prüfen."))
+        lines = self.env["sale.order.line"].with_company(self.company_id)
+        for item in pending:
+            product = item.product_id
+            if not product or not product.active or not product.sale_ok or (product.company_id and product.company_id != self.company_id):
+                raise UserError(_("Bitte für „%s“ im Material des Stundenberichts einen gültigen Verkaufsartikel hinterlegen.") % item.name)
+            if item.quantity <= 0:
+                raise UserError(_("Die Materialmenge für „%s“ muss größer als null sein.") % item.name)
+            line = lines.create({
+                "order_id": order.id, "product_id": product.id,
+                "product_uom_qty": item.quantity, "sequence": 95,
+            })
+            if item.note:
+                line.name = f"{line.name}\n{item.note}"
+            item.sale_line_id = line
+        return len(pending)
+
+    def action_transfer_missing_material(self):
+        self.ensure_one()
+        self.check_access("write")
+        if not self.env.su and not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_approver"):
+            raise AccessError(_("Nur Stundenbericht-Prüfer dürfen Material an Verkauf übergeben."))
+        with self._temporarily_unlocked_sale_order():
+            if self.state != "ready_to_bill" or not self.sale_order_id:
+                raise UserError(_("Material kann erst nach der Verkaufsübergabe nachgetragen werden."))
+            self.sale_order_id.check_access("write")
+            report = self.sudo()
+            count = report._transfer_material(recovery=True)
+            if count:
+                report.message_post(body=_("%s Materialposition(en) an das Angebot übergeben.") % count)
+        return True
+
     def action_approve_billing(self, approved_quantities=None):
         """Create sale lines only after an explicit office approval.
 
@@ -1075,7 +1128,9 @@ class NolteServiceReport(models.Model):
                         line.product_uom_qty = quantity
                         detail = employee.name
                         if key == "allowance_days":
-                            service_dates = sorted(set(employee_members.mapped("service_date")))
+                            service_dates = sorted(set(employee_members.filtered(
+                                lambda item: (item.billing_approved or {}).get("allowance_days", 0) > 0
+                            ).mapped("service_date")))
                             date_text = ", ".join(day.strftime("%d.%m.%Y") for day in service_dates)
                             if date_text:
                                 detail += "\nAuslöse: %s" % date_text
@@ -1088,9 +1143,121 @@ class NolteServiceReport(models.Model):
                         "billing_state": "transferred",
                     })
                 report._transfer_flat_rates()
+                report._transfer_material()
                 report.write({"state": "ready_to_bill", "server_revision": report.server_revision + 1})
                 report.message_post(body=_("Abrechnung freigegeben und Auftragspositionen erstellt."))
         return True
+
+    def action_open_combined_billing(self):
+        self._check_combined_billing_reports()
+        previews = self._combined_billing_previews()
+        wizard = self.env["nolte.service.report.billing.wizard"].with_context(active_id=False).create({
+            "report_ids": [(6, 0, self.ids)],
+            "combined_preview": previews,
+            "line_ids": self.env["nolte.service.report.billing.wizard"]._preview_lines(
+                self.member_ids, previews
+            ),
+        })
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Gemeinsam abrechnen"),
+            "res_model": wizard._name,
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "target": "new",
+        }
+
+    def _check_combined_billing_reports(self):
+        self.check_access("write")
+        if not self.env.su and not self.env.user.has_group("nolte_stundenbericht.group_stundenbericht_approver"):
+            raise AccessError(_("Nur Stundenbericht-Prüfer dürfen Berichte gemeinsam abrechnen."))
+        if len(self) < 2 or len(self.company_id) != 1 or len(self.partner_id.commercial_partner_id) != 1 or any(not report.partner_id for report in self):
+            raise UserError(_("Bitte mindestens zwei Berichte desselben Kunden und Unternehmens auswählen."))
+        if any(report.state != "under_review" or report.is_closed or not report.member_ids for report in self) or any(
+            member.billing_state == "transferred" for member in self.member_ids
+        ):
+            raise UserError(_("Alle ausgewählten Berichte müssen in Prüfung sein, Zeiten enthalten und dürfen noch nicht übertragen sein."))
+        orders = self.mapped("sale_order_id")
+        if len(orders) != sum(bool(report.sale_order_id) for report in self):
+            raise UserError(_("Für getrennte Rechnungen muss jeder Bericht einen eigenen Verkaufsauftrag haben."))
+        for report in self:
+            report._check_sale_order_transfer_target(allow_locked=True)
+
+    def _combined_billing_previews(self):
+        from odoo.addons.nolte_overtime_billing.services.time_allocation import _subtract_pauses, allocate_timeline
+
+        previews = {}
+        members = self.member_ids.sorted(lambda member: (member.service_date, member.report_id.id, member.id))
+        for member in members:
+            previews[str(member.id)] = {
+                "work": dict.fromkeys(("normal", "ot30", "ot50"), 0.0),
+                "travel": dict.fromkeys(("normal", "ot30", "ot50"), 0.0),
+                "kilometers": sum(member.segment_ids.filtered(
+                    lambda segment: segment.segment_type in ("outbound_travel", "return_travel")
+                ).mapped("kilometers")),
+                "overnights": 0.0,
+                "allowance_days": 0.0,
+            }
+        for report in self:
+            for employee, employee_members in report.member_ids.grouped("employee_id").items():
+                assignment = report.employee_assignment_ids.filtered(lambda item: item.employee_id == employee)[:1]
+                first = employee_members.sorted("service_date")[0]
+                previews[str(first.id)]["overnights"] = float(
+                    assignment.overnight_count if assignment else sum(employee_members.mapped("overnight_count"))
+                )
+
+        shared_day = False
+        for (employee_id, day), day_members in members.grouped(lambda member: (member.employee_id.id, member.service_date)).items():
+            shared_day |= len(day_members) > 1
+            transferred = self.env["nolte.service.report.member"].sudo().search_count([
+                ("employee_id", "=", employee_id), ("service_date", "=", day),
+                ("report_id.company_id", "=", self.company_id.id),
+                ("report_id.partner_id.commercial_partner_id", "=", self.partner_id.commercial_partner_id.id),
+                ("billing_state", "=", "transferred"),
+            ], limit=1)
+            if transferred:
+                raise UserError(_("Für %(employee)s wurde am %(day)s bereits ein Bericht dieses Kunden übertragen. Bitte die Abrechnung zuerst im Büro prüfen.") % {
+                    "employee": day_members[0].employee_id.name, "day": day.strftime("%d.%m.%Y"),
+                })
+            intervals, pauses = [], []
+            for member in day_members:
+                for segment in member.segment_ids:
+                    start = datetime.combine(day, datetime.strptime(segment.start_time, "%H:%M").time())
+                    end = datetime.combine(day, datetime.strptime(segment.end_time, "%H:%M").time())
+                    if end < start:
+                        end += timedelta(days=1)
+                    if segment.segment_type == "break":
+                        pauses.extend((start + timedelta(days=offset), end + timedelta(days=offset)) for offset in (-1, 0, 1))
+                    elif end > start:
+                        kind = "work" if segment.segment_type == "work" else "travel"
+                        intervals.append((start, end, kind, member.id))
+            intervals.sort()
+            if not intervals:
+                raise UserError(_("Für %s fehlen abrechenbare Zeitsegmente.") % day_members[0].employee_id.name)
+            effective = sorted(
+                (part_start, part_end, kind, member_id)
+                for start, end, kind, member_id in intervals
+                for part_start, part_end in _subtract_pauses(start, end, pauses)
+            )
+            if not effective:
+                raise UserError(_("Nach Pausenabzug bleiben für %s keine abrechenbaren Zeiten.") % day_members[0].employee_id.name)
+            if any(current[0] < previous[1] for previous, current in zip(effective, effective[1:])):
+                raise UserError(_("Die Zeiten von %(employee)s überschneiden sich am %(day)s. Bitte Arbeits- und Fahrtzeiten prüfen.") % {
+                    "employee": day_members[0].employee_id.name, "day": day.strftime("%d.%m.%Y"),
+                })
+            previews[str(effective[0][3])]["allowance_days"] = 1.0
+            remaining = allocate_timeline([(start, end, kind) for start, end, kind, _member in effective])
+            # Each time category consumes its daily tariff totals in chronological order.
+            for start, end, kind, member_id in effective:
+                hours = (end - start).total_seconds() / 3600.0
+                for bucket in ("normal", "ot30", "ot50"):
+                    amount = min(hours, remaining[kind][bucket])
+                    previews[str(member_id)][kind][bucket] += amount
+                    remaining[kind][bucket] -= amount
+                    hours -= amount
+        if not shared_day:
+            raise UserError(_("Die Auswahl muss mindestens zwei Berichte mit demselben Mitarbeiter am selben Tag enthalten."))
+        return previews
 
     def action_open_billing_approval_wizard(self):
         self.ensure_one()
@@ -1205,6 +1372,8 @@ class NolteServiceReportMaterial(models.Model):
     quantity = fields.Float(string="Menge", default=1.0)
     unit = fields.Char(string="Einheit", default="Stk.")
     note = fields.Char(string="Bemerkung")
+
+    sale_line_id = fields.Many2one("sale.order.line", string="Verkaufsposition", readonly=True, copy=False, ondelete="set null", groups="nolte_stundenbericht.group_stundenbericht_approver")
 
     _material_uuid_unique = models.Constraint("UNIQUE(mobile_uuid)", "Die Materialkennung muss eindeutig sein.")
 
