@@ -181,14 +181,14 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const newSegment = type => ({segmentUuid: uuid(), type, start: "", end: "", kilometers: 0, internalOnly: false});
     const saveActiveSchedule = () => { employeeSchedules[String(activeEmployeeId)] = days; };
-    const switchEmployee = employeeId => {
+    const switchEmployee = (employeeId, date) => {
         saveActiveSchedule();
         activeEmployeeId = String(employeeId);
         days = employeeSchedules[activeEmployeeId] || {};
         employeeSchedules[activeEmployeeId] = days;
         employeeOvernights[activeEmployeeId] ??= 0;
         if (!Object.keys(days).length) days[dayDate.value || field("serviceDate").value] = [];
-        dayDate.value = Object.keys(days).sort()[0] || field("serviceDate").value;
+        dayDate.value = date || Object.keys(days).sort()[0] || field("serviceDate").value;
         renderDays();
         renderEmployeeOvernight();
         scheduleAutoSave();
@@ -277,7 +277,24 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         entries.forEach(({employeeId, date, segments}) => {
             const row = document.createElement("tr");
-            appendCell(row, new Date(`${date}T00:00:00`).toLocaleDateString("de-DE", {day: "2-digit", month: "2-digit", year: "numeric"}));
+            const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("de-DE", {day: "2-digit", month: "2-digit", year: "numeric"});
+            const dateCell = appendCell(row, dateLabel);
+            if (employeeOptions.some(employee => String(employee.id) === employeeId)) {
+                const edit = document.createElement("button");
+                edit.type = "button";
+                edit.className = "btn btn-link p-0 border-0 text-start";
+                edit.textContent = dateLabel;
+                edit.setAttribute("aria-label", `Zeiten bearbeiten: ${employeeName(employeeId)}, ${dateLabel}`);
+                dateCell.replaceChildren(edit);
+                row.style.cursor = "pointer";
+                row.onclick = () => {
+                    timeEmployee.value = employeeId;
+                    switchEmployee(employeeId, date);
+                    const day = dayList.querySelector("details[open]");
+                    day?.querySelector("summary")?.focus({preventScroll: true});
+                    day?.scrollIntoView({block: "center"});
+                };
+            }
             appendCell(row, employeeName(employeeId));
             const grouped = types.map(type => segments.filter(segment => segment.type === type));
             grouped.forEach((items, index) => {
@@ -321,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=53", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=54", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", entryTaskId ? {task_id: entryTaskId} : {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");

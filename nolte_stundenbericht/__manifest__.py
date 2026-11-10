@@ -1,6 +1,6 @@
 {
     "name": "Nolte Stundenbericht",
-    "version": "19.0.1.3.17",
+    "version": "19.0.1.3.24",
     "category": "Services/Project",
     "summary": "Offlinefähige Einsatz- und Stundenberichte",
     "author": "Nolte Engineering",

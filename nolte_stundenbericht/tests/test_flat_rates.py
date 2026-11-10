@@ -253,3 +253,27 @@ class TestFlatRates(TransactionCase):
             failed.with_user(reviewer).action_approve_billing()
         self.assertTrue(order.locked)
         self.assertEqual(order.order_line, transferred)
+
+    def test_material_transfer_and_recovery_are_idempotent(self):
+        product = self.env["product.product"].create({
+            "name": "Test cleaner", "type": "consu", "list_price": 12, "invoice_policy": "order",
+        })
+        for key in ("work", "work_ot30", "work_ot50", "travel", "travel_ot30", "travel_ot50", "allowance"):
+            self.env["ir.config_parameter"].set_param("nolte_overtime_billing.product_%s_id" % key, self.product.id)
+        self.report.write({"state": "under_review", "material_ids": [Command.create({
+            "name": product.name, "mobile_uuid": "material-billing-test", "product_id": product.id,
+            "quantity": 5, "note": "Test note",
+        })]})
+        self.report.action_approve_billing()
+        material = self.report.material_ids
+        self.assertEqual(material.sale_line_id.product_uom_qty, 5)
+        self.assertEqual(material.sale_line_id.price_unit, 12)
+        self.assertIn("Test note", material.sale_line_id.name)
+        self.report.action_approve_billing()
+        self.assertEqual(len(self.report.sale_order_id.order_line.filtered(lambda line: line.product_id == product)), 1)
+
+        material.sale_line_id.unlink()
+        self.report.action_transfer_missing_material()
+        self.report.action_transfer_missing_material()
+        self.assertEqual(len(self.report.sale_order_id.order_line.filtered(lambda line: line.product_id == product)), 1)
+        self.assertEqual(material.sale_line_id.product_uom_qty, 5)

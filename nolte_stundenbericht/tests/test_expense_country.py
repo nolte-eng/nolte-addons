@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 from ..controllers import api_v1
 
@@ -208,3 +209,51 @@ class TestExpenseCountry(TransactionCase):
         report.action_sync_spesenbericht()
         self.assertEqual(report.spesen_sync_state, "synchronized")
         self.assertEqual(member.expense_report_line_id.work_hours, 7.0)
+
+    def test_combined_machine_billing_keeps_single_expense_day(self):
+        partner = self.env["res.partner"].create({"name": "Combined billing customer"})
+        first, second, third = (self.report() for _ in range(3))
+        reports = first | second | third
+        reports.write({"partner_id": partner.id, "state": "under_review"})
+        for report, (start, end) in zip(reports, [("07:45", "08:30"), ("08:30", "13:30"), ("13:30", "17:30")]):
+            report.member_ids.segment_ids.write({"start_time": start, "end_time": end})
+        first.member_ids.write({"segment_ids": [Command.create({
+            "segment_type": "outbound_travel", "start_time": "06:00", "end_time": "07:45", "kilometers": 145,
+        })]})
+        second.member_ids.write({"segment_ids": [Command.create({
+            "segment_type": "break", "start_time": "12:00", "end_time": "12:30",
+        })]})
+        first.action_sync_spesenbericht()
+        expense = reports.member_ids.expense_report_line_id
+        self.assertEqual(len(expense), 1)
+        self.assertEqual(expense.work_hours, 11)
+        self.assertEqual(expense.allowance, 17)
+
+        products = {}
+        for key in ("work", "work_ot30", "work_ot50", "travel", "travel_ot30", "travel_ot50", "km", "overnight", "allowance"):
+            products[key] = self.env["product.product"].create({"name": "Combined " + key, "type": "service"})
+            self.env["ir.config_parameter"].set_param("nolte_overtime_billing.product_%s_id" % key, products[key].id)
+
+        action = reports.action_open_combined_billing()
+        wizard = self.env[action["res_model"]].browse(action["res_id"])
+        first_line = wizard.line_ids.filtered(lambda line: line.report_id == first)
+        third_line = wizard.line_ids.filtered(lambda line: line.report_id == third)
+        self.assertEqual(first_line.allowance_days, 1)
+        self.assertAlmostEqual(third_line.work_normal, 1)
+        self.assertAlmostEqual(third_line.work_ot30, 2)
+        self.assertAlmostEqual(third_line.work_ot50, 1)
+        third_line.allowance_days = 1
+        with self.assertRaises(UserError), self.cr.savepoint():
+            wizard.action_approve()
+        self.assertFalse(reports.sale_order_id)
+        first_line.allowance_days = 0
+        wizard.action_approve()
+        self.assertEqual(len(reports.sale_order_id), 3)
+        allowance = reports.sale_order_id.order_line.filtered(lambda line: line.product_id == products["allowance"])
+        self.assertEqual(allowance.order_id, third.sale_order_id)
+        self.assertEqual(allowance.product_uom_qty, 1)
+        self.assertEqual(reports.member_ids.expense_report_line_id, expense)
+        self.assertEqual(expense.work_hours, 11)
+        self.assertEqual(expense.allowance, 17)
+        with self.assertRaises(UserError), self.cr.savepoint():
+            wizard.action_approve()

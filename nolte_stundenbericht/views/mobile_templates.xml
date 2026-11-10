@@ -273,7 +273,7 @@
       </main>
         <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/day_copy.js?v=1"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=75"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=76"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/company_search.js?v=1"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/flat_rates.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>

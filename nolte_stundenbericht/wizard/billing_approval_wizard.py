@@ -6,7 +6,9 @@ class NolteBillingApprovalWizard(models.TransientModel):
     _name = "nolte.service.report.billing.wizard"
     _description = "Freigabe der Einsatzabrechnung"
 
-    report_id = fields.Many2one("nolte.service.report", required=True, readonly=True)
+    report_id = fields.Many2one("nolte.service.report", readonly=True)
+    report_ids = fields.Many2many("nolte.service.report", string="Maschinenberichte", readonly=True)
+    combined_preview = fields.Json(readonly=True)
     line_ids = fields.One2many("nolte.service.report.billing.wizard.line", "wizard_id", string="Freigaben")
 
     @api.model
@@ -17,9 +19,13 @@ class NolteBillingApprovalWizard(models.TransientModel):
             return values
         if report.state != "under_review" or any(member.billing_state != "preview" for member in report.member_ids):
             raise UserError(_("Der Bericht benötigt zuerst eine vollständige Abrechnungsvorschau und Büroprüfung."))
+        values.update({"report_id": report.id, "line_ids": self._preview_lines(report.member_ids)})
+        return values
+
+    def _preview_lines(self, members, previews=None):
         lines = []
-        for member in report.member_ids:
-            preview = member.billing_preview or {}
+        for member in members:
+            preview = previews[str(member.id)] if previews is not None else member.billing_preview or {}
             work, travel = preview.get("work") or {}, preview.get("travel") or {}
             lines.append((0, 0, {
                 "member_id": member.id,
@@ -33,11 +39,12 @@ class NolteBillingApprovalWizard(models.TransientModel):
                 "calculated_kilometers": preview.get("kilometers", 0.0), "calculated_overnights": preview.get("overnights", 0.0),
                 "calculated_allowance_days": preview.get("allowance_days", 1.0),
             }))
-        values.update({"report_id": report.id, "line_ids": lines})
-        return values
+        return lines
 
     def action_approve(self):
         self.ensure_one()
+        if self.report_ids:
+            return self._approve_combined()
         quantities = {}
         keys = ("work_normal", "work_ot30", "work_ot50", "travel_normal", "travel_ot30", "travel_ot50", "kilometers", "overnights", "allowance_days")
         for line in self.line_ids:
@@ -60,6 +67,39 @@ class NolteBillingApprovalWizard(models.TransientModel):
         self.report_id.action_approve_billing(quantities)
         return {"type": "ir.actions.act_window", "res_model": "nolte.service.report", "res_id": self.report_id.id, "view_mode": "form"}
 
+    def _approve_combined(self):
+        reports = self.report_ids
+        reports.check_access("write")
+        reports.flush_recordset()
+        self.env.cr.execute(
+            "SELECT id FROM nolte_service_report WHERE id IN %s ORDER BY id FOR UPDATE",
+            [tuple(reports.ids)],
+        )
+        reports.invalidate_recordset()
+        reports._check_combined_billing_reports()
+        previews = reports._combined_billing_previews()
+        if previews != self.combined_preview:
+            raise UserError(_("Die Abrechnungsdaten wurden geändert. Bitte die gemeinsame Vorschau erneut öffnen."))
+        members = reports.member_ids
+        if sorted(self.line_ids.member_id.ids) != sorted(members.ids) or len(self.line_ids) != len(members):
+            raise UserError(_("Die Vorschau enthält unvollständige oder ungültige Freigabezeilen."))
+        allowances = set()
+        quantities = {}
+        keys = ("work_normal", "work_ot30", "work_ot50", "travel_normal", "travel_ot30", "travel_ot50", "kilometers", "overnights", "allowance_days")
+        for line in self.line_ids:
+            member = line.member_id
+            key = (member.employee_id.id, member.service_date)
+            if line.allowance_days not in (0, 1) or (line.allowance_days and key in allowances):
+                raise UserError(_("Pro Mitarbeiter und Tag darf die Auslöse höchstens einmal freigegeben werden."))
+            if line.allowance_days:
+                allowances.add(key)
+            quantities[str(member.id)] = {field: line[field] for field in keys}
+            preview = previews[str(member.id)]
+            preview["allowance_days"] = line.allowance_days
+            member.sudo().write({"billing_preview": preview, "billing_state": "preview"})
+        reports.sorted("id").action_approve_billing(quantities)
+        return {"type": "ir.actions.act_window_close"}
+
 
 class NolteBillingApprovalWizardLine(models.TransientModel):
     _name = "nolte.service.report.billing.wizard.line"
@@ -70,6 +110,8 @@ class NolteBillingApprovalWizardLine(models.TransientModel):
     # list is rendered. It is ignored by action_approve and must not block
     # the actual approval rows.
     member_id = fields.Many2one("nolte.service.report.member", readonly=True)
+    report_id = fields.Many2one(related="member_id.report_id", string="Bericht", readonly=True)
+    machine_number = fields.Char(related="member_id.report_id.machine_number", string="Maschinen-Nr.", readonly=True)
     service_date = fields.Date(related="member_id.service_date", string="Einsatztag", readonly=True)
     employee_id = fields.Many2one("hr.employee", string="Mitarbeiter", readonly=True)
     calculated_work_normal = fields.Float(string="Berechnet Arbeit normal", readonly=True)
