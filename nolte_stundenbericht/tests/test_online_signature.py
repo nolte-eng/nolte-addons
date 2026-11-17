@@ -271,3 +271,33 @@ class TestOnlineSignature(TransactionCase):
             self.technician.email = email
             identity = report.with_user(self.technician)._customer_mail_identity()
             self.assertEqual(parseaddr(identity["email_from"])[1], "info@sender.example.invalid")
+
+    def test_customer_confirmation_advances_task_without_technician_task_write_access(self):
+        project = self.env["project.project"].create({"name": "Signature ACL test project"})
+        task = self.env["project.task"].with_context(nolte_skip_report_preparation=True).create({
+            "name": "Signature ACL test task", "project_id": project.id,
+            "user_ids": [Command.set(self.technician.ids)],
+        })
+        stage = self.env["project.task.type"].create({
+            "name": "Servicebericht prüfen", "project_ids": [Command.set(project.ids)],
+        })
+        self.env["ir.rule"].create({
+            "name": "Signature regression task write restriction",
+            "model_id": self.env["ir.model"]._get_id("project.task"),
+            "domain_force": "[('id', '=', 0)]",
+            "perm_read": False, "perm_write": True, "perm_create": False, "perm_unlink": False,
+        })
+        with self.assertRaises(AccessError), self.cr.savepoint():
+            task.with_user(self.technician).write({"stage_id": stage.id})
+        report = self.env["nolte.service.report"].create({
+            "owner_user_id": self.technician.id, "task_id": task.id,
+            "manual_customer_name": "Signature ACL customer", "work_description": "Signature ACL work",
+        })
+        renderer = self.env["ir.actions.report"]
+        with patch.object(type(renderer), "_render_qweb_pdf", return_value=(b"%PDF-1.4 test", "pdf")),              patch.object(type(report), "action_sync_after_customer_confirmation", return_value=True):
+            report.with_user(self.technician)._finalize_customer_confirmation("Customer", False)
+        self.assertEqual(report.state, "customer_confirmed")
+        self.assertTrue(report.customer_pdf_attachment_id)
+        self.assertEqual(task.stage_id, stage)
+        with self.assertRaises(AccessError), self.cr.savepoint():
+            task.with_user(self.technician).write({"name": "Still forbidden"})
