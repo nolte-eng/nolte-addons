@@ -236,9 +236,15 @@ class ServiceReport(models.Model):
         self.customer_pdf_attachment_id = attachment
         self.message_post(body=_("Kundenfassung bestätigt von %s.") % signer_name)
         if self.task_id:
-            stage = self.env["project.task.type"].search([("name", "ilike", "Servicebericht prüfen"), ("project_ids", "in", self.task_id.project_id.id)], limit=1)
+            # The authorized report confirmation also advances its linked
+            # task. Technicians do not need general task write permissions.
+            task = self.task_id.sudo()
+            stage = self.env["project.task.type"].sudo().search([
+                ("name", "ilike", "Servicebericht prüfen"),
+                ("project_ids", "in", task.project_id.id),
+            ], limit=1)
             if stage:
-                self.task_id.stage_id = stage
+                task.stage_id = stage
         self.action_sync_after_customer_confirmation()
 
     def _queue_signed_customer_copy(self, customer_email, company_email):
