@@ -109,3 +109,20 @@ Niemals folgende Inhalte committen:
 - Datenbank-Dumps und Backups
 - Odoo-Filestore und Sessions
 - produktive Konfigurationsdateien mit Zugangsdaten
+
+
+## Mitarbeiterportal installieren
+
+Das Modul `nolte_mitarbeiterportal` stellt die geschützte Startseite unter `/mitarbeiterportal` bereit. Es ergänzt die vorhandenen Module, ohne deren Fachlogik zu duplizieren. Voraussetzung ist, dass die Zielmodule bereits installiert und für die Mitarbeiterkonten freigegeben sind.
+
+Nach dem Aktualisieren des Addons-Pfads das Modul in der jeweiligen Datenbank installieren:
+
+```bash
+docker exec -it <odoo-container> \\
+  odoo -c /etc/odoo/odoo.conf \\
+  -d <datenbank> \\
+  -i nolte_mitarbeiterportal \\
+  --stop-after-init
+```
+
+Danach den Odoo-Container regulär neu starten. Mitarbeiter melden sich mit ihrem Odoo-Konto an und öffnen `/mitarbeiterportal`. Die Kacheln führen zum Stundenbericht, Spesenbericht und zur Urlaubsplanung. Das iPhone/iPad-Icon wird über den Seitenkopf eingebunden.
