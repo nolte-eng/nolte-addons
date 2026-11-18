@@ -1,0 +1,46 @@
+.o_mitarbeiterportal {
+    --nolte-blue: #07539b;
+    min-height: calc(100vh - 120px);
+    padding: clamp(1.25rem, 4vw, 3.5rem) 1rem;
+    background: #f4f6f8;
+}
+.o_mitarbeiterportal__inner { max-width: 1040px; margin: 0 auto; }
+.o_mitarbeiterportal__header {
+    display: flex; align-items: center; gap: 1rem; margin: 0 auto 2rem;
+    color: #202833;
+}
+.o_mitarbeiterportal__logo { width: 64px; height: 64px; object-fit: contain; }
+.o_mitarbeiterportal__header h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.5rem); }
+.o_mitarbeiterportal__header p { margin: .35rem 0 0; color: #596675; }
+.o_mitarbeiterportal__grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(.45rem, 1vw, .85rem);
+}
+.o_mitarbeiterportal__tile {
+    aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 1rem; padding: .8rem; box-sizing: border-box;
+    color: #fff !important; background: var(--nolte-blue); text-decoration: none !important;
+    border: 2px solid #fff; transition: background .16s ease, transform .16s ease;
+}
+.o_mitarbeiterportal__tile:hover, .o_mitarbeiterportal__tile:focus-visible {
+    background: #063f76; color: #fff !important; transform: translateY(-2px);
+}
+.o_mitarbeiterportal__icon {
+    width: 54%; max-width: 150px; aspect-ratio: 1 / 1; border-radius: 50%;
+    display: grid; place-items: center; background: #fff; flex: 0 0 auto;
+}
+.o_mitarbeiterportal__icon svg {
+    width: 58%; height: 58%; fill: none; stroke: var(--nolte-blue);
+    stroke-width: 4; stroke-linecap: round; stroke-linejoin: round;
+}
+.o_mitarbeiterportal__label {
+    font-size: clamp(.9rem, 2.3vw, 1.5rem); line-height: 1.15; font-weight: 500;
+    text-align: center; overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+    .o_mitarbeiterportal { padding: 1rem .6rem 2rem; }
+    .o_mitarbeiterportal__header { margin-bottom: 1.2rem; }
+    .o_mitarbeiterportal__logo { width: 48px; height: 48px; }
+    .o_mitarbeiterportal__grid { gap: .35rem; }
+    .o_mitarbeiterportal__tile { gap: .6rem; padding: .4rem; }
+}

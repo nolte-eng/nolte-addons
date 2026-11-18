@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="portal_home" name="Mitarbeiterportal">
+        <t t-set="head">
+            <link rel="apple-touch-icon" sizes="180x180"
+                  href="/nolte_mitarbeiterportal/static/src/img/apple-touch-icon.png"/>
+            <meta name="apple-mobile-web-app-title" content="Mitarbeiterportal"/>
+            <meta name="apple-mobile-web-app-capable" content="yes"/>
+        </t>
+        <t t-call="website.layout">
+            <t t-set="pageName" t-value="'mitarbeiterportal'"/>
+            <main class="o_mitarbeiterportal">
+                <div class="o_mitarbeiterportal__inner">
+                    <header class="o_mitarbeiterportal__header">
+                        <img src="/nolte_stundenbericht/static/description/icon.png"
+                             alt="Nolte Engineering" class="o_mitarbeiterportal__logo"/>
+                        <div>
+                            <h1>Mitarbeiterportal</h1>
+                            <p>Ihre wichtigsten Mitarbeiterbereiche direkt erreichbar.</p>
+                        </div>
+                    </header>
+                    <section class="o_mitarbeiterportal__grid" aria-label="Mitarbeiterbereiche">
+                        <a class="o_mitarbeiterportal__tile" href="/my/stundenbericht">
+                            <span class="o_mitarbeiterportal__icon" aria-hidden="true">
+                                <svg viewBox="0 0 64 64"><path d="M18 8h20l12 12v36H18z"/><path d="M38 8v13h12M25 31h18M25 39h18M25 47h14"/></svg>
+                            </span>
+                            <span class="o_mitarbeiterportal__label">Stundenbericht</span>
+                        </a>
+                        <a class="o_mitarbeiterportal__tile" href="/my/spesenbericht">
+                            <span class="o_mitarbeiterportal__icon" aria-hidden="true">
+                                <svg viewBox="0 0 64 64"><rect x="12" y="17" width="40" height="31" rx="4"/><path d="M20 27h24M20 35h12M20 42h9"/><circle cx="42" cy="41" r="5"/></svg>
+                            </span>
+                            <span class="o_mitarbeiterportal__label">Spesenbericht</span>
+                        </a>
+                        <a class="o_mitarbeiterportal__tile" href="/odoo/time-off">
+                            <span class="o_mitarbeiterportal__icon" aria-hidden="true">
+                                <svg viewBox="0 0 64 64"><path d="M14 17h36v37H14zM22 10v14M42 10v14M14 28h36"/><path d="M23 37h5M36 37h5M23 45h5M36 45h5"/></svg>
+                            </span>
+                            <span class="o_mitarbeiterportal__label">Urlaubsplanung</span>
+                        </a>
+                    </section>
+                </div>
+            </main>
+        </t>
+    </template>
+</odoo>
