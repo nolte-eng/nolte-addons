@@ -95,7 +95,8 @@ class NolteSpesenbericht {
     this.root.querySelector(".js_ns_overtime_basis").textContent = `Soll ${hours(this.report.totals.target)} Std.`;
     this.root.querySelector(".js_ns_allowance").textContent = `${euro(this.report.totals.allowance)} €`;
     this.root.querySelector(".js_ns_expenses").textContent = `${euro(this.report.totals.hotel + this.report.totals.expenses)} €`;
-    this.root.querySelector(".js_ns_total").textContent = `${euro(this.report.totals.allowance + this.report.totals.hotel + this.report.totals.expenses)} €`;
+    const totalElement = this.root.querySelector(".js_ns_total");
+    if (totalElement) totalElement.textContent = `${euro(this.report.totals.allowance + this.report.totals.hotel + this.report.totals.expenses)} €`;
     const labels = { draft: "In Bearbeitung", rejected: "Zur Korrektur", submitted: "Eingereicht", approved: "Freigegeben", exported: "An Odoo übergeben" };
     const editable = ["draft", "rejected"].includes(this.report.state);
     const status = this.root.querySelector(".js_ns_status");
@@ -121,7 +122,8 @@ class NolteSpesenbericht {
       if (dailyCell) dailyCell.textContent = `${euro(daily)} €`;
       total += daily;
     }
-    this.root.querySelector(".js_ns_total").textContent = `${euro(total)} €`;
+    const totalElement = this.root.querySelector(".js_ns_total");
+    if (totalElement) totalElement.textContent = `${euro(total)} €`;
   }
 
   rowHtml(row, editable) {
