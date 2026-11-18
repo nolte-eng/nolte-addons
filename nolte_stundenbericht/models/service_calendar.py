@@ -87,7 +87,7 @@ class ServiceTaskCalendar(models.Model):
         return True
 
     def _sync_nolte_calendar(self):
-        """One private, internal all-day event per authorized service task."""
+        """One internally visible all-day event per authorized service task."""
         self.check_access('read')
         events = self.env['calendar.event'].sudo().with_context(
             active_test=False, no_mail_to_attendees=True, skip_attendee_notification=True,
@@ -115,7 +115,7 @@ class ServiceTaskCalendar(models.Model):
                 'start': datetime.combine(start, time(8)),
                 'stop': datetime.combine(end, time(18)),
                 'user_id': organizer.id, 'partner_ids': [Command.set(partners.ids)],
-                'privacy': 'private', 'show_as': 'busy', 'active': True,
+                'privacy': 'confidential', 'show_as': 'busy', 'active': True,
                 'location': task.nolte_service_location or False,
                 # A native res_model/res_id link also creates a meeting
                 # activity and can e-mail its organizer during backfills.

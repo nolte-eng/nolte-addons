@@ -257,7 +257,7 @@ class TestManualTask(TransactionCase):
         self.assertEqual(fields.Date.to_string(event.stop_date), '2026-11-12')
         self.assertIn(self.tech.partner_id, event.partner_ids)
         self.assertNotIn(customer, event.partner_ids)
-        self.assertEqual(event.privacy, 'private')
+        self.assertEqual(event.privacy, 'confidential')
         self.assertEqual(event.location, 'Factory Street 4')
         self.assertIn(customer.name, event.name)
         self.assertEqual(fields.Date.to_string(report.service_date), '2026-11-10')
@@ -303,6 +303,11 @@ class TestManualTask(TransactionCase):
             'name': 'Second calendar technician', 'login': 'test_calendar_second_tech',
             'group_ids': [Command.set(self.tech.group_ids.ids)]})
         task.write({'user_ids': [Command.set(other.ids)]})
+        self.assertEqual(event.with_user(self.tech).read(['name'])[0]['name'], event.name)
+        self.assertIn(task.name, event.with_user(self.tech).display_name)
+        self.assertIn(event, self.env['calendar.event'].with_user(other).search([
+            ('id', '=', event.id), ('partner_ids', 'in', other.partner_id.id),
+        ]))
         self.assertIn(other.partner_id, event.partner_ids)
         self.assertNotIn(self.tech.partner_id, event.partner_ids)
         self.assertEqual(unrelated.read(['name', 'start', 'stop', 'partner_ids'])[0], before)
