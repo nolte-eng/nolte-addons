@@ -41,6 +41,7 @@
     .o_mitarbeiterportal { padding: 1rem .6rem 2rem; }
     .o_mitarbeiterportal__header { margin-bottom: 1.2rem; }
     .o_mitarbeiterportal__logo { width: 48px; height: 48px; }
-    .o_mitarbeiterportal__grid { gap: .35rem; }
+    .o_mitarbeiterportal__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
     .o_mitarbeiterportal__tile { gap: .6rem; padding: .4rem; }
+    .o_mitarbeiterportal__label { font-size: clamp(.78rem, 4vw, 1.15rem); }
 }
