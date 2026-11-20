@@ -5,7 +5,7 @@
         <field name="arch" type="xml">
             <list js_class="nolte_service_report_list">
                 <field name="name"/>
-                <field name="display_service_date"/>
+                <field name="display_service_period"/>
                 <field name="partner_id"/>
                 <field name="technician_ids" widget="many2many_tags" optional="show" options="{'no_open': True}"/>
                 <field name="task_id"/>
@@ -45,7 +45,11 @@
                     <group>
                         <group>
                             <field name="service_date" invisible="planning_draft"/>
-                            <field name="display_service_date" string="Geplanter Termin" invisible="not planning_draft"/>
+                            <field name="planned_service_start" widget="daterange"
+                                   options="{'end_date_field': 'planned_service_end', 'always_range': True}"
+                                   invisible="not task_id" readonly="is_closed"/>
+                            <field name="planned_service_end" invisible="1"/>
+                            <field name="display_service_period" string="Erfasster Einsatzzeitraum" invisible="task_id and planning_draft"/>
                             <field name="partner_id"/>
                             <field name="manual_customer_name" invisible="partner_id"/>
                             <field name="manual_customer_street" invisible="partner_id"/>
@@ -62,7 +66,7 @@
                         <group>
                             <field name="bmf_rate_year" invisible="1"/>
                             <field name="bmf_rate_id" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="country_rate_key" string="Bisheriger BMF-Schlüssel" readonly="1" invisible="bmf_rate_id"/>
+                            <field name="country_rate_key" string="Bisheriges Einsatzland" readonly="1" invisible="bmf_rate_id"/>
                             <field name="service_location_name"/>
                             <field name="service_location_contact_name"/>
                             <field name="service_location_contact_phone"/>

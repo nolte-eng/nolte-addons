@@ -203,7 +203,8 @@ class TestManualTask(TransactionCase):
         self.assertEqual(reports.partner_id, customer)
         self.assertEqual(reports.machine_number, '22360024')
         self.assertEqual(reports.service_location, 'Site street 1')
-        self.assertEqual(reports.member_ids.employee_id, self.employee)
+        self.assertEqual(reports.employee_assignment_ids.employee_id, self.employee)
+        self.assertFalse(reports.member_ids)
         self.assertFalse(reports.member_ids.segment_ids)
         self.assertFalse(reports.work_description)
         self.assertFalse(reports.display_service_date)
@@ -233,7 +234,8 @@ class TestManualTask(TransactionCase):
             result = self.api.claim_task(task.id)
         self.assertEqual(result['reportId'], report.id)
         self.assertEqual(report.owner_user_id, self.tech)
-        self.assertEqual(report.member_ids.employee_id, self.employee)
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
+        self.assertFalse(report.member_ids)
         self.assertEqual(self.env['nolte.service.report'].search_count([('task_id', '=', task.id)]), 1)
         internal_project = self.env['project.project'].create({'name': 'Not a service project'})
         internal = self.env['project.task'].create({'name': 'Internal task', 'project_id': internal_project.id})
@@ -264,7 +266,9 @@ class TestManualTask(TransactionCase):
         self.assertEqual(self.env['mail.mail'].search_count([]), before_mails)
         # Normal technician calendar access works without HR/admin privileges.
         event.with_user(self.tech).read(['name', 'start', 'stop', 'allday'])
-        report.write({'state': 'customer_confirmed', 'customer_snapshot_payload': '{"frozen":true}'})
+        report.write({'member_ids': [Command.create({'employee_id': self.employee.id, 'service_date': '2026-11-10',
+            'segment_ids': [Command.create({'segment_type': 'work', 'start_time': '08:00', 'end_time': '09:00'})]})],
+            'state': 'customer_confirmed', 'customer_snapshot_payload': '{"frozen":true}'})
         with patch.object(type(self.env['mail.mail']), 'send', side_effect=AssertionError('Calendar must not send mail')):
             task.write({'nolte_service_date_start': '2026-11-15', 'nolte_service_date_end': '2026-11-17'})
         self.assertEqual(task.nolte_calendar_event_id.id, event.id)
@@ -456,7 +460,8 @@ class TestManualTask(TransactionCase):
         self.assertEqual(report.service_location, "Site Street 1")
         self.assertFalse(report.work_description)
         self.assertIn("Instructions, NOT performed work", report.task_id.description)
-        self.assertEqual(report.member_ids.employee_id, self.employee)
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
+        self.assertFalse(report.member_ids)
         self.assertFalse(report.member_ids.segment_ids)
         self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
         self.assertEqual(report.checklist_ids.name, "Test completion point")
@@ -494,8 +499,9 @@ class TestManualTask(TransactionCase):
         self.assertFalse(report.member_ids, "A date does not imply an employee assignment")
         task.write({"user_ids": [Command.set(self.tech.ids)]})
         self.assertEqual(report.owner_user_id, self.tech)
-        self.assertEqual(report.member_ids.employee_id, self.employee)
-        self.assertEqual(fields.Date.to_string(report.member_ids.service_date), "2026-11-05")
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
+        self.assertFalse(report.member_ids)
+        self.assertEqual(fields.Date.to_string(report.service_date), "2026-11-05")
         with patch.object(api_v1, "request", SimpleNamespace(env=report.with_user(self.tech).env)):
             self.assertEqual(self.api.load_report(report_id=report.id)["id"], report.id)
         task.write({"date_deadline": False})
@@ -522,7 +528,8 @@ class TestManualTask(TransactionCase):
         self.assertFalse(report.member_ids)
         task.write({"user_ids": [Command.set(self.tech.ids)]})
         self.assertEqual(report.owner_user_id, self.tech)
-        report.member_ids.write({"segment_ids": [Command.create({"segment_type": "work", "start_time": "08:00", "end_time": "09:00"})]})
+        report.write({"member_ids": [Command.create({"employee_id": self.employee.id, "service_date": report.service_date,
+            "segment_ids": [Command.create({"segment_type": "work", "start_time": "08:00", "end_time": "09:00"})]})]})
         original_date = report.service_date
         task.write({"date_deadline": "2026-11-07 00:00:00", "user_ids": [Command.clear()]})
         self.assertEqual(report.owner_user_id, self.tech)
@@ -551,7 +558,8 @@ class TestManualTask(TransactionCase):
         action = wizard.action_create_service_task()
         report = self.env["nolte.service.report"].browse(action["res_id"])
         self.assertEqual(report.owner_user_id, other_user)
-        self.assertEqual(set(report.member_ids.employee_id.ids), {self.employee.id, other_employee.id})
+        self.assertEqual(set(report.employee_assignment_ids.employee_id.ids), {self.employee.id, other_employee.id})
+        self.assertFalse(report.member_ids)
         self.assertEqual(set(report.task_id.user_ids.ids), {self.tech.id, other_user.id})
         self.assertTrue(report.with_user(other_user).has_access("write"))
         self.assertFalse(report.with_user(self.tech).has_access("write"), "Do not broaden team editing rights implicitly")
@@ -587,7 +595,7 @@ class TestManualTask(TransactionCase):
         action = task.with_user(self.tech).action_open_nolte_stundenbericht()
         self.assertEqual(action["type"], "ir.actions.act_window")
         self.assertEqual(action["res_id"], report.id)
-        other = report.copy({"name": "Second navigation report", "state": "draft", "mobile_uuid": str(uuid4())})
+        other = report.copy({"name": "Second navigation report", "state": "draft", "mobile_uuid": str(uuid4()), "task_id": task.id})
         action = task.with_user(self.tech).action_open_nolte_stundenbericht()
         self.assertEqual(action["domain"], [("id", "in", [other.id, report.id])])
 
@@ -606,7 +614,8 @@ class TestManualTask(TransactionCase):
             self.assertEqual(self.api.load_report(report.id)['mobileUuid'], report.mobile_uuid)
         self.assertEqual(task.user_ids, self.tech)
         self.assertEqual(report.owner_user_id, self.tech)
-        self.assertEqual(report.member_ids.employee_id, self.employee)
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
+        self.assertFalse(report.member_ids)
         other = self.tech.with_context(no_reset_password=True).copy({'login': 'test_claim_other', 'name': 'Other claiming technician'})
         self.env['hr.employee'].create({'name': other.name, 'user_id': other.id})
         with patch.object(api_v1, 'request', SimpleNamespace(env=task.with_user(other).env)):
@@ -657,7 +666,7 @@ class TestManualTask(TransactionCase):
             'company_id': self.env.company.id, 'company_ids': [Command.set(self.env.company.ids)]})
         task.user_ids = [Command.link(planner.id)]
         report.state = 'customer_confirmed'
-        draft = report.copy({'state': 'draft'})
+        draft = report.copy({'state': 'draft', 'task_id': task.id})
         action = task.with_user(planner).action_nolte_archive_service()
         self.assertEqual(action['url'], '/odoo/project/%s/tasks' % self.project.id)
         self.assertFalse(task.active)
@@ -732,3 +741,224 @@ class TestManualTask(TransactionCase):
             'company_id': self.env.company.id, 'company_ids': [Command.set(self.env.company.ids)]})
         allowed_view = report.with_user(reader).get_view(view_id=self.env.ref('nolte_stundenbericht.view_nolte_service_report_form').id, view_type='form')
         self.assertTrue(etree.fromstring(allowed_view['arch']).xpath('//field[@name="attendance_ids"]'))
+
+    def test_calendar_edits_update_planning_and_preserve_signed_report(self):
+        from odoo.exceptions import AccessError, UserError
+        task = self._shared_task(date_deadline="2026-11-20")
+        report = self._shared_report(task, state="customer_confirmed",
+                                     customer_snapshot_payload='{"signed":true}')
+        event = task.nolte_calendar_event_id
+        self.assertEqual(event.nolte_service_technician_ids, self.tech)
+        other = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": "Calendar reassignment technician", "login": "test_calendar_reassign",
+            "group_ids": [Command.set(self.tech.group_ids.ids)],
+        })
+        mails = self.env["mail.mail"].search_count([])
+        with patch.object(type(self.env["mail.mail"]), "send", side_effect=AssertionError("No service invitations")):
+            event.write({"start_date": "2026-11-22", "stop_date": "2026-11-25"})
+            self.assertEqual(str(task.nolte_service_date_start), "2026-11-22")
+            self.assertEqual(str(task.nolte_service_date_end), "2026-11-25")
+            event.write({"nolte_service_technician_ids": [Command.set(other.ids)]})
+        self.assertEqual(task.user_ids, other)
+        self.assertIn(other.partner_id, event.partner_ids)
+        self.assertNotIn(self.tech.partner_id, event.partner_ids)
+        self.assertEqual(report.customer_snapshot_payload, '{"signed":true}')
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
+        self.assertEqual(task.nolte_calendar_event_id, event)
+        task.write({"user_ids": [Command.set(self.tech.ids)], "date_deadline": "2026-11-26"})
+        self.assertEqual(event.nolte_service_technician_ids, self.tech)
+        self.assertEqual(str(event.stop_date), "2026-11-26")
+        self.env["ir.rule"].create({
+            "name": "Calendar task write regression", "model_id": self.env["ir.model"]._get_id("project.task"),
+            "domain_force": "[('id', '=', 0)]", "perm_read": False, "perm_write": True,
+            "perm_create": False, "perm_unlink": False,
+        })
+        with self.assertRaises(AccessError), self.cr.savepoint():
+            event.with_user(self.tech).write({"stop_date": "2026-11-28"})
+        self.assertEqual(str(event.stop_date), "2026-11-26")
+        with self.assertRaises(UserError), self.cr.savepoint():
+            event.write({"allday": False})
+        self.assertTrue(event.allday)
+        with self.assertRaises(UserError), self.cr.savepoint():
+            event.unlink()
+
+    def test_calendar_drag_archive_and_ordinary_appointments(self):
+        task = self._shared_task(date_deadline="2026-11-20")
+        event = task.nolte_calendar_event_id
+        event.write({"start": "2026-11-24 08:00:00", "stop": "2026-11-25 18:00:00"})
+        self.assertEqual(str(task.nolte_service_date_start), "2026-11-24")
+        self.assertEqual(str(task.nolte_service_date_end), "2026-11-25")
+        event.write({"active": False})
+        self.assertFalse(task.active)
+        event.write({"active": True})
+        self.assertTrue(task.active)
+        self.assertEqual(task.nolte_calendar_event_id, event)
+        ordinary = self.env["calendar.event"].with_context(no_mail_to_attendees=True).create({
+            "name": "Ordinary appointment", "start": "2026-11-20 08:00:00", "stop": "2026-11-20 09:00:00",
+        })
+        ordinary.write({"start": "2026-11-20 10:00:00", "stop": "2026-11-20 11:00:00"})
+        self.assertFalse(ordinary.nolte_service_task_id)
+        ordinary.unlink()
+
+    def test_service_date_alias_keeps_existing_search_filters(self):
+        task = self._shared_task(nolte_service_date_start="2035-05-07", date_deadline="2035-05-09")
+        tasks = self.env["project.task"]
+        for operator, value in (("=", "2035-05-07"), ("in", ["2035-05-07"]), (">=", "2035-05-07"), ("<", "2035-05-08")):
+            self.assertIn(task, tasks.search([("id", "=", task.id), ("nolte_service_date_start", operator, value)]))
+        self.assertNotIn(task, tasks.search([("id", "=", task.id), ("nolte_service_date_start", "=", "2035-05-08")]))
+
+    def test_report_list_shows_planned_and_recorded_periods(self):
+        task = self._shared_task(nolte_service_date_start="2026-11-20", nolte_service_date_end="2026-11-23")
+        report = self._shared_report(task, planning_draft=True)
+        self.assertEqual(report.display_service_period, "20.11.2026–23.11.2026")
+        task.nolte_service_date_end = "2026-11-24"
+        self.assertEqual(report.display_service_period, "20.11.2026–24.11.2026")
+        report.write({"planning_draft": False, "state": "customer_confirmed"})
+        report.write({"member_ids": [Command.create({"employee_id": self.employee.id, "service_date": "2026-11-21"})]})
+        report.write({"member_ids": [Command.create({"employee_id": self.employee.id, "service_date": "2026-11-22"})]})
+        self.assertEqual(report.display_service_period, "21.11.2026–22.11.2026")
+        task.write({"nolte_service_date_start": "2026-12-01", "nolte_service_date_end": "2026-12-05"})
+        self.assertEqual(report.display_service_period, "21.11.2026–22.11.2026")
+        report.member_ids[-1].unlink()
+        self.assertEqual(report.display_service_period, "21.11.2026")
+
+    def test_report_period_is_editable_and_updates_task_and_calendar(self):
+        from odoo.exceptions import ValidationError
+        task = self._shared_task(nolte_service_date_start="2026-11-20", nolte_service_date_end="2026-11-24")
+        report = self._shared_report(task, planning_draft=True)
+        event = task.nolte_calendar_event_id
+        self.assertEqual(str(report.planned_service_start), "2026-11-20")
+        report.write({"planned_service_start": "2026-12-01", "planned_service_end": "2026-12-05"})
+        self.assertEqual(str(task.nolte_service_date_start), "2026-12-01")
+        self.assertEqual(str(task.nolte_service_date_end), "2026-12-05")
+        self.assertEqual(str(event.start_date), "2026-12-01")
+        self.assertEqual(str(event.stop_date), "2026-12-05")
+        self.assertEqual(report.display_service_period, "01.12.2026–05.12.2026")
+        report.invalidate_recordset(["planned_service_start", "planned_service_end"])
+        report.write({"planned_service_end": "2026-12-06"})
+        self.assertEqual(str(task.nolte_service_date_start), "2026-12-01")
+        self.assertEqual(str(task.nolte_service_date_end), "2026-12-06")
+        with self.assertRaises(ValidationError), self.cr.savepoint():
+            report.write({"planned_service_start": "2026-12-10", "planned_service_end": "2026-12-02"})
+        report.write({"planning_draft": False, "state": "customer_confirmed"})
+        before = report.member_ids.mapped("service_date")
+        report.write({"planned_service_start": "2026-12-07", "planned_service_end": "2026-12-09"})
+        self.assertEqual(report.member_ids.mapped("service_date"), before)
+        event.write({"start_date": "2026-12-10", "stop_date": "2026-12-12"})
+        self.assertEqual(str(report.planned_service_start), "2026-12-10")
+        self.assertEqual(str(report.planned_service_end), "2026-12-12")
+
+    def test_empty_mobile_days_are_local_only_and_assignment_remains_loadable(self):
+        payload = dict(self.payload, employeeIds=[self.employee.id], employeeDays=[
+            {"employeeId": self.employee.id, "date": "2035-05-07", "segments": []},
+            {"employeeId": self.employee.id, "date": "2035-05-08", "segments": []},
+        ], employeeOvernights={str(self.employee.id): 2})
+        result = self.upsert(payload)
+        report = self.env["nolte.service.report"].browse(result["id"])
+        self.assertFalse(report.member_ids)
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
+
+        self.assertEqual(report.employee_assignment_ids.overnight_count, 2)
+        with patch.object(api_v1, "request", SimpleNamespace(env=report.with_user(self.tech).env)):
+            self.assertEqual(self.api.load_report(report.id)["id"], report.id)
+            self.assertIn(report.id, [item["id"] for item in self.api.recent_reports()])
+        payload.update(mobileRevision=2, employeeDays=[
+            {"employeeId": self.employee.id, "date": "2035-05-07", "segments": [
+                {"segmentUuid": str(uuid4()), "type": "work", "start": "08:00", "end": "10:00"}]},
+            {"employeeId": self.employee.id, "date": "2035-05-08", "segments": []},
+        ])
+        self.upsert(payload)
+        self.assertEqual(len(report.member_ids), 1)
+        self.assertEqual(str(report.member_ids.service_date), "2035-05-07")
+        self.assertEqual(report.employee_assignment_ids.overnight_count, 2)
+        self.upsert(payload)
+        self.assertEqual(len(report.member_ids), 1)
+
+    def test_duplicate_report_has_independent_planning_and_calendar(self):
+        task = self._shared_task(nolte_service_date_start='2035-07-01', nolte_service_date_end='2035-07-03')
+        source = task._nolte_ensure_planning_report()
+        duplicate = source.copy()
+        self.assertNotEqual(duplicate.task_id, source.task_id)
+        self.assertNotEqual(duplicate.mobile_uuid, source.mobile_uuid)
+        self.assertNotEqual(duplicate.name, source.name)
+        self.assertEqual(duplicate.employee_assignment_ids.employee_id, self.employee)
+        self.assertEqual(duplicate.planned_service_start, source.planned_service_start)
+        self.assertNotEqual(duplicate.task_id.nolte_calendar_event_id, task.nolte_calendar_event_id)
+        self.assertEqual(self.env['nolte.service.report'].search_count([('task_id', '=', duplicate.task_id.id)]), 1)
+        source.write({'planned_service_start': '2035-08-01', 'planned_service_end': '2035-08-03'})
+        self.assertEqual(str(duplicate.planned_service_start), '2035-07-01')
+        self.assertEqual(str(duplicate.task_id.nolte_calendar_event_id.start_date), '2035-07-01')
+        duplicate.task_id.nolte_calendar_event_id.write({'start_date': '2035-09-01', 'stop_date': '2035-09-04'})
+        self.assertEqual(str(duplicate.planned_service_start), '2035-09-01')
+        self.assertEqual(str(source.planned_service_start), '2035-08-01')
+        self.assertEqual(str(task.nolte_calendar_event_id.start_date), '2035-08-01')
+
+    def test_duplicate_confirmed_report_starts_without_work_or_confirmation(self):
+        task = self._shared_task(nolte_service_date_start='2035-07-01', nolte_service_date_end='2035-07-03')
+        source = self._shared_report(task)
+        member = source.member_ids
+        self.env['nolte.service.report.segment'].create({'member_id': member.id,
+            'segment_type': 'work', 'start_time': '08:00', 'end_time': '10:00'})
+        source.write({'state': 'customer_confirmed', 'customer_snapshot_payload': '{"signed":true}',
+            'customer_snapshot_hash': 'original-hash', 'customer_signer_name': 'Customer',
+            'work_description': 'Completed work', 'work_result': 'Finished'})
+        closed_stage = self.env['project.task.type'].create({'name': 'Abgeschlossen',
+            'project_ids': [Command.link(self.project.id)]})
+        task.write({'stage_id': closed_stage.id, 'state': '1_done'})
+        duplicate = source.copy()
+        self.assertEqual(duplicate.state, 'draft')
+        self.assertFalse(duplicate.customer_snapshot_payload)
+        self.assertFalse(duplicate.customer_snapshot_hash)
+        self.assertFalse(duplicate.customer_signer_name)
+        self.assertFalse(duplicate.member_ids)
+        self.assertFalse(duplicate.work_result)
+        self.assertFalse(duplicate.sale_order_id)
+        self.assertEqual(duplicate.spesen_sync_state, 'pending')
+        self.assertEqual(duplicate.employee_assignment_ids.employee_id, self.employee)
+        self.assertEqual(duplicate.task_id.stage_id.name, 'Einsatz geplant')
+        self.assertEqual(duplicate.task_id.state, '01_in_progress')
+        self.assertEqual(source.member_ids, member)
+        self.assertEqual(source.customer_snapshot_payload, '{"signed":true}')
+
+    def test_plan_and_calendar_changes_never_move_recorded_work_days(self):
+        task = self._shared_task(nolte_service_date_start="2035-05-07", nolte_service_date_end="2035-05-09")
+        report = task._nolte_ensure_planning_report()
+        self.assertFalse(report.member_ids)
+        task.write({"nolte_service_date_start": "2035-06-01", "nolte_service_date_end": "2035-06-03"})
+        self.assertFalse(report.member_ids)
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)
+        result = self.upsert(dict(self.payload, mobileUuid=report.mobile_uuid, taskId=task.id,
+            employeeIds=[self.employee.id], employeeDays=[{"employeeId": self.employee.id, "date": "2035-06-01",
+                "segments": [{"segmentUuid": str(uuid4()), "type": "work", "start": "08:00", "end": "09:00"}]}]))
+        self.assertEqual(result["id"], report.id)
+        member = report.member_ids
+        segment = member.segment_ids
+        task.nolte_calendar_event_id.write({"start_date": "2035-06-10", "stop_date": "2035-06-12"})
+        self.assertEqual(report.member_ids, member)
+        self.assertEqual(str(member.service_date), "2035-06-01")
+        self.assertEqual(member.segment_ids, segment)
+        self.assertEqual(str(report.planned_service_start), "2035-06-10")
+
+    def test_cleanup_preserves_signed_and_linked_empty_days(self):
+        report = self.env["nolte.service.report"].create({"owner_user_id": self.tech.id})
+        member = self.env["nolte.service.report.member"].create({"report_id": report.id,
+            "employee_id": self.employee.id, "service_date": "2035-05-07"})
+        report.write({"customer_snapshot_payload": '{"frozen":true}'})
+        self.assertEqual(report._discard_empty_planning_days(), 0)
+        self.assertTrue(member.exists())
+        report.customer_snapshot_payload = False
+        work = self.env["nolte.work.report"].create({"report_date": "2035-05-07", "company_id": self.env.company.id, "customer": "Protected source customer"})
+        source = self.env["nolte.work.report.line"].create({"work_report_id": work.id, "employee_id": self.employee.id,
+            "start_time": "08:00", "end_time": "10:00"})
+        member.work_report_line_id = source
+        self.assertEqual(report._discard_empty_planning_days(), 0)
+        self.assertTrue(member.exists())
+        member.work_report_line_id = False
+        member.overnight_count = 1
+        self.assertEqual(report._discard_empty_planning_days(), 0)
+        member.overnight_count = 0
+        with patch.object(api_v1, "request", SimpleNamespace(env=report.with_user(self.tech).env)):
+            self.assertEqual(report.with_user(self.tech)._discard_empty_planning_days(), 1)
+        self.assertFalse(member.exists())
+        self.assertTrue(source.exists())
+        self.assertEqual(report.employee_assignment_ids.employee_id, self.employee)

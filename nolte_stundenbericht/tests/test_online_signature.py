@@ -119,17 +119,17 @@ class TestOnlineSignature(TransactionCase):
         self.assertEqual(self.env["mail.mail"].search_count(domain), 1)
 
     def test_settings_are_scoped_and_admin_only(self):
-        settings_model = self.env["nolte.service.signature.settings"]
+        settings_model = self.env["res.config.settings"]
         with self.assertRaises(AccessError):
             settings_model.with_user(self.technician).create({})
         admin = self.env.ref("base.user_admin")
-        settings = settings_model.with_user(admin).create({"stundenbericht_signature_base_url": "http://example.invalid"})
-        with self.assertRaises(UserError):
-            settings.action_save()
+        with self.assertRaises(UserError), self.cr.savepoint():
+            settings_model.with_user(admin).create({"stundenbericht_signature_base_url": "http://example.invalid"})
+        settings = settings_model.with_user(admin).create({})
         parameters = self.env["ir.config_parameter"]
         parameters.set_param("nolte_signature_test_unrelated", "unchanged")
         settings.stundenbericht_signature_base_url = "https://example.invalid"
-        settings.action_save()
+        settings.set_values()
         self.assertEqual(parameters.get_param("nolte_stundenbericht.signature_base_url"), "https://example.invalid")
         self.assertEqual(parameters.get_param("nolte_signature_test_unrelated"), "unchanged")
 

@@ -1,0 +1,15 @@
+<odoo>
+    <record id="view_nolte_service_calendar_form" model="ir.ui.view">
+        <field name="name">calendar.event.service.planning</field>
+        <field name="model">calendar.event</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='start_date']" position="before">
+                <field name="nolte_service_task_id" invisible="1" groups="nolte_stundenbericht.group_stundenbericht_user"/>
+                <field name="nolte_service_technician_ids" widget="many2many_tags"
+                    invisible="not nolte_service_task_id" options="{'no_create': True}"
+                    readonly="not user_can_edit" groups="nolte_stundenbericht.group_stundenbericht_user"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

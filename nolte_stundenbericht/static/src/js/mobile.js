@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("online", online);
     window.addEventListener("offline", online);
     document.head.insertAdjacentHTML("beforeend", '<link rel="manifest" href="/nolte_stundenbericht/manifest.webmanifest">');
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=54", {scope: "/"}).catch(() => null);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/nolte_stundenbericht/service-worker.js?v=56", {scope: "/"}).catch(() => null);
     const boot = rpc("/nolte_stundenbericht/api/v1/bootstrap", entryTaskId ? {task_id: entryTaskId} : {}).then(data => {
         renderWorkTemplates(data.workTemplates || []);
         const countryField = field("countryRateKey");
@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (![...countryField.options].some(option => option.value === selectedCountry)) {
             const option = document.createElement("option");
-            option.value = selectedCountry; option.textContent = `${selectedCountry} (gespeicherter BMF-Schlüssel)`;
+            option.value = selectedCountry; option.textContent = `${selectedCountry} (gespeichertes Einsatzland)`;
             countryField.append(option);
         }
         countryField.value = selectedCountry;
@@ -600,8 +600,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const bootstrap = await boot;
         const task = field("taskId").selectedOptions[0];
         saveActiveSchedule();
-        const employeeDays = Object.entries(employeeSchedules).flatMap(([employeeId, employeeDates]) => Object.keys(employeeDates || {}).sort().map(date => ({employeeId: Number(employeeId), date, segments: (employeeDates[date] || []).filter(segment => isQuarterHour(segment.start) && isQuarterHour(segment.end))})));
-        const serviceDays = Object.keys(days).sort().map(date => ({date, segments: (days[date] || []).filter(segment => isQuarterHour(segment.start) && isQuarterHour(segment.end))}));
+        const employeeDays = Object.entries(employeeSchedules).flatMap(([employeeId, employeeDates]) => Object.keys(employeeDates || {}).sort().map(date => ({employeeId: Number(employeeId), date, segments: (employeeDates[date] || []).filter(segment => isQuarterHour(segment.start) && isQuarterHour(segment.end))}))).filter(item => item.segments.length);
+        const serviceDays = Object.keys(days).sort().map(date => ({date, segments: (days[date] || []).filter(segment => isQuarterHour(segment.start) && isQuarterHour(segment.end))})).filter(item => item.segments.length);
         return {
             mobileUuid: currentDraft?.mobileUuid || uuid(),
             mobileRevision: (currentDraft?.mobileRevision || 0) + 1,
@@ -711,7 +711,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const savedCountryKey = draft.countryRateKey || "DE";
         if (![...field("countryRateKey").options].some(option => option.value === savedCountryKey)) {
             const option = document.createElement("option"); option.value = savedCountryKey;
-            option.textContent = `${savedCountryKey} (gespeicherter BMF-Schlüssel)`;
+            option.textContent = `${savedCountryKey} (gespeichertes Einsatzland)`;
             field("countryRateKey").append(option);
         }
         field("countryRateKey").value = savedCountryKey;

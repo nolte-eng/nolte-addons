@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import unicodedata
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -13,6 +14,9 @@ from markupsafe import Markup, escape
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import email_normalize
+
+
+_logger = logging.getLogger(__name__)
 
 
 class NolteServiceReport(models.Model):
@@ -38,10 +42,15 @@ class NolteServiceReport(models.Model):
     service_date = fields.Date(string="Einsatzdatum", required=True, default=fields.Date.context_today, index=True, tracking=True)
     planning_draft = fields.Boolean(string="Vorbereiteter Planungsentwurf", default=False, readonly=True, copy=False)
     display_service_date = fields.Date(string="Einsatzdatum", compute="_compute_display_service_date", store=True)
-    country_rate_key = fields.Char(string="BMF-Tarifschlüssel", default="DE", required=True)
+    display_service_period = fields.Char(string="Einsatzzeitraum", compute="_compute_display_service_period")
+    planned_service_start = fields.Date(
+        string="Einsatzzeitraum", compute="_compute_planned_service_period", inverse="_inverse_planned_service_period")
+    planned_service_end = fields.Date(
+        string="Einsatzende", compute="_compute_planned_service_period", inverse="_inverse_planned_service_period")
+    country_rate_key = fields.Char(string="Einsatzland", default="DE", required=True)
     bmf_rate_year = fields.Integer(compute="_compute_bmf_rate_selection")
     bmf_rate_id = fields.Many2one(
-        "nolte.bmf.rate", string="BMF-Tarifschlüssel", compute="_compute_bmf_rate_selection",
+        "nolte.bmf.rate", string="Einsatzland", compute="_compute_bmf_rate_selection",
         inverse="_inverse_bmf_rate_selection",
         domain="[('active', '=', True), ('year', '=', bmf_rate_year)]",
     )
@@ -153,6 +162,53 @@ class NolteServiceReport(models.Model):
             pristine = report.planning_draft and report.state == "draft" and not report.member_ids.segment_ids
             report.display_service_date = report.task_id._nolte_period_start() if pristine else report.service_date
 
+    def write(self, values):
+        period_fields = {"planned_service_start": "nolte_service_date_start", "planned_service_end": "nolte_service_date_end"}
+        if not period_fields.keys() & values.keys():
+            return super().write(values)
+        self.check_access("write")
+        with self.env.cr.savepoint():
+            remaining = {key: value for key, value in values.items() if key not in period_fields}
+            if remaining:
+                super().write(remaining)
+            for report in self:
+                if not report.task_id:
+                    raise UserError(_("Bitte zuerst einen Einsatzauftrag zuordnen."))
+                report.task_id.write({target: values[source] for source, target in period_fields.items() if source in values})
+        return True
+
+    @api.depends("task_id.nolte_service_date_start", "task_id.nolte_service_date_end")
+    def _compute_planned_service_period(self):
+        for report in self:
+            report.planned_service_start = report.task_id._nolte_period_start() if report.task_id else False
+            report.planned_service_end = report.task_id.nolte_service_date_end
+
+    def _inverse_planned_service_period(self):
+        for report in self:
+            if not report.task_id:
+                raise UserError(_("Bitte zuerst einen Einsatzauftrag zuordnen."))
+            # Write both dates together so moving a whole period never
+            # validates the new start against the previous end.
+            start, end = report.planned_service_start, report.planned_service_end
+            report.task_id.write({"nolte_service_date_start": start, "nolte_service_date_end": end})
+
+    @api.depends("service_date", "planning_draft", "state", "task_id.nolte_service_date_start",
+                 "task_id.nolte_service_date_end", "member_ids.service_date", "member_ids.segment_ids")
+    def _compute_display_service_period(self):
+        for report in self:
+            pristine = report.planning_draft and report.state == "draft" and not report.member_ids.segment_ids
+            if pristine:
+                start = report.task_id._nolte_period_start() if report.task_id else False
+                end = report.task_id.nolte_service_date_end or start
+            else:
+                dates = sorted(day for day in report.member_ids.mapped("service_date") if day)
+                start = dates[0] if dates else report.service_date
+                end = dates[-1] if dates else start
+            text = start.strftime("%d.%m.%Y") if start else _("Termin offen")
+            if start and end and end != start:
+                text += "–%s" % end.strftime("%d.%m.%Y")
+            report.display_service_period = text
+
     @api.depends("state", "task_id.state", "task_id.stage_id.name", "task_id.active", "archived_manually")
     def _compute_is_closed(self):
         for report in self:
@@ -200,7 +256,7 @@ class NolteServiceReport(models.Model):
         self.check_access("read")
         if self.owner_user_id != self.env.user or self.state not in ("draft", "returned"):
             raise UserError(_("Nur eigene, bearbeitbare Berichte können in der App geöffnet werden."))
-        if self.env.user not in self.member_ids.employee_id.mapped("user_id"):
+        if self.env.user not in (self.member_ids.employee_id | self.employee_assignment_ids.employee_id).mapped("user_id"):
             raise UserError(_("Bitte zuerst einen verantwortlichen Monteur in der Planung zuweisen."))
         return {"type": "ir.actions.act_url", "url": "/my/stundenbericht?task_id=%s&report_id=%s" % (self.task_id.id, self.id), "target": "self"}
 
@@ -454,7 +510,7 @@ class NolteServiceReport(models.Model):
                 "employeeName": assignment.employee_id.name,
                 "overnightCount": assignment.overnight_count,
             } for assignment in self.employee_assignment_ids],
-            "memberNames": list(dict.fromkeys(self.member_ids.mapped("employee_id.name"))),
+            "memberNames": list(dict.fromkeys((self.employee_assignment_ids.employee_id | self.member_ids.employee_id).mapped("name"))),
             "timeRows": time_rows,
             "timeTotals": {
                 "work": duration_text(total_work),
@@ -686,7 +742,7 @@ class NolteServiceReport(models.Model):
                 and normalized(rate.location_name) in ("", "imubrigen"))
             if len(general) == 1:
                 return general.rate_key
-        raise UserError(_("Für den BMF-Schlüssel %(key)s fehlt ein eindeutiger aktiver Tarif für %(year)s. Bitte den passenden Eintrag aus der BMF-Auswahl wählen.") % {"key": key or "-", "year": service_date.year})
+        raise UserError(_("Für das Einsatzland %(key)s fehlt ein eindeutiger aktiver Tarif für %(year)s. Bitte den passenden Eintrag aus der Länderauswahl wählen.") % {"key": key or "-", "year": service_date.year})
 
     def action_sync_spesenbericht(self):
         """Create/update the existing work report and distribute it safely.
@@ -706,11 +762,6 @@ class NolteServiceReport(models.Model):
             day_groups = {}
             for member in report.member_ids:
                 employee = member.employee_id
-                # This workflow already runs with elevated report rights and
-                # may inspect the employee's private rollout configuration.
-                # Read only these two configuration fields in sudo mode;
-                # normal employee access is intentionally more restrictive.
-                employee_profile = employee.sudo()
                 service_date = member.service_date
                 key = (employee.id, service_date)
                 if key in day_groups:
@@ -721,14 +772,6 @@ class NolteServiceReport(models.Model):
                     "service_date": service_date,
                     "members": day_members,
                 }
-                if employee_profile.stundenbericht_source == "csv":
-                    report._create_sync_conflict(employee, "csv_duplicate", _("Der Mitarbeiter ist weiterhin auf CSV-Stundenberichte eingestellt."), service_date)
-                    conflicts = True
-                    continue
-                if employee_profile.stundenbericht_app_active_from and service_date < employee_profile.stundenbericht_app_active_from:
-                    report._create_sync_conflict(employee, "csv_duplicate", _("Der Einsatz liegt vor dem App-Umstellungsdatum des Mitarbeiters."), service_date)
-                    conflicts = True
-                    continue
                 try:
                     group["summary"] = report._members_day_summary(day_members)
                     country_keys = {item._expense_bmf_key(service_date) for item in day_members.mapped("report_id")}
@@ -758,8 +801,8 @@ class NolteServiceReport(models.Model):
                     elif daily_line and daily_line.work_report_line_id and daily_line.work_report_line_id not in day_members.mapped("work_report_line_id"):
                         report._create_sync_conflict(employee, "csv_duplicate", _("Für diesen Tag existiert bereits eine andere importierte Stundenquelle."), service_date)
                         conflicts = True
-                    elif daily_line and not daily_line.work_report_line_id and (daily_line.customer or daily_line.start_time or daily_line.end_time or daily_line.break_minutes):
-                        report._create_sync_conflict(employee, "manual_entry", _("Für diesen Tag existieren manuell gepflegte Monatsdaten."), service_date)
+                    elif daily_line and not daily_line.work_report_line_id and (daily_line.travel_sequence_key or daily_line.customer or daily_line.start_time or daily_line.end_time or daily_line.break_minutes):
+                        report._create_sync_conflict(employee, "manual_entry", _("Für diesen Tag existieren bereits CSV- oder manuell gepflegte Spesendaten. Bitte den Tag im Spesenbericht prüfen."), service_date)
                         conflicts = True
             if conflicts:
                 report.write({"spesen_sync_state": "conflict", "spesen_sync_message": _("Die Übergabe wurde wegen Prüfkonflikten nicht ausgeführt.")})
@@ -824,6 +867,49 @@ class NolteServiceReport(models.Model):
             report.message_post(body=_("Zeiten an den bestehenden Spesenbericht übergeben."))
         return True
 
+    def _discardable_empty_time_members(self):
+        """Only unsigned, unlinked draft placeholders are safe to discard."""
+        def _has_protected_data(member):
+            # Workers need not read sales/expense records to preserve their links.
+            member = member.sudo()
+            return bool(member.segment_ids or member.overnight_count or member.work_report_line_id
+                or member.expense_report_line_id or member.attendance_ids or member.billing_sale_line_ids
+                or member.billing_preview or member.billing_state != "pending")
+
+        result = self.env["nolte.service.report.member"]
+        for report in self:
+            if (report.state != "draft" or report.is_closed or report.customer_snapshot_payload
+                    or report.customer_pdf_attachment_id or report.customer_signature):
+                continue
+            result |= report.member_ids.filtered(lambda item: not _has_protected_data(item))
+        return result
+
+    def _discard_empty_planning_days(self):
+        self.check_access("write")
+        empty = self._discardable_empty_time_members()
+        if empty:
+            # Legacy reports may store the technician only on a placeholder day.
+            # Preserve that assignment before removing the unused time row.
+            for report in empty.report_id:
+                for employee in empty.filtered(lambda item: item.report_id == report).employee_id - report.employee_assignment_ids.employee_id:
+                    self.env["nolte.service.report.employee"].create({
+                        "report_id": report.id, "employee_id": employee.id,
+                    })
+            _logger.info("Removing empty unsigned/unlinked service day placeholders: %s", empty.ids)
+            count = len(empty)
+            empty.sudo().unlink()
+            return count
+        return 0
+
+    def _billing_time_members(self):
+        """Ignore empty extra days only when this employee has times in the same report."""
+        members = self.env["nolte.service.report.member"]
+        for report in self:
+            recorded = report.member_ids.filtered("segment_ids")
+            employees = recorded.employee_id
+            members |= recorded | report.member_ids.filtered(lambda item: item.employee_id not in employees)
+        return members
+
     def action_compute_billing_preview(self):
         """Calculate billable quantities without creating sales-order lines."""
         from odoo.addons.nolte_overtime_billing.services.time_allocation import allocate_with_pauses
@@ -832,7 +918,11 @@ class NolteServiceReport(models.Model):
             report = original_report.sudo()
             if report.state not in ("customer_confirmed", "internally_amended", "under_review", "ready_to_bill"):
                 raise UserError(_("Eine Abrechnungsvorschau setzt eine Kundenbestätigung voraus."))
-            for member in report.member_ids:
+            time_members = report._billing_time_members()
+            (report.member_ids - time_members).write({
+                "billing_preview": {}, "billing_state": "preview",
+            })
+            for member in time_members:
                 intervals, pauses = [], []
                 total_kilometers = 0.0
                 for segment in member.segment_ids:
@@ -850,9 +940,9 @@ class NolteServiceReport(models.Model):
                 if not intervals:
                     raise UserError(_("Für %s fehlen abrechenbare Zeitsegmente.") % member.employee_id.name)
                 allocation = allocate_with_pauses(intervals, pauses)
-                employee_members = report.member_ids.filtered(lambda item: item.employee_id == member.employee_id).sorted(lambda item: (item.service_date, item.id))
+                employee_members = time_members.filtered(lambda item: item.employee_id == member.employee_id).sorted(lambda item: (item.service_date, item.id))
                 assignment = report.employee_assignment_ids.filtered(lambda item: item.employee_id == member.employee_id)[:1]
-                overnight_total = assignment.overnight_count if assignment else sum(employee_members.mapped("overnight_count"))
+                overnight_total = assignment.overnight_count if assignment else sum(report.member_ids.filtered(lambda item: item.employee_id == member.employee_id).mapped("overnight_count"))
                 overnight_quantity = float(overnight_total or 0) if member == employee_members[:1] else 0.0
                 member.write({
                     "billing_preview": {**allocation, "kilometers": total_kilometers, "overnights": overnight_quantity, "allowance_days": 1.0},
@@ -865,8 +955,8 @@ class NolteServiceReport(models.Model):
     def _sale_order_service_note(self):
         """Compact customer-facing service details, without internal work text."""
         self.ensure_one()
-        technicians = list(dict.fromkeys(self.member_ids.mapped("employee_id.name")))
-        dates = sorted(date for date in self.member_ids.mapped("service_date") if date)
+        technicians = list(dict.fromkeys((self.employee_assignment_ids.employee_id | self.member_ids.employee_id).mapped("name")))
+        dates = sorted(date for date in self._billing_time_members().mapped("service_date") if date)
         if not dates and self.service_date:
             dates = [self.service_date]
         date_text = dates[0].strftime("%d.%m.%Y") if dates else "-"
@@ -1076,7 +1166,7 @@ class NolteServiceReport(models.Model):
                     products[key] = product
                 approved_by_employee = {}
                 members_by_employee = {}
-                for member in report.member_ids:
+                for member in report._billing_time_members():
                     preview = member.billing_preview or {}
                     source = {
                         "work_normal": (preview.get("work") or {}).get("normal", 0.0),
@@ -1187,8 +1277,8 @@ class NolteServiceReport(models.Model):
         from odoo.addons.nolte_overtime_billing.services.time_allocation import _subtract_pauses, allocate_timeline
 
         previews = {}
-        members = self.member_ids.sorted(lambda member: (member.service_date, member.report_id.id, member.id))
-        for member in members:
+        members = self._billing_time_members().sorted(lambda member: (member.service_date, member.report_id.id, member.id))
+        for member in self.member_ids:
             previews[str(member.id)] = {
                 "work": dict.fromkeys(("normal", "ot30", "ot50"), 0.0),
                 "travel": dict.fromkeys(("normal", "ot30", "ot50"), 0.0),
@@ -1199,11 +1289,11 @@ class NolteServiceReport(models.Model):
                 "allowance_days": 0.0,
             }
         for report in self:
-            for employee, employee_members in report.member_ids.grouped("employee_id").items():
+            for employee, employee_members in report._billing_time_members().grouped("employee_id").items():
                 assignment = report.employee_assignment_ids.filtered(lambda item: item.employee_id == employee)[:1]
                 first = employee_members.sorted("service_date")[0]
                 previews[str(first.id)]["overnights"] = float(
-                    assignment.overnight_count if assignment else sum(employee_members.mapped("overnight_count"))
+                    assignment.overnight_count if assignment else sum(report.member_ids.filtered(lambda item: item.employee_id == employee).mapped("overnight_count"))
                 )
 
         shared_day = False
@@ -1365,7 +1455,7 @@ class NolteServiceReportMaterial(models.Model):
     _order = "sequence, id"
 
     report_id = fields.Many2one("nolte.service.report", required=True, ondelete="cascade", index=True)
-    mobile_uuid = fields.Char(required=True, copy=False, readonly=True, index=True)
+    mobile_uuid = fields.Char(default=lambda self: str(uuid4()), required=True, copy=False, readonly=True, index=True)
     sequence = fields.Integer(default=10)
     name = fields.Char(string="Artikel / Material", required=True)
     product_id = fields.Many2one("product.product", string="Odoo-Artikel")
@@ -1465,7 +1555,7 @@ class NolteProjectTask(models.Model):
             raise UserError(_("Sie sind nicht für den Stundenbericht freigeschaltet."))
         reports = self.env["nolte.service.report"].search([("task_id", "=", self.id)], order="service_date desc, id desc")
         if (len(reports) == 1 and reports.state in ("draft", "returned") and reports.owner_user_id == self.env.user
-                and self.env.user in reports.member_ids.employee_id.mapped("user_id")):
+                and self.env.user in (reports.member_ids.employee_id | reports.employee_assignment_ids.employee_id).mapped("user_id")):
             return reports.action_open_mobile_report()
         if reports:
             action = self.env["ir.actions.actions"]._for_xml_id("nolte_stundenbericht.action_nolte_service_report")
@@ -1483,3 +1573,9 @@ class NolteProjectTask(models.Model):
     nolte_machine_number = fields.Char(string="Standard-Maschinennummer")
     nolte_machine_type = fields.Char(string="Standard-Maschinentyp")
     nolte_overnight_count = fields.Integer(string="Standard-Übernachtungen", default=0)
+
+
+class NolteExpenseReportLine(models.Model):
+    _inherit = "nolte.expense.report.line"
+
+    country = fields.Char(string="Einsatzland")

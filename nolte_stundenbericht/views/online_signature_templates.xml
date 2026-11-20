@@ -6,20 +6,28 @@
         <field name="arch" type="xml"><xpath expr="//form" position="inside"><field name="nolte_signature_request_id" invisible="1"/></xpath></field>
     </record>
     <record id="view_signature_settings" model="ir.ui.view">
-        <field name="name">nolte.signature.settings</field>
-        <field name="model">nolte.service.signature.settings</field>
+        <field name="name">res.config.settings.stundenbericht</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <form string="Online-Unterschrift">
-                <sheet><group><field name="stundenbericht_signature_base_url" placeholder="https://nolte-eng.de"/></group>
-                    <p>Kundenlinks sind 14 Tage gültig. In Produktion muss die HTTPS-Adresse öffentlich erreichbar sein. Leer = Odoo-Systembasisadresse. In Staging darf ausschließlich die Staging-Adresse verwendet werden.</p>
-                </sheet>
-                <footer><button name="action_save" type="object" string="Speichern" class="btn-primary"/><button string="Abbrechen" special="cancel"/></footer>
-            </form>
+            <xpath expr="//form" position="inside">
+                <app name="nolte_stundenbericht" string="Stundenbericht" groups="base.group_system">
+                    <block title="Online-Unterschrift" name="nolte_signature">
+                        <setting string="Kundenlinks" help="Kundenlinks sind 14 Tage gültig. Die HTTPS-Adresse muss für Kunden erreichbar sein. Leer verwendet die Odoo-Systembasisadresse.">
+                            <field name="stundenbericht_signature_base_url" placeholder="https://nolte-eng.de"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
         </field>
     </record>
     <record id="action_signature_settings" model="ir.actions.act_window">
-        <field name="name">Online-Unterschrift</field><field name="res_model">nolte.service.signature.settings</field>
-        <field name="view_mode">form</field><field name="view_id" ref="view_signature_settings"/><field name="target">new</field>
+        <field name="name">Online-Unterschrift</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="base.res_config_settings_view_form"/>
+        <field name="target">current</field>
+        <field name="context">{'module': 'nolte_stundenbericht'}</field>
     </record>
     <menuitem id="menu_signature_settings" name="Online-Unterschrift" parent="menu_nolte_stundenbericht_configuration" action="action_signature_settings" groups="base.group_system" sequence="80"/>
     <template id="online_signature_page" name="Stundenbericht online bestätigen">

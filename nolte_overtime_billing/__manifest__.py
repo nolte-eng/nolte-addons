@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nolte Overtime Billing (CSV → Sales Order)",
-    "version": "19.0.1.5.6",
+    "version": "19.0.1.5.7",
     "category": "Sales",
     "summary": "Import timesheet CSV, calculate overtime, and create a sales order (and invoice).",
     "author": "Nolte Engineering / Nolte Sales",

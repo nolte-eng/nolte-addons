@@ -23,6 +23,22 @@ class TestFlatRates(TransactionCase):
         self.partner.property_product_pricelist = self.env["product.pricelist"].create({"name": "Flat-rate test pricelist", "currency_id": self.env.company.currency_id.id})
         self.report = self.env["nolte.service.report"].create({"name": "TEST-FLAT-RATES", "partner_id": self.partner.id, "owner_user_id": self.tech.id})
 
+    def test_backend_material_generates_unique_uuid_and_preserves_mobile_uuid(self):
+        self.report.write({"material_ids": [
+            Command.create({"name": "Backend material one", "quantity": 2}),
+            Command.create({"name": "Backend material two"}),
+            Command.create({"name": "App material", "mobile_uuid": "test-explicit-material-uuid"}),
+        ]})
+        materials = self.report.material_ids
+        self.assertEqual(len(materials), 3)
+        self.assertTrue(all(materials.mapped("mobile_uuid")))
+        self.assertEqual(len(set(materials.mapped("mobile_uuid"))), 3)
+        app_material = materials.filtered(lambda item: item.name == "App material")
+        self.assertEqual(app_material.mobile_uuid, "test-explicit-material-uuid")
+        copied = app_material.copy()
+        self.assertTrue(copied.mobile_uuid)
+        self.assertNotIn(copied.mobile_uuid, materials.mapped("mobile_uuid"))
+
     def test_sync_repeat_remove_and_snapshot(self):
         report = self.report.with_user(self.tech)
         report._sync_flat_rates([self.rate.id, self.rate.id])
@@ -277,3 +293,26 @@ class TestFlatRates(TransactionCase):
         self.report.action_transfer_missing_material()
         self.assertEqual(len(self.report.sale_order_id.order_line.filtered(lambda line: line.product_id == product)), 1)
         self.assertEqual(material.sale_line_id.product_uom_qty, 5)
+
+    def test_empty_extra_day_does_not_create_sale_lines_or_transferred_marker(self):
+        employee = self.env["hr.employee"].create({"name": "Empty billing day technician"})
+        for key in ("work", "allowance"):
+            self.env["ir.config_parameter"].set_param("nolte_overtime_billing.product_%s_id" % key, self.product.id)
+        self.report.write({"state": "under_review", "member_ids": [
+            Command.create({"employee_id": employee.id, "service_date": "2035-05-06"}),
+            Command.create({"employee_id": employee.id, "service_date": "2035-05-07", "segment_ids": [
+                Command.create({"segment_type": "work", "start_time": "08:00", "end_time": "10:00"}),
+            ]}),
+        ]})
+        empty = self.report.member_ids.filtered(lambda item: not item.segment_ids)
+        active = self.report.member_ids - empty
+        self.report.action_compute_billing_preview()
+        self.report.action_approve_billing()
+        self.assertEqual(active.billing_state, "transferred")
+        self.assertEqual(empty.billing_state, "preview")
+        self.assertFalse(empty.billing_sale_line_ids)
+        self.assertFalse(empty.billing_preview)
+        lines = self.report.sale_order_id.order_line
+        self.assertEqual(sorted(lines.filtered(lambda item: not item.display_type).mapped("product_uom_qty")), [1, 2])
+        self.report.action_approve_billing()
+        self.assertEqual(self.report.sale_order_id.order_line, lines)

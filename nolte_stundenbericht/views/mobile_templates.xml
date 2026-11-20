@@ -101,7 +101,7 @@
                   </div>
                   <input type="hidden" data-customer-name=""/>
                   <div class="col-6">
-                    <label>Land für BMF-Schlüssel</label>
+                    <label>Einsatzland</label>
                     <select class="form-select" name="countryRateKey" required="required"><option value="DE" selected="selected">Deutschland</option></select>
                   </div>
                   <div class="col-12" data-service-location-wrap="">
@@ -273,7 +273,7 @@
       </main>
         <script type="module" src="/nolte_stundenbericht/static/src/js/uuid.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/day_copy.js?v=1"/>
-        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=76"/>
+        <script type="module" src="/nolte_stundenbericht/static/src/js/mobile.js?v=78"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/company_search.js?v=1"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/flat_rates.js?v=2"/>
         <script type="module" src="/nolte_stundenbericht/static/src/js/return_trip.js?v=5"/>

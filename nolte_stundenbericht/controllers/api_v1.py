@@ -232,7 +232,7 @@ class NolteStundenberichtApiV1(http.Controller):
                     "billingState": member.billing_state,
                     "billingPreview": member.billing_preview or {},
                     "billingApproved": member.billing_approved or {},
-                    "saleLineIds": member.billing_sale_line_ids.ids,
+                    "saleLineIds": member.sudo().billing_sale_line_ids.ids,
                     "segments": [
                         {
                             "segmentUuid": segment.segment_uuid,
@@ -361,12 +361,6 @@ class NolteStundenberichtApiV1(http.Controller):
         employee_options = [{"id": item.id, "name": item.name} for item in employees]
         if employee.id not in employees.ids:
             employee_options.insert(0, {"id": employee.id, "name": employee.name})
-        # These rollout controls belong to the private employee profile. The
-        # mobile user has already been matched to their own employee above;
-        # use a narrow sudo read only for these two fields so the public
-        # employee profile ACL does not block app bootstrap for portal-like
-        # users.
-        private_employee = request.env["hr.employee"].sudo().browse(employee.id)
         rates = request.env["nolte.bmf.rate"].sudo().search([("active", "=", True)], order="year desc, country_name, location_name, id")
         country_options = {}
         for rate in rates:
@@ -377,8 +371,6 @@ class NolteStundenberichtApiV1(http.Controller):
         return {
             "employee": {"id": employee.id, "name": employee.name},
             "employees": employee_options,
-            "source": private_employee.stundenbericht_source,
-            "appActiveFrom": fields.Date.to_string(private_employee.stundenbericht_app_active_from) if private_employee.stundenbericht_app_active_from else False,
             "countries": sorted(country_options.values(), key=lambda item: item["name"].casefold()),
             "serverTime": fields.Datetime.to_string(fields.Datetime.now()),
             "assignments": [task_values(task) for task in tasks],
@@ -389,7 +381,7 @@ class NolteStundenberichtApiV1(http.Controller):
     def recent_reports(self):
         employee = self._employee_for_request()
         reports = request.env["nolte.service.report"].search(
-            [("member_ids.employee_id", "=", employee.id), ("is_closed", "=", False)], order="service_date desc, id desc", limit=100
+            ["|", ("member_ids.employee_id", "=", employee.id), ("employee_assignment_ids.employee_id", "=", employee.id), ("is_closed", "=", False)], order="service_date desc, id desc", limit=100
         )
         return [{
             "id": report.id,
@@ -408,7 +400,7 @@ class NolteStundenberichtApiV1(http.Controller):
         employee = self._employee_for_request()
         report = request.env["nolte.service.report"].search([
             ("id", "=", int(report_id)),
-            ("member_ids.employee_id", "=", employee.id),
+            "|", ("member_ids.employee_id", "=", employee.id), ("employee_assignment_ids.employee_id", "=", employee.id),
         ], limit=1)
         if not report:
             raise AccessError(request.env._("Dieser Bericht ist für Sie nicht verfügbar."))
@@ -502,7 +494,7 @@ class NolteStundenberichtApiV1(http.Controller):
         employee = self._employee_for_request()
         date_value = fields.Date.to_date(service_date)
         domain = [
-            ("member_ids.employee_id", "=", employee.id),
+            "|", ("member_ids.employee_id", "=", employee.id), ("employee_assignment_ids.employee_id", "=", employee.id),
             ("service_date", "<", date_value),
             ("state", "in", ("customer_confirmed", "internally_amended", "under_review", "ready_to_bill", "billed")),
         ]
@@ -535,7 +527,7 @@ class NolteStundenberichtApiV1(http.Controller):
     def photo_upload(self, mobile_uuid, filename, data):
         report = self._report_for_update(mobile_uuid)
         employee = self._employee_for_request()
-        if not request.env.user.has_group("nolte_stundenbericht.group_stundenbericht_manager") and employee not in report.member_ids.employee_id:
+        if not request.env.user.has_group("nolte_stundenbericht.group_stundenbericht_manager") and employee not in (report.member_ids.employee_id | report.employee_assignment_ids.employee_id):
             raise AccessError(request.env._("Sie dürfen diesem Einsatzbericht keine Fotos hinzufügen."))
         if report.state not in ("draft", "returned"):
             raise UserError(request.env._("Fotos können nach der Kundenbestätigung nicht mehr geändert werden."))
@@ -705,8 +697,12 @@ class NolteStundenberichtApiV1(http.Controller):
                 if not isinstance(day, dict) or not day.get("date") or not isinstance(day.get("segments") or [], list):
                     raise UserError(request.env._("Ein Einsatztag ist ungültig."))
                 service_date = fields.Date.to_date(day["date"])
-                received_days.add(service_date)
                 member = report.member_ids.filtered(lambda item: item.employee_id == target_employee and item.service_date == service_date)[:1]
+                # Empty local UI days are not worked days. Keep protected legacy
+                # placeholders intact; draft cleanup below only removes safe ones.
+                if not day.get("segments") and not member.segment_ids:
+                    continue
+                received_days.add(service_date)
                 if not member:
                     member = request.env["nolte.service.report.member"].create({"report_id": report.id, "employee_id": target_employee.id, "service_date": service_date})
                 # Old clients attached counts to each date. Preserve those by
@@ -737,7 +733,11 @@ class NolteStundenberichtApiV1(http.Controller):
                             segment_model.create({"member_id": member.id, "segment_uuid": segment_uuid, **values})
                     received_uuids.add(segment_uuid)
                 member.segment_ids.filtered(lambda segment: segment.segment_uuid not in received_uuids).unlink()
-            report.member_ids.filtered(lambda item: item.employee_id.id == employee_id and item.service_date not in received_days).unlink()
+            omitted = report.member_ids.filtered(lambda item: item.employee_id.id == employee_id and item.service_date not in received_days)
+            linked = omitted.filtered(lambda item: item.segment_ids and (item.sudo().work_report_line_id or item.sudo().expense_report_line_id or item.sudo().attendance_ids or item.sudo().billing_sale_line_ids))
+            if linked:
+                raise UserError(request.env._("Bereits übertragene Arbeitstage können hier nicht entfernt werden. Bitte die Zeiterfassung im Büro prüfen."))
+            (omitted.filtered("segment_ids") | (omitted & report._discardable_empty_time_members())).sudo().unlink()
         if employee_days is not None:
             submitted_overnights = payload.get("employeeOvernights") or {}
             legacy_day_totals = {}
@@ -754,9 +754,17 @@ class NolteStundenberichtApiV1(http.Controller):
                 assignment_values = {"overnight_count": max(0, int(count_value or 0))}
                 if assignment:
                     assignment.write(assignment_values)
-                elif count_value or any(item.get("employeeId") == employee_id for item in employee_days if isinstance(item, dict)):
+                else:
                     assignment_model.create({"report_id": report.id, "employee_id": employee_id, **assignment_values})
             report.write({"overnight_count": sum(report.employee_assignment_ids.mapped("overnight_count"))})
+        # Assignment is independent of recorded days, including legacy clients
+        # that send only the single-employee schedule.
+        for target_employee in allowed_employees:
+            if target_employee not in report.employee_assignment_ids.employee_id:
+                request.env["nolte.service.report.employee"].create({
+                    "report_id": report.id, "employee_id": target_employee.id,
+                })
+        report._discard_empty_planning_days()
         materials = payload.get("materials") or []
         if not isinstance(materials, list):
             raise UserError(request.env._("Die Materialliste ist ungültig."))
@@ -838,49 +846,6 @@ class NolteStundenberichtApiV1(http.Controller):
         report._finalize_customer_confirmation(str(signer_name).strip(), signature)
         return self._serialize(report)
 
-    @http.route("/nolte_stundenbericht/api/v1/reports/send-customer-email", type="jsonrpc", auth="user", methods=["POST"])
-    def send_customer_email(self, mobile_uuid, email_to):
-        employee = self._employee_for_request()
-        report = request.env["nolte.service.report"].search([
-            ("mobile_uuid", "=", (mobile_uuid or "").strip()),
-            ("member_ids.employee_id", "=", employee.id),
-        ], limit=1)
-        if not report:
-            raise AccessError(request.env._("Dieser Bericht ist für Sie nicht verfügbar."))
-        if report.state not in ("customer_confirmed", "internally_amended", "under_review", "ready_to_bill", "billed") or not report.customer_pdf_attachment_id:
-            raise UserError(request.env._("Der Kundenbericht kann erst nach der Kundenbestätigung versendet werden."))
-
-        recipient = (email_to or "").strip()
-        if not re.fullmatch(r"[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+", recipient):
-            raise UserError(request.env._("Bitte geben Sie eine gültige einzelne Kunden-E-Mail-Adresse ein."))
-        company_email = (report.company_id.email or report.company_id.partner_id.email or "").strip()
-        if not company_email:
-            raise UserError(request.env._("Für Ihr Unternehmen ist keine Service-E-Mail-Adresse hinterlegt."))
-        copy_recipient = company_email if company_email.casefold() != recipient.casefold() else False
-
-        mail = request.env["mail.mail"].sudo().create({
-            "subject": request.env._("Stundenbericht %s") % report.name,
-            "body_html": request.env._("Guten Tag,<br/><br/>anbei erhalten Sie den Stundenbericht %(report)s.<br/><br/>Freundliche Grüße<br/>%(company)s") % {
-                "report": report.name,
-                "company": report.company_id.name,
-            },
-            **report._customer_mail_identity(company_email),
-            "email_to": recipient,
-            "email_cc": copy_recipient,
-            "attachment_ids": [(4, report.customer_pdf_attachment_id.id)],
-            "model": report._name,
-            "res_id": report.id,
-            "auto_delete": False,
-        })
-        mail.send()
-        return {
-            "sent": mail.state == "sent",
-            "queued": mail.state == "outgoing",
-            "recipient": recipient,
-            "copyRecipient": copy_recipient or "",
-            "error": request.env._("Der Mailserver hat die Nachricht nicht angenommen. Bitte den Prüfer oder Administrator informieren.") if mail.state not in ("sent", "outgoing") else "",
-        }
-
     @http.route("/nolte_stundenbericht/api/v1/reports/internal-amendment", type="jsonrpc", auth="user", methods=["POST"])
     def internal_amendment(self, mobile_uuid, payload, expected_server_revision=None):
         if not isinstance(payload, dict):
@@ -890,11 +855,16 @@ class NolteStundenberichtApiV1(http.Controller):
             raise UserError(request.env._("Interne Nachträge sind erst nach der Kundenbestätigung zulässig."))
         employee = self._employee_for_request(payload.get("employeeId"))
         member = report.member_ids.filtered(lambda item: item.employee_id == employee)[:1]
-        if not member:
+        if not member and employee not in report.employee_assignment_ids.employee_id:
             raise AccessError(request.env._("Dieser Mitarbeiter gehört nicht zum Einsatzbericht."))
         segments = payload.get("segments") or []
         if not isinstance(segments, list):
             raise UserError(request.env._("Die Rückfahrtsegmente müssen als Liste übermittelt werden."))
+        if not member and segments:
+            member = request.env["nolte.service.report.member"].create({
+                "report_id": report.id, "employee_id": employee.id,
+                "service_date": payload.get("serviceDate") or report.service_date,
+            })
         # Only subsequent, internal return trips may be edited here.  A return
         # trip captured before customer confirmation remains part of the
         # customer-approved report and must never be replaced by this process.

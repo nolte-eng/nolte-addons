@@ -41,7 +41,7 @@ class ProjectTask(models.Model):
 
     def write(self, values):
         result = super().write(values)
-        if not self.env.context.get("install_mode") and not self.env.context.get("nolte_skip_planning_sync") and {"date_deadline", "nolte_service_date_start", "user_ids"}.intersection(values):
+        if not self.env.context.get("install_mode") and not self.env.context.get("nolte_skip_planning_sync") and {"date_deadline", "nolte_service_date_start_value", "planned_date_begin", "user_ids"}.intersection(values):
             self._sync_nolte_planning_drafts()
         return result
 
@@ -67,6 +67,7 @@ class ProjectTask(models.Model):
                 ("planning_draft", "=", True), ("state", "=", "draft"),
             ])
             for report in reports:
+                report._discard_empty_planning_days()
                 if (report.mobile_revision or report.member_ids.segment_ids or report.work_description or report.work_result
                         or report.public_note or report.photo_ids or report.material_ids or report.flat_rate_line_ids
                         or report.customer_pdf_attachment_id or report.sale_order_id
@@ -86,14 +87,9 @@ class ProjectTask(models.Model):
                 owner = (report.owner_user_id if report.owner_user_id in users else
                          (self.env.user if self.env.user in users else users[:1])) or report.create_uid
                 service_date = task._nolte_period_start() or report.service_date
-                existing = report.member_ids.mapped("employee_id")
-                removed_members = report.member_ids.filtered(lambda member: member.employee_id not in employees)
-                removed_members.unlink()
-                report.member_ids.write({"service_date": service_date})
                 report.employee_assignment_ids.filtered(lambda assignment: assignment.employee_id not in employees).unlink()
                 assigned = report.employee_assignment_ids.mapped("employee_id")
                 report.write({"owner_user_id": owner.id, "service_date": service_date,
-                    "member_ids": [Command.create({"employee_id": employee.id, "service_date": service_date}) for employee in employees - existing],
                     "employee_assignment_ids": [Command.create({"employee_id": employee.id}) for employee in employees - assigned],
                 })
             # A date alone is sufficient for 'Einsatz geplant'. Do not move

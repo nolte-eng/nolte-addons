@@ -201,7 +201,6 @@ class NolteServiceIntakeWizard(models.TransientModel):
             "service_location_contact_phone": values["nolte_service_location_contact_phone"],
             "machine_number": values["nolte_machine_number"], "machine_type": values["nolte_machine_type"],
             "employee_assignment_ids": [Command.create({"employee_id": employee.id}) for employee in technicians],
-            "member_ids": [Command.create({"employee_id": employee.id, "service_date": service_date}) for employee in technicians],
             "checklist_ids": [Command.create({"name": line.name, "note": line.note or False,
                 "visibility": "customer", "checked": False, "sequence": line.sequence}) for line in template.line_ids],
         })

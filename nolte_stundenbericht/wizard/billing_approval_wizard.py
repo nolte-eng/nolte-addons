@@ -24,7 +24,8 @@ class NolteBillingApprovalWizard(models.TransientModel):
 
     def _preview_lines(self, members, previews=None):
         lines = []
-        for member in members:
+        included = members.report_id._billing_time_members()
+        for member in members & included:
             preview = previews[str(member.id)] if previews is not None else member.billing_preview or {}
             work, travel = preview.get("work") or {}, preview.get("travel") or {}
             lines.append((0, 0, {

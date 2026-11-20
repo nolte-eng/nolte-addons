@@ -69,7 +69,11 @@ class TestExpenseCountry(TransactionCase):
             self.env['nolte.expense.report'].with_user(tech).check_access('write')
 
     def monthly(self):
-        monthly = self.env["nolte.expense.report"].create({"employee_id": self.employee.id, "month": self.day.replace(day=1)})
+        monthly = self.env["nolte.expense.report"].search([
+            ("employee_id", "=", self.employee.id), ("month", "=", self.day.replace(day=1)),
+        ], limit=1) or self.env["nolte.expense.report"].create({
+            "employee_id": self.employee.id, "month": self.day.replace(day=1),
+        })
         if not monthly.line_ids.filtered(lambda item: item.date == self.day):
             self.env["nolte.expense.report.line"].create({"report_id": monthly.id, "date": self.day})
         return monthly
@@ -90,6 +94,68 @@ class TestExpenseCountry(TransactionCase):
         report.action_sync_spesenbericht()
         self.assertEqual(report.member_ids.mapped("expense_report_line_id"), lines)
         self.assertEqual(report.member_ids.mapped("work_report_line_id"), source_lines)
+
+    def csv_import(self, reference="TEST-CSV", start="08:00", end="18:00"):
+        wizard = self.env["nolte.overtime.import.wizard"].create({
+            "csv_file": "dGVzdA==", "csv_filename": reference + ".csv",
+            "partner_id": self.env.company.partner_id.id,
+        })
+        wizard._import_expense_report_times({"berichtNr": reference}, {
+            "1": {"datum": self.day.isoformat(), "arbeitszeitBeginn": start, "arbeitszeitEnde": end},
+        }, self.employee)
+
+    def test_legacy_employee_rollout_settings_do_not_block_any_member(self):
+        self.employee.write({"stundenbericht_source": "csv", "stundenbericht_app_active_from": date(2036, 1, 1)})
+        other = self.employee.copy({"name": "Second legacy CSV employee"})
+        report = self.report(employees=self.employee | other)
+        report.action_sync_spesenbericht()
+        self.assertEqual(report.spesen_sync_state, "synchronized")
+        self.assertEqual(len(report.member_ids.expense_report_line_id), 2)
+        self.assertEqual(set(report.member_ids.expense_report_line_id.mapped("work_hours")), {10})
+
+    def test_csv_cannot_replace_app_day(self):
+        report = self.report()
+        report.action_sync_spesenbericht()
+        line = report.member_ids.expense_report_line_id
+        before = line.read(["start_time", "end_time", "break_minutes", "country", "work_report_line_id"])
+        with self.assertRaises(UserError), self.cr.savepoint():
+            self.csv_import()
+        self.assertEqual(line.read(["start_time", "end_time", "break_minutes", "country", "work_report_line_id"]), before)
+
+    def test_app_cannot_replace_csv_day(self):
+        self.csv_import()
+        report = self.report("DE")
+        report.action_sync_spesenbericht()
+        self.assertEqual(report.spesen_sync_state, "conflict")
+        self.assertFalse(report.member_ids.work_report_line_id)
+        self.assertIn("CSV", report.conflict_ids.description)
+
+    def test_csv_repeat_is_idempotent_and_other_or_edited_data_are_protected(self):
+        self.csv_import()
+        line = self.monthly().line_ids.filtered(lambda item: item.date == self.day)
+        self.assertTrue(line.travel_sequence_key.startswith("csv:"))
+        line.write({"lunch": True, "expense_amount": 12})
+        self.csv_import()
+        self.assertEqual(self.monthly().line_ids.filtered(lambda item: item.date == self.day), line)
+        self.assertTrue(line.lunch)
+        self.assertEqual(line.expense_amount, 12)
+        with self.assertRaises(UserError), self.cr.savepoint():
+            self.csv_import(reference="OTHER-CSV")
+        line.end_time = "17:00"
+        with self.assertRaises(UserError), self.cr.savepoint():
+            self.csv_import()
+        self.assertEqual(line.end_time, "17:00")
+
+    def test_csv_preserves_manual_day_and_locked_month(self):
+        monthly = self.monthly()
+        line = monthly.line_ids.filtered(lambda item: item.date == self.day)
+        line.write({"start_time": "09:00", "end_time": "15:00"})
+        with self.assertRaises(UserError), self.cr.savepoint():
+            self.csv_import()
+        self.assertEqual(line.start_time, "09:00")
+        monthly.state = "submitted"
+        with self.assertRaises(UserError), self.cr.savepoint():
+            self.csv_import()
 
     def test_legacy_country_code_uses_central_general_rate(self):
         report = self.report("DK")
@@ -257,3 +323,50 @@ class TestExpenseCountry(TransactionCase):
         self.assertEqual(expense.allowance, 17)
         with self.assertRaises(UserError), self.cr.savepoint():
             wizard.action_approve()
+
+    def test_empty_extra_day_does_not_block_or_add_allowance_to_billing(self):
+        report = self.report()
+        report.state = "under_review"
+        empty = self.env["nolte.service.report.member"].create({
+            "report_id": report.id, "employee_id": self.employee.id, "service_date": "2035-05-06",
+        })
+        assignment = report.employee_assignment_ids.filtered(lambda item: item.employee_id == self.employee)
+        if not assignment:
+            assignment = self.env["nolte.service.report.employee"].create({"report_id": report.id,"employee_id": self.employee.id})
+        assignment.overnight_count = 2
+        report.action_compute_billing_preview()
+        active = report.member_ids - empty
+        self.assertEqual(empty.billing_state, "preview")
+        self.assertFalse(empty.billing_preview)
+        self.assertEqual(active.billing_preview["overnights"], 2)
+        second = self.report()
+        second.state = "under_review"
+        second.member_ids.segment_ids.write({"start_time": "18:00", "end_time": "19:00"})
+        previews = (report | second)._combined_billing_previews()
+        self.assertEqual(previews[str(empty.id)]["allowance_days"], 0)
+        self.assertEqual(previews[str(empty.id)]["overnights"], 0)
+        self.assertEqual(previews[str(active.id)]["allowance_days"], 1)
+        lines = self.env["nolte.service.report.billing.wizard"]._preview_lines(report.member_ids, previews)
+        self.assertEqual([line[2]["member_id"] for line in lines], active.ids)
+        self.assertIn("07.05.2035", report._sale_order_service_note())
+        self.assertNotIn("06.05.2035", report._sale_order_service_note())
+        self.assertTrue(empty.exists())
+        assignment.unlink()
+        empty.overnight_count = 3
+        report.action_compute_billing_preview()
+        self.assertEqual(active.billing_preview["overnights"], 3)
+        previews = (report | second)._combined_billing_previews()
+        self.assertEqual(previews[str(active.id)]["overnights"], 3)
+        self.assertEqual(previews[str(empty.id)]["overnights"], 0)
+
+    def test_employee_with_no_times_still_requires_review(self):
+        other = self.employee.copy({"name": "Missing times employee"})
+        report = self.report()
+        report.state = "under_review"
+        self.env["nolte.service.report.member"].create({
+            "report_id": report.id, "employee_id": other.id, "service_date": self.day,
+        })
+        with self.assertRaisesRegex(UserError, "Missing times employee"), self.cr.savepoint():
+            report.action_compute_billing_preview()
+        with self.assertRaisesRegex(UserError, "Missing times employee"), self.cr.savepoint():
+            report._combined_billing_previews()

@@ -125,7 +125,6 @@ class ServiceTask(models.Model):
             'partner_id': self._nolte_customer().id or False,
             **{r: value(self, t) for r, t in SHARED.items() if r != 'partner_id'},
             'employee_assignment_ids': [Command.create({'employee_id': e.id}) for e in employees],
-            'member_ids': [Command.create({'employee_id': e.id, 'service_date': service_date}) for e in employees],
             'checklist_ids': [Command.create({'name': line.name, 'note': line.note or False,
                 'visibility': 'customer', 'checked': False, 'sequence': line.sequence}) for line in template.line_ids],
         })
@@ -164,6 +163,49 @@ class ServiceTask(models.Model):
 
 class ServiceReport(models.Model):
     _inherit = 'nolte.service.report'
+
+    def copy(self, default=None):
+        """A duplicated report is a new service visit with its own planning."""
+        self.ensure_one()
+        self.check_access('read')
+        self.check_access('create')
+        with self.env.cr.savepoint():
+            defaults = dict(default or {})
+            if self.task_id and 'task_id' not in defaults:
+                task_defaults = {
+                    'parent_id': False, 'child_ids': [Command.clear()],
+                    'nolte_service_date_start': self.task_id._nolte_period_start(),
+                    'nolte_service_date_end': self.task_id.nolte_service_date_end,
+                    'state': '01_in_progress',
+                }
+                if 'sale_line_id' in self.task_id._fields:
+                    task_defaults['sale_line_id'] = False
+                if self.task_id.nolte_service_planning:
+                    stage = self.env['project.task.type'].search([
+                        ('name', '=', 'Einsatz geplant' if self.task_id._nolte_period_start() else 'Ungeplant'),
+                        '|', ('project_ids', '=', False), ('project_ids', 'in', self.task_id.project_id.id),
+                    ], order='sequence, id', limit=1)
+                    if stage:
+                        task_defaults['stage_id'] = stage.id
+                task = self.task_id.with_context(
+                    nolte_skip_report_preparation=True, tracking_disable=True,
+                    mail_create_nosubscribe=True, mail_auto_subscribe_no_notify=True,
+                ).copy(task_defaults)
+                defaults['task_id'] = task.id
+            defaults = {
+                'state': 'draft', 'planning_draft': bool(defaults.get('task_id')),
+                'sale_order_id': False, 'overnight_count': 0,
+                'work_description': False, 'work_result': False, 'internal_note': False,
+                'member_ids': [],
+                'employee_assignment_ids': [Command.create({'employee_id': employee.id})
+                    for employee in self.employee_assignment_ids.employee_id | self.member_ids.employee_id],
+                'checklist_ids': [Command.create({
+                    'name': line.name, 'sequence': line.sequence, 'note': line.note,
+                    'visibility': line.visibility, 'checked': False,
+                }) for line in self.checklist_ids],
+                **defaults,
+            }
+            return super().copy(defaults)
 
     def _nolte_task_for_shared_data(self):
         self.ensure_one()

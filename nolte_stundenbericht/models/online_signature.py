@@ -73,26 +73,28 @@ class ServiceSignatureRequest(models.Model):
 
 
 class SignatureSettings(models.TransientModel):
-    _name = "nolte.service.signature.settings"
-    _description = "Einstellungen der Online-Unterschrift"
+    _inherit = "res.config.settings"
 
     stundenbericht_signature_base_url = fields.Char(
         string="Öffentliche HTTPS-Adresse für Kundenlinks",
-        default=lambda self: self.env["ir.config_parameter"].sudo().get_param("nolte_stundenbericht.signature_base_url"),
-        help="Zum Beispiel https://nolte-eng.de. Leer = Odoo-Systembasisadresse. In Produktion muss diese Adresse ohne Tailscale erreichbar sein.",
+        config_parameter="nolte_stundenbericht.signature_base_url",
+        help="Zum Beispiel https://nolte-eng.de. Leer verwendet die Odoo-Systembasisadresse.",
     )
 
-    def action_save(self):
+    @api.constrains("stundenbericht_signature_base_url")
+    def _check_signature_base_url(self):
+        for settings in self:
+            value = (settings.stundenbericht_signature_base_url or "").strip()
+            if value:
+                parsed = urlsplit(value)
+                if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.query or parsed.fragment:
+                    raise UserError(_("Bitte eine gültige HTTPS-Adresse eingeben."))
+
+    def set_values(self):
         self.ensure_one()
-        if not self.env.user.has_group("base.group_system"):
-            raise AccessError(_("Nur Administratoren dürfen die öffentliche Kundenadresse ändern."))
-        value = (self.stundenbericht_signature_base_url or "").strip().rstrip("/")
-        if value:
-            parsed = urlsplit(value)
-            if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.query or parsed.fragment:
-                raise UserError(_("Bitte eine gültige HTTPS-Adresse eingeben."))
-        self.env["ir.config_parameter"].sudo().set_param("nolte_stundenbericht.signature_base_url", value or False)
-        return {"type": "ir.actions.act_window_close"}
+        self.stundenbericht_signature_base_url = (self.stundenbericht_signature_base_url or "").strip().rstrip("/") or False
+        self._check_signature_base_url()
+        return super().set_values()
 
 
 class ServiceReport(models.Model):

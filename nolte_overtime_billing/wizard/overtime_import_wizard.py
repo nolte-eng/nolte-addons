@@ -465,6 +465,7 @@ class NolteOvertimeImportWizard(models.TransientModel):
         line_model = self.env["nolte.expense.report.line"].sudo()
         affected_reports = report_model
         imported_lines = line_model
+        unchanged_lines = line_model
         customer = _first_text_line(meta.get("ausfuehrungsort")) or self.partner_id.display_name
         first_day = min(daily)
         last_day = max(daily)
@@ -509,13 +510,33 @@ class NolteOvertimeImportWizard(models.TransientModel):
                 "travel_sequence_key": travel_sequence_key,
             }
             if line:
-                line.write(vals)
+                # A repeat of the same unchanged CSV is safe. Never replace
+                # app-controlled, manual, different-CSV or subsequently edited data.
+                has_times = bool(line.customer or line.start_time or line.end_time or line.break_minutes)
+                same_import = line.travel_sequence_key == travel_sequence_key
+                same_values = all(line[field] == vals[field] for field in (
+                    "customer", "start_time", "end_time", "break_minutes",
+                ))
+                if line.work_report_line_id or (line.travel_sequence_key and not same_import) or (
+                    has_times and not (same_import and same_values)
+                ):
+                    raise UserError(_(
+                        "Spesen für %(employee)s am %(day)s sind bereits aus einer anderen Quelle "
+                        "vorhanden oder wurden nach dem Import geändert. Es wurde nichts überschrieben. "
+                        "Bitte den Tag im Spesenbericht prüfen."
+                    ) % {"employee": employee.name, "day": day.strftime("%d.%m.%Y")})
+                if same_import and same_values:
+                    unchanged_lines |= line
+                else:
+                    line.write(vals)
                 imported_lines |= line
             else:
                 imported_lines |= line_model.create(vals)
         ordered_lines = imported_lines.sorted("date")
         if len(ordered_lines) >= 2:
             for index, line in enumerate(ordered_lines):
+                if line in unchanged_lines:
+                    continue
                 travel_type = "arrival" if index == 0 else (
                     "departure" if index == len(ordered_lines) - 1 else "full"
                 )

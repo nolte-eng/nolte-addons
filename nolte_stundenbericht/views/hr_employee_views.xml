@@ -2,6 +2,7 @@
     <record id="view_employee_form_nolte_stundenbericht" model="ir.ui.view">
         <field name="name">hr.employee.form.nolte.stundenbericht</field>
         <field name="model">hr.employee</field>
+        <field name="active" eval="False"/>
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
